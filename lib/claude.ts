@@ -112,10 +112,11 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
   }
 
   const total = raw.slides.length;
-  const variant = Math.floor(Math.random() * 2);
+  const variant = Math.floor(Math.random() * 3);
+  const photoSeed = Math.floor(Math.random() * 100);
   const slides = raw.slides.map((s, i) => ({
     slide_number: i + 1,
-    html: renderSlide(s as SlideContent, i + 1, total, variant),
+    html: renderSlide(s as SlideContent, i + 1, total, variant, photoSeed),
   }));
 
   return {
