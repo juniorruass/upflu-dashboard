@@ -24,7 +24,7 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError("Email ou senha incorretos. Tente novamente.");
+      setError(`Erro: ${authError.message} (${authError.status})`);
       setLoading(false);
       return;
     }

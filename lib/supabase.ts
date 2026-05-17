@@ -4,8 +4,8 @@ import {
 } from "@supabase/ssr";
 import { createClient as supabaseClient } from "@supabase/supabase-js";
 
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(/^﻿/, "").trim();
+const ANON = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").replace(/^﻿/, "").trim();
 
 export function createBrowserClient() {
   return ssrBrowserClient(URL, ANON);
