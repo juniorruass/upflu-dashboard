@@ -1,52 +1,54 @@
 import Groq from "groq-sdk";
 import { GeneratedCarousel } from "@/types";
+import { renderSlide, SlideContent } from "@/lib/templates";
 export { UPFLU_TOPICS, getTopicByIndex } from "@/lib/themes";
 
 const groq = new Groq({
   apiKey: (process.env.GROQ_API_KEY || "").replace(/^﻿/, "").trim(),
 });
 
-const SYSTEM_PROMPT = `Você é o sistema de criação de conteúdo da UPFLU, empresa de crescimento digital, implementações e IA para negócios. Sua tarefa é gerar carrosséis completos para o Instagram da UPFLU.
+const SYSTEM_PROMPT = `Você cria conteúdo para carrosséis do Instagram da UPFLU — empresa de crescimento digital e implementações com IA para pequenos negócios (barbearias, clínicas, advogados, restaurantes).
 
-A UPFLU não é agência de marketing — é empresa de implementação tecnológica. O tom de voz é: direto, sem rodeio, informal mas profissional. Sem jargões de guru ("alavancar", "sinergia", "escalar"). Sem emojis decorativos. Fala como quem sabe o que faz.
+Tom: direto, sem guru, sem "alavancar" ou "sinergia". Fala como quem resolve problema real.
 
-Clientes ideais: barbearias, advogados, clínicas, restaurantes, academias.
-
-Ao gerar um carrossel, retorne APENAS um JSON válido no seguinte formato:
+Retorne APENAS JSON válido, sem texto fora do JSON:
 {
-  "topic": "título do carrossel",
-  "caption": "legenda completa para o Instagram (hook + contexto + CTA + hashtags)",
+  "topic": "título resumido",
+  "caption": "legenda instagram: hook + contexto + CTA + 10 hashtags",
   "slides": [
-    {
-      "slide_number": 1,
-      "html": "HTML COMPLETO DO SLIDE"
-    }
+    {"type":"capa","eyebrow":"TEXTO CURTO UPPERCASE","title":"Título Grande","subtitle":"subtítulo curto"},
+    {"type":"numero","number":"80%","title":"título do dado","body":"explicação em 1-2 frases"},
+    {"type":"texto","eyebrow":"CONTEXTO","title":"Título de impacto","body":"desenvolvimento em 2-3 frases"},
+    {"type":"destaque","title":"Frase de impacto curta","body":"complemento em 1 frase"},
+    {"type":"numero","number":"3x","title":"outro dado relevante","body":"explicação"},
+    {"type":"cta","title":"Quer implementar isso no seu negócio?","handle":"@upflu.digital"}
   ]
 }
 
-Especificações do HTML de cada slide:
-- Dimensões exatas: 1080px × 1350px (width e height fixos no elemento raiz)
-- Fonte: Inter via Google Fonts (@import no <style> no início do HTML)
-- Fundo escuro padrão: #0E1116
-- Fundo alternativo (slides pares): #F5ECD7
-- Cor de destaque: #00C896
-- Texto sobre escuro: #FAFAF7
-- Texto sobre claro: #1A1A1A
-- Sem imagens externas (apenas CSS puro)
-- Logo: texto "UPFLU" em verde (#00C896) 16px weight 700 no canto superior esquerdo
-- Contador de slide no canto superior direito: "01/07" formato, 14px, #888888
-- Inline CSS apenas (sem classes externas, sem Tailwind)
-- Padding lateral: 80px
+Regras:
+- Sempre 6 slides nessa ordem: capa, numero, texto, destaque, numero, cta
+- Títulos da capa: máx 4 palavras impactantes
+- Numbers: use dados reais ou estimativas plausíveis (%, R$, x, h)
+- Body: máx 2 frases curtas e diretas`;
 
-Estrutura (5 slides apenas):
-- Slide 1 CAPA: eyebrow verde uppercase + título 90px weight 900 + subtítulo
-- Slides 2-4: alternar NÚMERO (numeral gigante verde), TEXTO (h2+parágrafo), DESTAQUE (fundo #00C896)
-- Slide 5 CTA: fundo #00C896, logo, "Quer implementar no seu negócio?", @upflu.digital
+interface RawSlide {
+  type: "capa" | "numero" | "texto" | "destaque" | "cta";
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  body?: string;
+  number?: string;
+  handle?: string;
+}
 
-Sem imagens externas. HTML inline completo por slide. Responda APENAS o JSON.`;
+interface RawGenerated {
+  topic: string;
+  caption: string;
+  slides: RawSlide[];
+}
 
 export async function generateCarousel(topic: string): Promise<GeneratedCarousel> {
-  const userPrompt = `Tema: "${topic}"\n\nGere 5 slides. Retorne apenas o JSON.`;
+  const userPrompt = `Tema: "${topic}"\n\nGere o JSON do carrossel.`;
 
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -54,31 +56,34 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: 8000,
+    max_tokens: 3000,
     temperature: 0.7,
   });
 
   const text = (completion.choices[0].message.content || "").trim();
-
-  const jsonMatch =
-    text.match(/```json\s*([\s\S]*?)\s*```/) ||
-    text.match(/```\s*([\s\S]*?)\s*```/);
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/);
   const jsonText = jsonMatch ? jsonMatch[1].trim() : text;
 
-  let parsed: GeneratedCarousel;
+  let raw: RawGenerated;
   try {
-    parsed = JSON.parse(jsonText) as GeneratedCarousel;
+    raw = JSON.parse(jsonText) as RawGenerated;
   } catch {
-    throw new Error(
-      `Falha ao interpretar resposta como JSON. Início: ${jsonText.slice(0, 400)}`
-    );
+    throw new Error(`JSON inválido. Início: ${jsonText.slice(0, 300)}`);
   }
 
-  parsed.topic = topic;
-
-  if (!Array.isArray(parsed.slides) || parsed.slides.length === 0) {
-    throw new Error("Nenhum slide foi gerado");
+  if (!Array.isArray(raw.slides) || raw.slides.length === 0) {
+    throw new Error("Nenhum slide gerado");
   }
 
-  return parsed;
+  const total = raw.slides.length;
+  const slides = raw.slides.map((s, i) => ({
+    slide_number: i + 1,
+    html: renderSlide(s as SlideContent, i + 1, total),
+  }));
+
+  return {
+    topic: raw.topic || topic,
+    caption: raw.caption || "",
+    slides,
+  };
 }
