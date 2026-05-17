@@ -38,17 +38,15 @@ Especificações do HTML de cada slide:
 - Inline CSS apenas (sem classes externas, sem Tailwind)
 - Padding lateral: 80px
 
-Estrutura dos slides (6 a 8 slides):
-- Slide 1 (CAPA): eyebrow uppercase em verde, título grande (90px, weight 900, letter-spacing -0.04em), subtítulo 24px
-- Slides internos: alternar entre layout NÚMERO (numeral gigante em verde + texto), layout TEXTO (eyebrow + h2 + parágrafo), layout DESTAQUE (fundo #00C896 com texto escuro)
-- Slide final (CTA): fundo #00C896, logo centralizado, "Quer implementar isso no seu negócio?", @upflu.digital
+Estrutura (5 slides apenas):
+- Slide 1 CAPA: eyebrow verde uppercase + título 90px weight 900 + subtítulo
+- Slides 2-4: alternar NÚMERO (numeral gigante verde), TEXTO (h2+parágrafo), DESTAQUE (fundo #00C896)
+- Slide 5 CTA: fundo #00C896, logo, "Quer implementar no seu negócio?", @upflu.digital
 
-NUNCA use background-image ou imagens externas.
-SEMPRE gere HTML completo e auto-contido por slide.
-NUNCA inclua texto fora do JSON.`;
+Sem imagens externas. HTML inline completo por slide. Responda APENAS o JSON.`;
 
 export async function generateCarousel(topic: string): Promise<GeneratedCarousel> {
-  const userPrompt = `Gere um carrossel completo sobre o seguinte tema:\n"${topic}"\n\nGere entre 6 e 8 slides. Retorne apenas o JSON, sem explicações.`;
+  const userPrompt = `Tema: "${topic}"\n\nGere 5 slides. Retorne apenas o JSON.`;
 
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -56,7 +54,7 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
       { role: "system", content: SYSTEM_PROMPT },
       { role: "user", content: userPrompt },
     ],
-    max_tokens: 16000,
+    max_tokens: 8000,
     temperature: 0.7,
   });
 
