@@ -276,7 +276,12 @@ export function PendingCard({
 
               <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
                 <div>
-                  <SlidePreview htmlContent={slides[currentSlide]?.html_content ?? ""} />
+                  <SlidePreview
+                    htmlContent={slides[currentSlide]?.html_content ?? ""}
+                    scale={0.32}
+                    allSlides={slides.map((s) => s.html_content)}
+                    slideIndex={currentSlide}
+                  />
                   <p style={{ textAlign: "center", fontSize: "12px", color: "#888888", margin: "8px 0 0" }}>
                     {currentSlide + 1} / {slides.length}
                   </p>
@@ -289,7 +294,7 @@ export function PendingCard({
                           width: i === currentSlide ? "20px" : "6px",
                           height: "6px",
                           borderRadius: "3px",
-                          background: i === currentSlide ? "#00C896" : "#2A2A2A",
+                          background: i === currentSlide ? "#C4A042" : "#2A2A2A",
                           border: "none",
                           cursor: "pointer",
                           padding: 0,
@@ -358,7 +363,7 @@ export function PendingCard({
               fontFamily: "inherit",
               transition: "border-color 0.15s",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#00C896")}
+            onFocus={(e) => (e.target.style.borderColor = "#C4A042")}
             onBlur={(e) => (e.target.style.borderColor = "#2A2A2A")}
           />
         </div>
@@ -370,7 +375,7 @@ export function PendingCard({
             style={{
               flex: 1,
               padding: "12px",
-              background: "#00C896",
+              background: "#C4A042",
               border: "none",
               borderRadius: "8px",
               fontSize: "14px",
@@ -500,12 +505,12 @@ export function ApprovedCard({ carousel }: { carousel: Carousel }) {
             top: "10px",
             left: "10px",
             background: "rgba(13,13,13,0.85)",
-            border: "1px solid #00C896",
+            border: "1px solid #C4A042",
             borderRadius: "6px",
             padding: "4px 10px",
             fontSize: "11px",
             fontWeight: "700",
-            color: "#00C896",
+            color: "#C4A042",
             letterSpacing: "0.5px",
             backdropFilter: "blur(4px)",
           }}

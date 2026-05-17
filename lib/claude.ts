@@ -78,9 +78,10 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
   }
 
   const total = raw.slides.length;
+  const variant = Math.floor(Math.random() * 2); // 0 = Dark Tech, 1 = Editorial Bold
   const slides = raw.slides.map((s, i) => ({
     slide_number: i + 1,
-    html: renderSlide(s as SlideContent, i + 1, total),
+    html: renderSlide(s as SlideContent, i + 1, total, variant),
   }));
 
   return {
