@@ -33,9 +33,10 @@ export async function createServerClient() {
 }
 
 export function createAdminClient() {
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").replace(/^﻿/, "").trim();
   return supabaseClient(
     URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    serviceKey,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
 }

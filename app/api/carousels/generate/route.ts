@@ -6,7 +6,7 @@ import { UPFLU_TOPICS } from "@/lib/themes";
 // Vercel Cron: 0 12 * * * (12:00 UTC = 09:00 BRT)
 export async function GET(request: Request) {
   const isDev = process.env.NODE_ENV !== "production";
-  const cronSecret = process.env.CRON_SECRET;
+  const cronSecret = (process.env.CRON_SECRET || "").replace(/^﻿/, "").trim();
 
   if (!isDev) {
     const auth = request.headers.get("authorization");
