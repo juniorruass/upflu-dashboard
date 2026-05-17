@@ -19,7 +19,7 @@ function topBar(n: number, total: number) {
 function bottomBar() {
   return `<div style="border-top:1px solid rgba(255,255,255,0.07);padding-top:24px;display:flex;align-items:center;gap:12px;position:relative;z-index:2;">
     <div style="width:28px;height:2px;background:${GOLD};border-radius:1px;flex-shrink:0;"></div>
-    <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.28);letter-spacing:0.08em;font-family:Inter,sans-serif;">@upflu.digital</span>
+    <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.28);letter-spacing:0.08em;font-family:Inter,sans-serif;">@upfluagencia</span>
   </div>`;
 }
 
@@ -262,7 +262,7 @@ function cta0(s: SlideContent): string {
     <div style="width:52px;height:4px;background:${GOLD};border-radius:2px;margin-bottom:60px;"></div>
     <h2 style="font-size:72px;font-weight:900;color:#FFFFFF;line-height:0.95;letter-spacing:-0.04em;margin-bottom:56px;max-width:820px;">${accent(s.title)}</h2>
     <div style="background:${GOLD};border-radius:100px;padding:18px 52px;margin-bottom:36px;">
-      <p style="font-size:22px;font-weight:800;color:#0D0D0D;letter-spacing:0.05em;">${s.handle || "@upflu.digital"}</p>
+      <p style="font-size:22px;font-weight:800;color:#0D0D0D;letter-spacing:0.05em;">${s.handle || "@upfluagencia"}</p>
     </div>
     <p style="font-size:15px;font-weight:500;color:rgba(255,255,255,0.2);letter-spacing:0.12em;text-transform:uppercase;">IA para pequenos negócios</p>
   </div>
@@ -280,7 +280,7 @@ function cta1(s: SlideContent): string {
     <img src="/upflu-logo.png" style="height:90px;width:auto;object-fit:contain;margin-bottom:64px;" alt="UPFLU" />
     <h2 style="font-size:76px;font-weight:900;color:#FFFFFF;line-height:0.93;letter-spacing:-0.04em;margin-bottom:52px;max-width:820px;">${accent(s.title)}</h2>
     <div style="background:${GOLD};border-radius:100px;padding:20px 56px;margin-bottom:40px;">
-      <p style="font-size:24px;font-weight:800;color:#0D0D0D;letter-spacing:0.06em;">${s.handle || "@upflu.digital"}</p>
+      <p style="font-size:24px;font-weight:800;color:#0D0D0D;letter-spacing:0.06em;">${s.handle || "@upfluagencia"}</p>
     </div>
     <p style="font-size:16px;font-weight:500;color:rgba(255,255,255,0.2);letter-spacing:0.12em;text-transform:uppercase;">IA para pequenos negócios</p>
   </div>

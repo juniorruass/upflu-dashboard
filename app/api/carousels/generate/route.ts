@@ -52,6 +52,7 @@ async function runGenerate(topic?: string) {
 
     const generated = await generateCarousel(topicToUse);
 
+    // ── 1. Insert carousel as pending ──────────────────────────────────────
     const { data: carousel, error: carouselError } = await supabase
       .from("carousels")
       .insert({
@@ -66,6 +67,7 @@ async function runGenerate(topic?: string) {
       throw new Error(`Failed to insert carousel: ${carouselError?.message}`);
     }
 
+    // ── 2. Insert slides ───────────────────────────────────────────────────
     const slidesPayload = generated.slides.map((s) => ({
       carousel_id: carousel.id,
       slide_number: s.slide_number,
@@ -78,6 +80,29 @@ async function runGenerate(topic?: string) {
 
     if (slidesError) throw new Error(`Failed to insert slides: ${slidesError.message}`);
 
+    // ── 3. Auto-approve: assign post_number and set status ─────────────────
+    const { data: maxRow } = await supabase
+      .from("carousels")
+      .select("post_number")
+      .not("post_number", "is", null)
+      .order("post_number", { ascending: false })
+      .limit(1)
+      .single();
+
+    const nextNumber = (maxRow?.post_number ?? 0) + 1;
+
+    const { error: approveError } = await supabase
+      .from("carousels")
+      .update({
+        status: "approved",
+        post_number: nextNumber,
+        approved_at: new Date().toISOString(),
+      })
+      .eq("id", carousel.id);
+
+    if (approveError) throw new Error(`Failed to auto-approve: ${approveError.message}`);
+
+    // ── 4. Return full carousel ────────────────────────────────────────────
     const { data: full, error: fullError } = await supabase
       .from("carousels")
       .select(
@@ -89,7 +114,7 @@ async function runGenerate(topic?: string) {
 
     if (fullError) throw new Error(fullError.message);
 
-    console.log(`[generate] Created carousel: ${carousel.id} — "${generated.topic}"`);
+    console.log(`[generate] Auto-approved carousel #${nextNumber}: ${carousel.id} — "${generated.topic}"`);
 
     return NextResponse.json(full, { status: 201 });
   } catch (err) {
