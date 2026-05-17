@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/carousels/generate",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}
