@@ -7,14 +7,34 @@ function accent(text: string): string {
   return (text || "").replace(/\{\{(.*?)\}\}/g, `<span style="color:${GOLD};">$1</span>`);
 }
 
-/* SVG logo icon — U + arrow-up + wave */
+/* SVG logo icon — faithful recreation of UPFLU icon:
+   U-shape outer frame + upward arrow (gold) exiting top + 2 wave lines below */
 function logoIcon(size = 38): string {
-  const h = Math.round(size * 1.15);
-  return `<svg width="${size}" height="${h}" viewBox="0 0 40 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M5 4 L5 26 Q5 40 20 40 Q35 40 35 26 L35 4" stroke="rgba(255,255,255,0.88)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="20" y1="34" x2="20" y2="13" stroke="${GOLD}" stroke-width="3.2" stroke-linecap="round"/>
-    <path d="M13 20 L20 12 L27 20" stroke="${GOLD}" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M9 38 Q14.5 32 20 38 Q25.5 44 31 38" stroke="rgba(255,255,255,0.55)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  const h = Math.round(size * 1.22);
+  return `<svg width="${size}" height="${h}" viewBox="0 0 48 58" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Outer U shape: straight sides, rounded bottom, open top -->
+    <path d="M6 4 L6 30 Q6 46 24 46 Q42 46 42 30 L42 4"
+          stroke="rgba(255,255,255,0.92)" stroke-width="5" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Inner U lighter fill for 3-D depth suggestion -->
+    <path d="M11 6 L11 30 Q11 41 24 41 Q37 41 37 30 L37 6"
+          stroke="rgba(255,255,255,0.12)" stroke-width="2" fill="none"
+          stroke-linecap="round"/>
+    <!-- Arrow shaft (gold) — exits above the U -->
+    <line x1="24" y1="40" x2="24" y2="5"
+          stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>
+    <!-- Arrowhead -->
+    <path d="M14 16 L24 3 L34 16"
+          stroke="${GOLD}" stroke-width="4" fill="none"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Wave 1 (primary) -->
+    <path d="M8 50 Q16 43 24 50 Q32 57 40 50"
+          stroke="rgba(255,255,255,0.72)" stroke-width="3.2" fill="none"
+          stroke-linecap="round"/>
+    <!-- Wave 2 (secondary) -->
+    <path d="M13 55 Q18.5 50 24 55 Q29.5 60 35 55"
+          stroke="rgba(255,255,255,0.35)" stroke-width="2.5" fill="none"
+          stroke-linecap="round"/>
   </svg>`;
 }
 
