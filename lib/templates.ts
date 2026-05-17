@@ -7,43 +7,11 @@ function accent(text: string): string {
   return (text || "").replace(/\{\{(.*?)\}\}/g, `<span style="color:${GOLD};">$1</span>`);
 }
 
-/* SVG logo icon — faithful recreation of UPFLU icon:
-   U-shape outer frame + upward arrow (gold) exiting top + 2 wave lines below */
-function logoIcon(size = 38): string {
-  const h = Math.round(size * 1.22);
-  return `<svg width="${size}" height="${h}" viewBox="0 0 48 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Outer U shape: straight sides, rounded bottom, open top -->
-    <path d="M6 4 L6 30 Q6 46 24 46 Q42 46 42 30 L42 4"
-          stroke="rgba(255,255,255,0.92)" stroke-width="5" fill="none"
-          stroke-linecap="round" stroke-linejoin="round"/>
-    <!-- Inner U lighter fill for 3-D depth suggestion -->
-    <path d="M11 6 L11 30 Q11 41 24 41 Q37 41 37 30 L37 6"
-          stroke="rgba(255,255,255,0.12)" stroke-width="2" fill="none"
-          stroke-linecap="round"/>
-    <!-- Arrow shaft (gold) — exits above the U -->
-    <line x1="24" y1="40" x2="24" y2="5"
-          stroke="${GOLD}" stroke-width="4" stroke-linecap="round"/>
-    <!-- Arrowhead -->
-    <path d="M14 16 L24 3 L34 16"
-          stroke="${GOLD}" stroke-width="4" fill="none"
-          stroke-linecap="round" stroke-linejoin="round"/>
-    <!-- Wave 1 (primary) -->
-    <path d="M8 50 Q16 43 24 50 Q32 57 40 50"
-          stroke="rgba(255,255,255,0.72)" stroke-width="3.2" fill="none"
-          stroke-linecap="round"/>
-    <!-- Wave 2 (secondary) -->
-    <path d="M13 55 Q18.5 50 24 55 Q29.5 60 35 55"
-          stroke="rgba(255,255,255,0.35)" stroke-width="2.5" fill="none"
-          stroke-linecap="round"/>
-  </svg>`;
-}
-
+/* Real UPFLU logo — served from /upflu-logo.png (public folder).
+   The iframe uses sandbox="allow-same-origin" so relative URLs resolve correctly. */
 function topBar(n: number, total: number) {
   return `<div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;">
-    <div style="display:flex;align-items:center;gap:13px;">
-      ${logoIcon(38)}
-      <span style="font-size:20px;font-weight:900;color:#FFFFFF;letter-spacing:0.06em;font-family:Inter,sans-serif;">UPFLU</span>
-    </div>
+    <img src="/upflu-logo.png" style="height:48px;width:auto;object-fit:contain;" alt="UPFLU" />
     <span style="font-size:13px;font-weight:700;color:rgba(255,255,255,0.22);letter-spacing:0.18em;font-family:Inter,sans-serif;">${String(n).padStart(2, "0")} / ${String(total).padStart(2, "0")}</span>
   </div>`;
 }
@@ -290,8 +258,7 @@ function cta0(s: SlideContent): string {
   <div style="position:absolute;bottom:0;right:0;width:140px;height:3px;background:linear-gradient(90deg,transparent,${GOLD});"></div>
   <div style="position:absolute;bottom:0;right:0;width:3px;height:140px;background:linear-gradient(0deg,${GOLD},transparent);"></div>
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:80px;text-align:center;">
-    ${logoIcon(68)}
-    <span style="font-size:28px;font-weight:900;color:#FFFFFF;letter-spacing:0.07em;margin-top:16px;margin-bottom:72px;">UPFLU</span>
+    <img src="/upflu-logo.png" style="height:90px;width:auto;object-fit:contain;margin-bottom:72px;" alt="UPFLU" />
     <div style="width:52px;height:4px;background:${GOLD};border-radius:2px;margin-bottom:60px;"></div>
     <h2 style="font-size:72px;font-weight:900;color:#FFFFFF;line-height:0.95;letter-spacing:-0.04em;margin-bottom:56px;max-width:820px;">${accent(s.title)}</h2>
     <div style="background:${GOLD};border-radius:100px;padding:18px 52px;margin-bottom:36px;">
@@ -310,8 +277,7 @@ function cta1(s: SlideContent): string {
   <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,rgba(196,160,66,0.02) 0px,rgba(196,160,66,0.02) 1px,transparent 1px,transparent 60px);"></div>
   <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(196,160,66,0.05) 0%,transparent 60%);border-radius:50%;"></div>
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:80px 80px 80px 100px;text-align:center;">
-    ${logoIcon(72)}
-    <span style="font-size:30px;font-weight:900;color:#FFFFFF;letter-spacing:0.07em;margin-top:18px;margin-bottom:64px;">UPFLU</span>
+    <img src="/upflu-logo.png" style="height:90px;width:auto;object-fit:contain;margin-bottom:64px;" alt="UPFLU" />
     <h2 style="font-size:76px;font-weight:900;color:#FFFFFF;line-height:0.93;letter-spacing:-0.04em;margin-bottom:52px;max-width:820px;">${accent(s.title)}</h2>
     <div style="background:${GOLD};border-radius:100px;padding:20px 56px;margin-bottom:40px;">
       <p style="font-size:24px;font-weight:800;color:#0D0D0D;letter-spacing:0.06em;">${s.handle || "@upflu.digital"}</p>
