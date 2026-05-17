@@ -7,29 +7,31 @@ const groq = new Groq({
   apiKey: (process.env.GROQ_API_KEY || "").replace(/^﻿/, "").trim(),
 });
 
-const SYSTEM_PROMPT = `Você cria conteúdo para carrosséis do Instagram da UPFLU — empresa de crescimento digital e implementações com IA para pequenos negócios (barbearias, clínicas, advogados, restaurantes).
+const SYSTEM_PROMPT = `Você cria conteúdo para carrosséis do Instagram da UPFLU — empresa de implementações com IA para pequenos negócios (barbearias, clínicas, advogados, restaurantes).
 
-Tom: direto, sem guru, sem "alavancar" ou "sinergia". Fala como quem resolve problema real.
+Tom: direto, sem guru, sem "alavancar". Fala como quem resolve problema real.
 
 Retorne APENAS JSON válido, sem texto fora do JSON:
 {
   "topic": "título resumido",
   "caption": "legenda instagram: hook + contexto + CTA + 10 hashtags",
   "slides": [
-    {"type":"capa","eyebrow":"TEXTO CURTO UPPERCASE","title":"Título Grande","subtitle":"subtítulo curto"},
-    {"type":"numero","number":"80%","title":"título do dado","body":"explicação em 1-2 frases"},
-    {"type":"texto","eyebrow":"CONTEXTO","title":"Título de impacto","body":"desenvolvimento em 2-3 frases"},
-    {"type":"destaque","title":"Frase de impacto curta","body":"complemento em 1 frase"},
-    {"type":"numero","number":"3x","title":"outro dado relevante","body":"explicação"},
-    {"type":"cta","title":"Quer implementar isso no seu negócio?","handle":"@upflu.digital"}
+    {"type":"capa","eyebrow":"UPFLU · IA PARA NEGÓCIOS","title":"{{Palavra-chave}} em destaque aqui","subtitle":"subtítulo curto em 1 frase"},
+    {"type":"numero","number":"80%","title":"título do dado com {{destaque}}","body":"explicação em 1-2 frases curtas"},
+    {"type":"texto","eyebrow":"O PROBLEMA","title":"Título de impacto com {{palavra}}","body":"desenvolvimento em 2-3 frases diretas"},
+    {"type":"destaque","title":"Frase de impacto marcante sem chaves","body":"complemento em 1 frase direta"},
+    {"type":"numero","number":"3x","title":"outro dado com {{destaque}}","body":"explicação curta"},
+    {"type":"cta","title":"Quer {{implementar}} isso no seu negócio?","handle":"@upflu.digital"}
   ]
 }
 
-Regras:
+Regras obrigatórias:
 - Sempre 6 slides nessa ordem: capa, numero, texto, destaque, numero, cta
-- Títulos da capa: máx 4 palavras impactantes
-- Numbers: use dados reais ou estimativas plausíveis (%, R$, x, h)
-- Body: máx 2 frases curtas e diretas`;
+- Títulos da capa: máx 5 palavras IMPACTANTES
+- Use {{palavra}} em 1-2 palavras por título para destacar em verde (exceto no slide destaque)
+- Numbers: dados reais ou estimativas plausíveis (%, R$, x, min, h)
+- Body: máx 2 frases curtas e diretas
+- eyebrow: máx 4 palavras em UPPERCASE`;
 
 interface RawSlide {
   type: "capa" | "numero" | "texto" | "destaque" | "cta";
