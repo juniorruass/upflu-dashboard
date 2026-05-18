@@ -19,7 +19,8 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 // can render them inside a sandboxed iframe without cross-origin issues.
 async function inlineExternalImages(html: string): Promise<string> {
   const urlPattern = /https:\/\/images\.unsplash\.com\/[^'")\s]+/g;
-  const urls = [...new Set(html.match(urlPattern) ?? [])];
+  const matched = html.match(urlPattern) ?? [];
+  const urls = Array.from(new Set(matched));
   if (urls.length === 0) return html;
 
   const pairs = await Promise.all(
