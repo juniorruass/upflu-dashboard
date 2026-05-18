@@ -29,7 +29,7 @@ export async function POST(
         approved_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("status", "pending")
+      .in("status", ["pending", "approved"])
       .select(
         `
         id, status, post_number, topic, caption, created_at, approved_at, declined_at,
