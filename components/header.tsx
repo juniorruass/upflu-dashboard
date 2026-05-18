@@ -1,8 +1,10 @@
 "use client";
 
-import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase";
+
+const GOLD = "#BEA06A";
+const BORDER = "rgba(255,255,255,0.07)";
 
 interface HeaderProps {
   title: string;
@@ -24,27 +26,20 @@ export default function Header({ title }: HeaderProps) {
 
     fetchPending();
 
-    // Realtime subscription
     const channel = supabase
       .channel("pending-count")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "carousels" },
-        () => fetchPending()
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "carousels" }, () => fetchPending())
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   return (
     <header
       style={{
-        height: "64px",
-        background: "#111111",
-        borderBottom: "1px solid #2A2A2A",
+        height: "60px",
+        background: "#080808",
+        borderBottom: `1px solid ${BORDER}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -54,118 +49,37 @@ export default function Header({ title }: HeaderProps) {
         zIndex: 30,
       }}
     >
-      {/* Page title */}
-      <h1
-        style={{
-          fontSize: "18px",
-          fontWeight: "600",
-          color: "#F5F5F5",
-          margin: 0,
-        }}
-      >
-        {title}
-      </h1>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <h1 style={{ fontSize: "15px", fontWeight: "500", color: "#F0EDE8", margin: 0, letterSpacing: "0.01em" }}>
+          {title}
+        </h1>
+        {pendingCount > 0 && (
+          <span style={{
+            fontSize: "10px", fontWeight: "600", color: GOLD,
+            background: "rgba(190,160,106,0.1)", border: `1px solid rgba(190,160,106,0.2)`,
+            padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.04em",
+          }}>
+            {pendingCount} pendente{pendingCount > 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
 
-      {/* Right side */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        {/* Notifications */}
-        <button
-          style={{
-            position: "relative",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            width: "36px",
-            height: "36px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "8px",
-          }}
-          className="hover:bg-[#252525]"
-          title={pendingCount > 0 ? `${pendingCount} carrossel(s) pendente(s)` : "Sem pendências"}
-        >
-          <Bell size={20} color="#888888" />
-          {pendingCount > 0 && (
-            <span
-              style={{
-                position: "absolute",
-                top: "4px",
-                right: "4px",
-                width: "16px",
-                height: "16px",
-                background: "#00C896",
-                borderRadius: "50%",
-                fontSize: "9px",
-                fontWeight: "700",
-                color: "#0D0D0D",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "2px solid #111111",
-              }}
-            >
-              {pendingCount > 9 ? "9+" : pendingCount}
-            </span>
-          )}
-        </button>
-
-        {/* Divider */}
-        <div
-          style={{
-            width: "1px",
-            height: "24px",
-            background: "#2A2A2A",
-          }}
-        />
-
-        {/* User avatar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <div
-            style={{
-              width: "36px",
-              height: "36px",
-              background: "linear-gradient(135deg, #00C896 0%, #00A07A 100%)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "13px",
-              fontWeight: "700",
-              color: "#0D0D0D",
-              flexShrink: 0,
-            }}
-          >
+        <div style={{ width: "1px", height: "20px", background: BORDER }} />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "32px", height: "32px",
+            background: "rgba(190,160,106,0.10)",
+            border: `1px solid rgba(190,160,106,0.20)`,
+            borderRadius: "50%",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "11px", fontWeight: "600", color: GOLD, flexShrink: 0,
+          }}>
             JR
           </div>
           <div>
-            <p
-              style={{
-                fontSize: "13px",
-                fontWeight: "600",
-                color: "#F5F5F5",
-                margin: 0,
-                lineHeight: 1.2,
-              }}
-            >
-              Junior
-            </p>
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#888888",
-                margin: 0,
-                lineHeight: 1.2,
-              }}
-            >
-              Admin
-            </p>
+            <p style={{ fontSize: "13px", fontWeight: "500", color: "#F0EDE8", margin: 0, lineHeight: 1.2 }}>Junior</p>
+            <p style={{ fontSize: "11px", color: "#777068", margin: 0, lineHeight: 1.2 }}>Admin</p>
           </div>
         </div>
       </div>

@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-outfit",
 });
 
 export const metadata: Metadata = {
-  title: "UPFLU | Dashboard de Conteúdo",
-  description: "Sistema de gestão e geração de conteúdo da UPFLU",
+  title: "UPFLU | Admin",
+  description: "Painel de gestão UPFLU",
 };
 
 export default function RootLayout({
@@ -20,17 +20,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
-      <body className="bg-[#111111] text-[#F5F5F5] font-sans antialiased">
+    <html lang="pt-BR" className={outfit.variable}>
+      <body style={{ margin: 0, background: "#080808", color: "#F0EDE8", fontFamily: "var(--font-outfit), sans-serif" }}>
         {children}
         <Toaster
           theme="dark"
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "#1A1A1A",
-              border: "1px solid #2A2A2A",
-              color: "#F5F5F5",
+              background: "#111111",
+              border: "1px solid rgba(255,255,255,0.07)",
+              color: "#F0EDE8",
+              fontFamily: "var(--font-outfit), sans-serif",
             },
           }}
         />

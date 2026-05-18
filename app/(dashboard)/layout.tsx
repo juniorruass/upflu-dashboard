@@ -9,9 +9,9 @@ export default function DashboardLayout({
     <>
       <style>{`
         .dashboard-main { margin-left: 240px; }
-        @media (max-width: 768px) { .dashboard-main { margin-left: 64px; } }
+        @media (max-width: 768px) { .dashboard-main { margin-left: 56px; } }
       `}</style>
-      <div style={{ display: "flex", minHeight: "100vh", background: "#111111" }}>
+      <div style={{ display: "flex", minHeight: "100vh", background: "#080808" }}>
         <Sidebar />
         <main
           className="dashboard-main"
@@ -21,7 +21,6 @@ export default function DashboardLayout({
             flexDirection: "column",
             minHeight: "100vh",
             overflow: "hidden",
-            transition: "margin-left 0.2s ease",
           }}
         >
           {children}

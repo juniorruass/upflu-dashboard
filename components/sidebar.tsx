@@ -10,53 +10,18 @@ import {
   Megaphone,
   BarChart2,
   Settings,
-  Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+const GOLD = "#BEA06A";
+const BORDER = "rgba(255,255,255,0.07)";
 
 const navItems = [
-  {
-    label: "Visão Geral",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    disabled: false,
-    exact: true,
-  },
-  {
-    label: "Conteúdo",
-    href: "/dashboard/conteudo",
-    icon: Images,
-    disabled: false,
-    exact: false,
-  },
-  {
-    label: "Clientes",
-    href: "/dashboard/clientes",
-    icon: Users,
-    disabled: true,
-    exact: false,
-  },
-  {
-    label: "Propostas",
-    href: "/dashboard/propostas",
-    icon: FileText,
-    disabled: true,
-    exact: false,
-  },
-  {
-    label: "Anúncios",
-    href: "/dashboard/anuncios",
-    icon: Megaphone,
-    disabled: true,
-    exact: false,
-  },
-  {
-    label: "Relatórios",
-    href: "/dashboard/relatorios",
-    icon: BarChart2,
-    disabled: true,
-    exact: false,
-  },
+  { label: "Visão Geral", href: "/dashboard", icon: LayoutDashboard, disabled: false, exact: true },
+  { label: "Conteúdo", href: "/dashboard/conteudo", icon: Images, disabled: true, exact: false },
+  { label: "Clientes", href: "/dashboard/clientes", icon: Users, disabled: true, exact: false },
+  { label: "Propostas", href: "/dashboard/propostas", icon: FileText, disabled: true, exact: false },
+  { label: "Anúncios", href: "/dashboard/anuncios", icon: Megaphone, disabled: true, exact: false },
+  { label: "Relatórios", href: "/dashboard/relatorios", icon: BarChart2, disabled: true, exact: false },
 ];
 
 export default function Sidebar() {
@@ -67,209 +32,166 @@ export default function Sidebar() {
       <style>{`
         .upflu-sidebar { width: 240px; min-width: 240px; }
         .upflu-sidebar-text { display: block; }
-        .upflu-sidebar-logo-text { display: flex; }
+        .upflu-sidebar-logo-sub { display: block; }
         .upflu-sidebar-badge { display: inline-flex; }
         @media (max-width: 768px) {
-          .upflu-sidebar { width: 64px; min-width: 64px; }
+          .upflu-sidebar { width: 56px; min-width: 56px; }
           .upflu-sidebar-text { display: none; }
-          .upflu-sidebar-logo-text { display: none; }
+          .upflu-sidebar-logo-sub { display: none; }
           .upflu-sidebar-badge { display: none; }
         }
+        .nav-link-hover:hover { background: rgba(255,255,255,0.03) !important; }
       `}</style>
-    <aside
-      className="upflu-sidebar"
-      style={{
-        background: "#161616",
-        borderRight: "1px solid #2A2A2A",
-        height: "100vh",
-        position: "fixed",
-        top: 0,
-        left: 0,
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 40,
-        transition: "width 0.2s ease",
-      }}
-    >
-      {/* Logo */}
-      <div
-        style={{
-          padding: "28px 24px 24px",
-          borderBottom: "1px solid #2A2A2A",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              background: "#00C896",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Zap size={18} color="#0D0D0D" strokeWidth={2.5} />
-          </div>
-          <span
-            className="upflu-sidebar-logo-text"
-            style={{
-              fontSize: "20px",
-              fontWeight: "700",
-              color: "#F5F5F5",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            UP<span style={{ color: "#00C896" }}>FLU</span>
-          </span>
-        </div>
-        <p
-          className="upflu-sidebar-text"
-          style={{
-            fontSize: "11px",
-            color: "#888888",
-            marginTop: "6px",
-            marginLeft: "42px",
-          }}
-        >
-          Content Dashboard
-        </p>
-      </div>
 
-      {/* Navigation */}
-      <nav
+      <aside
+        className="upflu-sidebar"
         style={{
-          flex: 1,
-          padding: "16px 12px",
+          background: "#080808",
+          borderRight: `1px solid ${BORDER}`,
+          height: "100vh",
+          position: "fixed",
+          top: 0,
+          left: 0,
           display: "flex",
           flexDirection: "column",
-          gap: "4px",
-          overflowY: "auto",
+          zIndex: 40,
         }}
-        className="scrollbar-thin"
       >
-        {navItems.map((item) => {
-          const isActive = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+        {/* Logo */}
+        <div style={{ padding: "32px 24px 28px", borderBottom: `1px solid ${BORDER}` }}>
+          <img
+            src="/upflu-logo.png"
+            alt="UPFLU"
+            style={{ height: "32px", width: "auto", objectFit: "contain" }}
+          />
+          <p
+            className="upflu-sidebar-logo-sub"
+            style={{
+              fontSize: "10px",
+              fontWeight: "400",
+              color: "#777068",
+              marginTop: "10px",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+            }}
+          >
+            Admin Panel
+          </p>
+        </div>
 
-          if (item.disabled) {
+        {/* Navigation */}
+        <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: "2px" }}>
+          {navItems.map((item) => {
+            const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+
+            if (item.disabled) {
+              return (
+                <div
+                  key={item.href}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    cursor: "not-allowed",
+                    opacity: 0.35,
+                  }}
+                >
+                  <item.icon size={16} color="#9A9288" strokeWidth={1.5} />
+                  <span className="upflu-sidebar-text" style={{ fontSize: "13px", fontWeight: "400", color: "#9A9288", flex: 1 }}>
+                    {item.label}
+                  </span>
+                  <span
+                    className="upflu-sidebar-badge"
+                    style={{
+                      fontSize: "8px",
+                      fontWeight: "600",
+                      color: GOLD,
+                      background: "rgba(190,160,106,0.08)",
+                      border: `1px solid rgba(190,160,106,0.18)`,
+                      padding: "2px 6px",
+                      borderRadius: "3px",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Em breve
+                  </span>
+                </div>
+              );
+            }
+
             return (
-              <div
+              <Link
                 key={item.href}
+                href={item.href}
+                className={!isActive ? "nav-link-hover" : ""}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "10px",
                   padding: "10px 12px",
-                  borderRadius: "8px",
-                  cursor: "not-allowed",
-                  opacity: 0.4,
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  background: isActive ? "rgba(190,160,106,0.07)" : "transparent",
+                  borderLeft: isActive ? `2px solid ${GOLD}` : "2px solid transparent",
+                  paddingLeft: "10px",
+                  transition: "background 0.15s",
                 }}
               >
-                <item.icon size={18} color="#888888" />
+                <item.icon
+                  size={16}
+                  color={isActive ? GOLD : "#9A9288"}
+                  strokeWidth={isActive ? 2 : 1.5}
+                />
                 <span
                   className="upflu-sidebar-text"
                   style={{
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#888888",
-                    flex: 1,
+                    fontSize: "13px",
+                    fontWeight: isActive ? "600" : "400",
+                    color: isActive ? GOLD : "#9A9288",
                   }}
                 >
                   {item.label}
                 </span>
-                <span
-                  className="upflu-sidebar-badge"
-                  style={{
-                    fontSize: "9px",
-                    fontWeight: "600",
-                    color: "#00C896",
-                    background: "rgba(0,200,150,0.1)",
-                    border: "1px solid rgba(0,200,150,0.2)",
-                    padding: "2px 6px",
-                    borderRadius: "4px",
-                    letterSpacing: "0.5px",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Em breve
-                </span>
-              </div>
+              </Link>
             );
-          }
+          })}
+        </nav>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "10px 12px",
-                borderRadius: "8px",
-                textDecoration: "none",
-                background: isActive ? "#00C896" : "transparent",
-                transition: "background 0.15s ease",
-              }}
-              className={cn(!isActive && "hover:bg-[#252525]")}
-            >
-              <item.icon
-                size={18}
-                color={isActive ? "#0D0D0D" : "#888888"}
-                strokeWidth={isActive ? 2.5 : 2}
-              />
-              <span
-                className="upflu-sidebar-text"
+        {/* Footer — Settings */}
+        <div style={{ padding: "12px", borderTop: `1px solid ${BORDER}` }}>
+          {(() => {
+            const isActive = pathname === "/dashboard/configuracoes";
+            return (
+              <Link
+                href="/dashboard/configuracoes"
+                className={!isActive ? "nav-link-hover" : ""}
                 style={{
-                  fontSize: "14px",
-                  fontWeight: isActive ? "600" : "500",
-                  color: isActive ? "#0D0D0D" : "#F5F5F5",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 12px",
+                  borderRadius: "6px",
+                  textDecoration: "none",
+                  background: isActive ? "rgba(190,160,106,0.07)" : "transparent",
+                  borderLeft: isActive ? `2px solid ${GOLD}` : "2px solid transparent",
+                  transition: "background 0.15s",
                 }}
               >
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Footer — Settings */}
-      <div style={{ padding: "12px", borderTop: "1px solid #2A2A2A" }}>
-        <Link
-          href="/dashboard/configuracoes"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            textDecoration: "none",
-            background: pathname === "/dashboard/configuracoes" ? "#00C896" : "transparent",
-            transition: "background 0.15s",
-          }}
-          className={cn(pathname !== "/dashboard/configuracoes" && "hover:bg-[#252525]")}
-        >
-          <Settings
-            size={18}
-            color={pathname === "/dashboard/configuracoes" ? "#0D0D0D" : "#888888"}
-            strokeWidth={pathname === "/dashboard/configuracoes" ? 2.5 : 2}
-          />
-          <span
-            className="upflu-sidebar-text"
-            style={{
-              fontSize: "14px",
-              fontWeight: "500",
-              color: pathname === "/dashboard/configuracoes" ? "#0D0D0D" : "#888888",
-            }}
-          >
-            Configurações
-          </span>
-        </Link>
-      </div>
-    </aside>
+                <Settings size={16} color={isActive ? GOLD : "#9A9288"} strokeWidth={isActive ? 2 : 1.5} />
+                <span
+                  className="upflu-sidebar-text"
+                  style={{ fontSize: "13px", fontWeight: isActive ? "600" : "400", color: isActive ? GOLD : "#9A9288" }}
+                >
+                  Configurações
+                </span>
+              </Link>
+            );
+          })()}
+        </div>
+      </aside>
     </>
   );
 }
