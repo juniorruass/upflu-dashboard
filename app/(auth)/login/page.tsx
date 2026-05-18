@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 const GOLD = "#BEA06A";
-const GOLD_LIGHT = "#D0B688";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -68,6 +67,7 @@ export default function LoginPage() {
       <div style={{ width: "100%", maxWidth: "380px", position: "relative" }}>
         {/* Logo */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "48px" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "44px", width: "auto", objectFit: "contain" }} />
           <p style={{ fontSize: "11px", color: "#777068", marginTop: "14px", letterSpacing: "0.22em", textTransform: "uppercase" }}>
             Acesso Restrito

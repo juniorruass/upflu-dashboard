@@ -59,11 +59,8 @@ export default function Sidebar() {
       >
         {/* Logo */}
         <div style={{ padding: "32px 24px 28px", borderBottom: `1px solid ${BORDER}` }}>
-          <img
-            src="/upflu-logo.png"
-            alt="UPFLU"
-            style={{ height: "32px", width: "auto", objectFit: "contain" }}
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
           <p
             className="upflu-sidebar-logo-sub"
             style={{
