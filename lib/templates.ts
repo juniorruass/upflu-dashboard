@@ -148,7 +148,7 @@ function v1_capa(s: SlideContent, n: number, total: number) {
   <div style="position:absolute;left:0;top:0;bottom:0;width:10px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.08) 100%);"></div>
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:64px 80px 64px 100px;">
     ${topBar(n, total)}
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:56px;">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
       ${s.eyebrow ? `<div style="display:inline-flex;align-items:center;background:${GOLD};padding:7px 20px;border-radius:4px;margin-bottom:36px;align-self:flex-start;"><p style="font-size:12px;font-weight:900;color:#0D0D0D;letter-spacing:0.38em;text-transform:uppercase;">${s.eyebrow}</p></div>` : ""}
       <h1 style="font-size:136px;font-weight:900;color:#FFFFFF;line-height:0.86;letter-spacing:-0.06em;margin-bottom:44px;max-width:920px;">${accent(s.title)}</h1>
       <div style="display:flex;align-items:center;gap:20px;">
@@ -233,19 +233,19 @@ function v2_capa(s: SlideContent, n: number, total: number, photoSeed: number) {
   const photo = pickPhoto(photoSeed);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
 <div style="width:1080px;height:1350px;background:#0D0D0D;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
-  <!-- Full-bleed photo -->
-  <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center 25%;"></div>
-  <!-- Cinematic overlay: visible photo at top, dark at bottom for text -->
-  <div style="position:absolute;inset:0;background:linear-gradient(175deg,rgba(0,0,0,0.28) 0%,rgba(13,13,13,0.65) 35%,rgba(13,13,13,0.93) 62%,#0D0D0D 78%);"></div>
+  <!-- Full-bleed photo — photo visible top half, text on bottom half -->
+  <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center 20%;"></div>
+  <!-- Gradient: transparent at top, solid dark from midpoint down so text is readable -->
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.20) 30%,rgba(13,13,13,0.75) 52%,rgba(13,13,13,0.97) 66%,#0D0D0D 76%);"></div>
   <!-- Gold left border -->
-  <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.1) 100%);"></div>
-  <!-- Content -->
+  <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.15) 100%);"></div>
+  <!-- Content always centered vertically -->
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:64px 80px 64px 94px;">
     ${topBar(n, total)}
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:56px;">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;">
       ${s.eyebrow ? `<div style="display:inline-flex;background:${GOLD};padding:7px 20px;border-radius:4px;margin-bottom:28px;align-self:flex-start;"><p style="font-size:12px;font-weight:900;color:#0D0D0D;letter-spacing:0.38em;text-transform:uppercase;">${s.eyebrow}</p></div>` : ""}
-      <h1 style="font-size:132px;font-weight:900;color:#FFFFFF;line-height:0.87;letter-spacing:-0.06em;margin-bottom:36px;max-width:920px;text-shadow:0 4px 48px rgba(0,0,0,0.7);">${accent(s.title)}</h1>
-      ${s.subtitle ? `<p style="font-size:26px;font-weight:400;color:rgba(255,255,255,0.65);line-height:1.5;max-width:640px;text-shadow:0 2px 16px rgba(0,0,0,0.6);">${s.subtitle}</p>` : ""}
+      <h1 style="font-size:132px;font-weight:900;color:#FFFFFF;line-height:0.87;letter-spacing:-0.06em;margin-bottom:36px;max-width:920px;text-shadow:0 4px 48px rgba(0,0,0,0.8);">${accent(s.title)}</h1>
+      ${s.subtitle ? `<p style="font-size:26px;font-weight:400;color:rgba(255,255,255,0.7);line-height:1.5;max-width:640px;text-shadow:0 2px 20px rgba(0,0,0,0.8);">${s.subtitle}</p>` : ""}
     </div>
     ${bottomBar()}
   </div>
@@ -256,9 +256,9 @@ function v2_numero(s: SlideContent, n: number, total: number, photoSeed: number)
   const photo = pickPhoto(photoSeed + 1);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
 <div style="width:1080px;height:1350px;background:#0D0D0D;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
-  <!-- Subtle photo at top -->
-  <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center 30%;"></div>
-  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.82) 0%,rgba(13,13,13,0.92) 40%,#0D0D0D 60%);"></div>
+  <!-- Photo visible at top-right corner, dark below for text -->
+  <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center top;"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.45) 0%,rgba(13,13,13,0.80) 35%,rgba(13,13,13,0.97) 55%,#0D0D0D 65%);"></div>
   <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.1) 100%);"></div>
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:64px 80px 64px 94px;">
     ${topBar(n, total)}
