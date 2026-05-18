@@ -149,9 +149,8 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
   }
 
   const total = raw.slides.length;
-  // 40% futuristic centered (3), 40% cinematic photo (2), 20% editorial bold (1)
-  const rand = Math.random();
-  const variant = rand < 0.4 ? 3 : rand < 0.8 ? 2 : 1;
+  // 50% futuristic centered (3), 50% cinematic photo (2) — variants 0 and 1 retired (no photo)
+  const variant = Math.random() < 0.5 ? 3 : 2;
   const photoSeed = Math.floor(Math.random() * 100);
   const slides = raw.slides.map((s, i) => ({
     slide_number: i + 1,
