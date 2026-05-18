@@ -64,7 +64,7 @@ REGRAS ABSOLUTAS — violá-las é inaceitável:
 4. Body: máx 2 frases CURTAS. Segunda frase deve aprofundar ou chocar, nunca repetir a primeira.
 5. Eyebrow: máx 4 palavras, UPPERCASE, estilo tag editorial de revista.
 6. Destaque: frase memorável, sem {{}}. Deve ser digna de screenshot, repost e salvar.
-7. Caption: hook sem emojis, específico, que provoca. CTA pede ação clara (DM "QUERO", "ME CHAMA", seguir).
+7. Caption: hook sem emojis, específico, que provoca. CTA pede ação clara: manda DM com QUERO, ME CHAMA, ou pede para seguir. NUNCA use aspas duplas dentro de strings do JSON — viola o formato.
 8. Varie tema, ângulo e número de abertura — nunca dois frames iguais em gerações seguidas.`;
 
 interface RawSlide {
@@ -94,6 +94,7 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
     ],
     max_tokens: 3000,
     temperature: 0.85,
+    response_format: { type: "json_object" },
   });
 
   const text = (completion.choices[0].message.content || "").trim();
