@@ -384,10 +384,149 @@ function v2_cta(s: SlideContent, photoSeed: number) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   VARIANT 3 — FUTURISTIC CENTERED
+   Full-bleed photo · Gold grid overlay · Corner brackets
+   HUD scan line · Title centered + glow on highlight
+   ═══════════════════════════════════════════════════════ */
+
+function accentGlow(text: string): string {
+  return (text || "").replace(
+    /\{\{(.*?)\}\}/g,
+    `<span style="color:${GOLD};text-shadow:0 0 28px rgba(196,160,66,0.85),0 0 56px rgba(196,160,66,0.4);">$1</span>`
+  );
+}
+
+function v3_frame(photoUrl: string) {
+  return `
+  <div style="position:absolute;inset:0;background-image:url('${photoUrl}');background-size:cover;background-position:center;"></div>
+  <div style="position:absolute;inset:0;background:rgba(4,4,6,0.74);"></div>
+  <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(196,160,66,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(196,160,66,0.035) 1px,transparent 1px);background-size:68px 68px;"></div>
+  <div style="position:absolute;top:54px;left:54px;width:52px;height:52px;border-top:2px solid ${GOLD};border-left:2px solid ${GOLD};opacity:0.7;"></div>
+  <div style="position:absolute;top:54px;right:54px;width:52px;height:52px;border-top:2px solid ${GOLD};border-right:2px solid ${GOLD};opacity:0.7;"></div>
+  <div style="position:absolute;bottom:54px;left:54px;width:52px;height:52px;border-bottom:2px solid ${GOLD};border-left:2px solid ${GOLD};opacity:0.7;"></div>
+  <div style="position:absolute;bottom:54px;right:54px;width:52px;height:52px;border-bottom:2px solid ${GOLD};border-right:2px solid ${GOLD};opacity:0.7;"></div>
+  <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(196,160,66,0.10),transparent);pointer-events:none;"></div>
+  <div style="position:absolute;top:42%;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(196,160,66,0.22),transparent);pointer-events:none;"></div>`;
+}
+
+function v3_topBar(n: number, total: number) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;">
+    <img src="/upflu-logo.png" style="height:44px;width:auto;object-fit:contain;filter:drop-shadow(0 0 8px rgba(196,160,66,0.35));" alt="UPFLU" />
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:6px;height:6px;background:${GOLD};border-radius:50%;box-shadow:0 0 8px ${GOLD};"></div>
+      <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:0.22em;font-family:Inter,sans-serif;">${String(n).padStart(2,"0")} / ${String(total).padStart(2,"0")}</span>
+    </div>
+  </div>`;
+}
+
+function v3_bottomBar(handle = "@upfluagencia") {
+  return `<div style="display:flex;align-items:center;justify-content:space-between;position:relative;z-index:2;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:24px;height:1px;background:${GOLD};box-shadow:0 0 6px rgba(196,160,66,0.5);"></div>
+      <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.28);letter-spacing:0.1em;font-family:Inter,sans-serif;">${handle}</span>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:rgba(196,160,66,0.35);letter-spacing:0.3em;text-transform:uppercase;font-family:Inter,sans-serif;">UPFLU.DIGITAL</div>
+  </div>`;
+}
+
+function v3_capa(s: SlideContent, n: number, total: number, photoSeed: number) {
+  const photo = pickPhoto(photoSeed);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
+<div style="width:1080px;height:1350px;background:#040406;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
+  ${v3_frame(photo)}
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:72px 80px;">
+    ${v3_topBar(n, total)}
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;">
+      ${s.eyebrow ? `<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:36px;"><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div><p style="font-size:11px;font-weight:800;color:${GOLD};letter-spacing:0.42em;text-transform:uppercase;text-shadow:0 0 12px rgba(196,160,66,0.6);">${s.eyebrow}</p><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div></div>` : ""}
+      <h1 style="font-size:130px;font-weight:900;color:#FFFFFF;line-height:0.88;letter-spacing:-0.055em;margin-bottom:40px;max-width:940px;text-shadow:0 4px 60px rgba(0,0,0,0.9);text-align:center;">${accentGlow(s.title)}</h1>
+      ${s.subtitle ? `<div style="width:48px;height:2px;background:${GOLD};border-radius:1px;margin:0 auto 24px;box-shadow:0 0 10px ${GOLD};"></div><p style="font-size:24px;font-weight:400;color:rgba(255,255,255,0.6);line-height:1.55;max-width:620px;text-align:center;text-shadow:0 2px 20px rgba(0,0,0,0.8);">${s.subtitle}</p>` : ""}
+    </div>
+    ${v3_bottomBar()}
+  </div>
+</div></body></html>`;
+}
+
+function v3_numero(s: SlideContent, n: number, total: number, photoSeed: number) {
+  const photo = pickPhoto(photoSeed + 3);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
+<div style="width:1080px;height:1350px;background:#040406;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
+  ${v3_frame(photo)}
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:560px;font-weight:900;color:rgba(196,160,66,0.04);line-height:1;letter-spacing:-0.08em;white-space:nowrap;pointer-events:none;">${s.number || ""}</div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:72px 80px;">
+    ${v3_topBar(n, total)}
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;">
+      <p style="font-size:220px;font-weight:900;color:${GOLD};line-height:0.82;letter-spacing:-0.07em;margin-bottom:28px;text-shadow:0 0 60px rgba(196,160,66,0.5),0 0 120px rgba(196,160,66,0.2);">${s.number || ""}</p>
+      <div style="width:80px;height:2px;background:${GOLD};border-radius:1px;margin:0 auto 32px;box-shadow:0 0 10px ${GOLD};"></div>
+      <h2 style="font-size:58px;font-weight:900;color:#FFFFFF;line-height:0.97;letter-spacing:-0.033em;margin-bottom:28px;max-width:800px;text-align:center;">${accentGlow(s.title)}</h2>
+      <p style="font-size:23px;font-weight:400;color:rgba(255,255,255,0.48);line-height:1.65;max-width:680px;text-align:center;">${s.body || ""}</p>
+    </div>
+    ${v3_bottomBar()}
+  </div>
+</div></body></html>`;
+}
+
+function v3_texto(s: SlideContent, n: number, total: number, photoSeed: number) {
+  const photo = pickPhoto(photoSeed + 4);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
+<div style="width:1080px;height:1350px;background:#040406;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
+  ${v3_frame(photo)}
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:72px 80px;">
+    ${v3_topBar(n, total)}
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;">
+      ${s.eyebrow ? `<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:32px;"><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div><p style="font-size:11px;font-weight:800;color:${GOLD};letter-spacing:0.42em;text-transform:uppercase;">${s.eyebrow}</p><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div></div>` : ""}
+      <h2 style="font-size:88px;font-weight:900;color:#FFFFFF;line-height:0.91;letter-spacing:-0.045em;margin-bottom:44px;max-width:900px;text-align:center;text-shadow:0 4px 40px rgba(0,0,0,0.9);">${accentGlow(s.title)}</h2>
+      <div style="width:48px;height:2px;background:${GOLD};border-radius:1px;margin:0 auto 36px;box-shadow:0 0 10px ${GOLD};"></div>
+      <p style="font-size:26px;font-weight:400;color:rgba(255,255,255,0.52);line-height:1.65;max-width:760px;text-align:center;">${s.body || ""}</p>
+    </div>
+    ${v3_bottomBar()}
+  </div>
+</div></body></html>`;
+}
+
+function v3_destaque(s: SlideContent, n: number, total: number, photoSeed: number) {
+  const photo = pickPhoto(photoSeed + 6);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
+<div style="width:1080px;height:1350px;background:#040406;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
+  ${v3_frame(photo)}
+  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:400px;font-weight:900;color:rgba(196,160,66,0.05);line-height:1;font-family:Georgia,serif;pointer-events:none;white-space:nowrap;">"</div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:72px 80px;">
+    ${v3_topBar(n, total)}
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;">
+      <div style="width:1px;height:60px;background:linear-gradient(180deg,transparent,${GOLD});margin:0 auto 40px;box-shadow:0 0 10px rgba(196,160,66,0.4);"></div>
+      <h2 style="font-size:90px;font-weight:900;color:#FFFFFF;line-height:0.91;letter-spacing:-0.046em;margin-bottom:44px;max-width:920px;text-align:center;text-shadow:0 4px 40px rgba(0,0,0,0.9);">${s.title}</h2>
+      <div style="width:1px;height:60px;background:linear-gradient(180deg,${GOLD},transparent);margin:0 auto 36px;box-shadow:0 0 10px rgba(196,160,66,0.4);"></div>
+      <p style="font-size:28px;font-weight:500;color:rgba(196,160,66,0.75);line-height:1.5;max-width:740px;text-align:center;">${s.body || ""}</p>
+    </div>
+    ${v3_bottomBar()}
+  </div>
+</div></body></html>`;
+}
+
+function v3_cta(s: SlideContent, photoSeed: number) {
+  const photo = pickPhoto(photoSeed + 7);
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
+<div style="width:1080px;height:1350px;background:#040406;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
+  ${v3_frame(photo)}
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:720px;height:720px;border:1px solid rgba(196,160,66,0.08);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:500px;border:1px solid rgba(196,160,66,0.06);border-radius:50%;pointer-events:none;"></div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:80px;text-align:center;">
+    <img src="/upflu-logo.png" style="height:88px;width:auto;object-fit:contain;margin-bottom:56px;filter:drop-shadow(0 0 16px rgba(196,160,66,0.4));" alt="UPFLU" />
+    <div style="width:48px;height:2px;background:${GOLD};border-radius:1px;margin:0 auto 48px;box-shadow:0 0 12px ${GOLD};"></div>
+    <h2 style="font-size:76px;font-weight:900;color:#FFFFFF;line-height:0.93;letter-spacing:-0.044em;margin-bottom:52px;max-width:840px;text-shadow:0 4px 40px rgba(0,0,0,0.9);">${accentGlow(s.title)}</h2>
+    <div style="background:${GOLD};border-radius:100px;padding:20px 56px;margin-bottom:32px;box-shadow:0 0 40px rgba(196,160,66,0.35);">
+      <p style="font-size:24px;font-weight:800;color:#040406;letter-spacing:0.06em;">${s.handle || "@upfluagencia"}</p>
+    </div>
+    <p style="font-size:13px;font-weight:600;color:rgba(196,160,66,0.3);letter-spacing:0.28em;text-transform:uppercase;">IA PARA PEQUENOS NEGÓCIOS</p>
+  </div>
+</div></body></html>`;
+}
+
+/* ═══════════════════════════════════════════════════════
    Public API
    variant 0 = Dark Tech
    variant 1 = Editorial Bold
    variant 2 = Cinematic Photo
+   variant 3 = Futuristic Centered (HUD + glow)
    ═══════════════════════════════════════════════════════ */
 
 export function renderSlide(
@@ -397,28 +536,33 @@ export function renderSlide(
   variant = 0,
   photoSeed = 0
 ): string {
-  const v = variant % 3;
+  const v = variant % 4;
   switch (s.type) {
     case "capa":
       return v === 0 ? v0_capa(s, n, total)
            : v === 1 ? v1_capa(s, n, total)
-           : v2_capa(s, n, total, photoSeed);
+           : v === 2 ? v2_capa(s, n, total, photoSeed)
+           : v3_capa(s, n, total, photoSeed);
     case "numero":
       return v === 0 ? v0_numero(s, n, total)
            : v === 1 ? v1_numero(s, n, total)
-           : v2_numero(s, n, total, photoSeed);
+           : v === 2 ? v2_numero(s, n, total, photoSeed)
+           : v3_numero(s, n, total, photoSeed);
     case "texto":
       return v === 0 ? v0_texto(s, n, total)
            : v === 1 ? v1_texto(s, n, total)
-           : v2_texto(s, n, total);
+           : v === 2 ? v2_texto(s, n, total)
+           : v3_texto(s, n, total, photoSeed);
     case "destaque":
       return v === 0 ? v0_destaque(s, n, total)
            : v === 1 ? v1_destaque(s, n, total)
-           : v2_destaque(s, n, total, photoSeed);
+           : v === 2 ? v2_destaque(s, n, total, photoSeed)
+           : v3_destaque(s, n, total, photoSeed);
     case "cta":
     default:
       return v === 0 ? v0_cta(s)
            : v === 1 ? v1_cta(s)
-           : v2_cta(s, photoSeed);
+           : v === 2 ? v2_cta(s, photoSeed)
+           : v3_cta(s, photoSeed);
   }
 }

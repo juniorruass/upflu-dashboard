@@ -91,15 +91,17 @@ Retorne APENAS JSON válido — zero texto fora do JSON:
 }
 
 ━━━ REGRAS ABSOLUTAS ━━━
-1. CAPA: 3-5 palavras no título. Pense em outdoor de rodovia — cada palavra paga o espaço que ocupa.
+1. CAPA: 3-5 palavras no título. Pense em outdoor de rodovia — cada palavra paga o espaço que ocupa. Deve chocar ou provocar, nunca só descrever.
 2. {{highlight}}: use em exatamente 1 palavra por título — a de MAIOR impacto emocional. NUNCA no slide destaque.
 3. NÚMEROS: específicos e críveis — 67% > 70%, 2,4x > dobro, R$3.800 > alguns milhares. Sempre com unidade.
-4. BODY: exatamente 2 frases. A segunda deve aprofundar ou chocar — nunca repetir a primeira.
-5. EYEBROW: máx 4 palavras, UPPERCASE. Estilo tag de revista de negócios.
-6. DESTAQUE: frase que merece screenshot e repost. Sem {{}}, sem dados, só verdade emocional.
-7. CAPTION: sem emojis no hook. Termina com hashtags reais do Brasil.
-8. VARIEDADE: cada carrossel deve ter formato, ângulo e dado de abertura diferentes do anterior.
-9. NUNCA use aspas duplas dentro de strings JSON — quebra o formato.`;
+4. BODY: exatamente 2 frases curtas. A segunda aprofunda ou choca — nunca repete a primeira.
+5. EYEBROW: máx 4 palavras, UPPERCASE. VARIE por slide — escolha o mais adequado ao conteúdo:
+   DADO DO SETOR · CASO REAL · A VERDADE QUE DÓI · ERRO QUE CUSTA CARO · ALERTA PARA DONOS · DESCOBERTA BRUTAL · O QUE NINGUÉM FALA · FERRAMENTA ESSENCIAL · UPFLUAGENCIA · IA & AUTOMAÇÃO · VOCÊ SABIA? · MERCADO EM 2025
+6. DESTAQUE: frase que merece screenshot e repost. Sem {{}}, sem dados, só verdade emocional e brutal.
+7. SUBTITLE da capa: NÃO é dado técnico. É frase emocional que cria tensão. Exemplos: "Você nem sabe quantos foram embora hoje." / "Esse erro custa mais do que você imagina." / "Enquanto você lê isso, seu concorrente já automatizou."
+8. CAPTION: sem emojis no hook. Termina com hashtags reais do Brasil.
+9. VARIEDADE: cada carrossel deve ter formato, ângulo e dado de abertura diferentes do anterior. Nunca dois frames iguais.
+10. NUNCA use aspas duplas dentro de strings JSON — quebra o formato.`;
 
 interface RawSlide {
   type: "capa" | "numero" | "texto" | "destaque" | "cta";
@@ -147,8 +149,9 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
   }
 
   const total = raw.slides.length;
-  // 70% cinematic photo (2), 30% editorial bold (1) — dark tech (0) retired
-  const variant = Math.random() < 0.7 ? 2 : 1;
+  // 40% futuristic centered (3), 40% cinematic photo (2), 20% editorial bold (1)
+  const rand = Math.random();
+  const variant = rand < 0.4 ? 3 : rand < 0.8 ? 2 : 1;
   const photoSeed = Math.floor(Math.random() * 100);
   const slides = raw.slides.map((s, i) => ({
     slide_number: i + 1,
