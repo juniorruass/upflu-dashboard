@@ -1,27 +1,27 @@
-// Curated Unsplash photos for carousel backgrounds.
-// All fit=crop&w=1080&h=1350 for perfect 4:5 Instagram portrait format.
+// Curated Unsplash tech photos for carousel backgrounds.
+// All fit=crop&w=1080&h=1350 for 4:5 Instagram portrait format.
 
 export const PHOTOS = [
-  // Entrepreneur / laptop at night
-  "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1080&h=1350&fit=crop&q=85",
-  // Business charts / analytics
-  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1080&h=1350&fit=crop&q=85",
-  // Team meeting / collaboration
-  "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1080&h=1350&fit=crop&q=85",
-  // Person coding / working focused
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=1080&h=1350&fit=crop&q=85",
-  // Modern office / minimal desk
-  "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1080&h=1350&fit=crop&q=85",
-  // Professional portrait (arms crossed)
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1080&h=1350&fit=crop&q=85",
-  // Startup / hustle vibes
-  "https://images.unsplash.com/photo-1553877522-43269d4ea984?w=1080&h=1350&fit=crop&q=85",
-  // Tech / AI concept
+  // Circuit board macro — gold/green tones
+  "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1080&h=1350&fit=crop&q=85",
+  // Binary / matrix code on screen
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1080&h=1350&fit=crop&q=85",
+  // AI robot / holographic concept
+  "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=1080&h=1350&fit=crop&q=85",
+  // Code on MacBook screen — dark setup
+  "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1080&h=1350&fit=crop&q=85",
+  // Server room — blue neon lights
+  "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1080&h=1350&fit=crop&q=85",
+  // Futuristic tech — glowing interface
+  "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1080&h=1350&fit=crop&q=85",
+  // Person typing on laptop — dark moody
+  "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1080&h=1350&fit=crop&q=85",
+  // Tech / AI earth from space
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1080&h=1350&fit=crop&q=85",
-  // Restaurant / food business
-  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1080&h=1350&fit=crop&q=85",
-  // Barbershop / personal care
-  "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1080&h=1350&fit=crop&q=85",
+  // Dark tech workspace / multiple screens
+  "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1080&h=1350&fit=crop&q=85",
+  // Glowing keyboard / dark neon
+  "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=1080&h=1350&fit=crop&q=85",
 ];
 
 export function pickPhoto(seed: number): string {

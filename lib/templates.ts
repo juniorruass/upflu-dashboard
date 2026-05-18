@@ -235,8 +235,8 @@ function v2_capa(s: SlideContent, n: number, total: number, photoSeed: number) {
 <div style="width:1080px;height:1350px;background:#0D0D0D;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
   <!-- Full-bleed photo — photo visible top half, text on bottom half -->
   <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center 20%;"></div>
-  <!-- Gradient: transparent at top, solid dark from midpoint down so text is readable -->
-  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(0,0,0,0.20) 30%,rgba(13,13,13,0.75) 52%,rgba(13,13,13,0.97) 66%,#0D0D0D 76%);"></div>
+  <!-- Light gradient: photo very visible top, subtle dark only where text sits -->
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.08) 30%,rgba(13,13,13,0.30) 50%,rgba(13,13,13,0.62) 65%,rgba(13,13,13,0.82) 78%);"></div>
   <!-- Gold left border -->
   <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.15) 100%);"></div>
   <!-- Content always centered vertically -->
@@ -256,9 +256,9 @@ function v2_numero(s: SlideContent, n: number, total: number, photoSeed: number)
   const photo = pickPhoto(photoSeed + 1);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${FONT}${BASE}</style></head><body>
 <div style="width:1080px;height:1350px;background:#0D0D0D;font-family:Inter,sans-serif;position:relative;overflow:hidden;">
-  <!-- Photo visible at top-right corner, dark below for text -->
+  <!-- Photo visible, subtle dark only for text contrast -->
   <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center top;"></div>
-  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.45) 0%,rgba(13,13,13,0.80) 35%,rgba(13,13,13,0.97) 55%,#0D0D0D 65%);"></div>
+  <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0.10) 0%,rgba(13,13,13,0.28) 40%,rgba(13,13,13,0.65) 60%,rgba(13,13,13,0.85) 75%);"></div>
   <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,${GOLD} 0%,rgba(196,160,66,0.1) 100%);"></div>
   <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:64px 80px 64px 94px;">
     ${topBar(n, total)}
@@ -399,7 +399,7 @@ function accentGlow(text: string): string {
 function v3_frame(photoUrl: string) {
   return `
   <div style="position:absolute;inset:0;background-image:url('${photoUrl}');background-size:cover;background-position:center;"></div>
-  <div style="position:absolute;inset:0;background:rgba(4,4,6,0.74);"></div>
+  <div style="position:absolute;inset:0;background:rgba(4,4,6,0.19);"></div>
   <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(196,160,66,0.035) 1px,transparent 1px),linear-gradient(90deg,rgba(196,160,66,0.035) 1px,transparent 1px);background-size:68px 68px;"></div>
   <div style="position:absolute;top:54px;left:54px;width:52px;height:52px;border-top:2px solid ${GOLD};border-left:2px solid ${GOLD};opacity:0.7;"></div>
   <div style="position:absolute;top:54px;right:54px;width:52px;height:52px;border-top:2px solid ${GOLD};border-right:2px solid ${GOLD};opacity:0.7;"></div>
@@ -438,7 +438,7 @@ function v3_capa(s: SlideContent, n: number, total: number, photoSeed: number) {
     ${v3_topBar(n, total)}
     <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 0;">
       ${s.eyebrow ? `<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:36px;"><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div><p style="font-size:11px;font-weight:800;color:${GOLD};letter-spacing:0.42em;text-transform:uppercase;text-shadow:0 0 12px rgba(196,160,66,0.6);">${s.eyebrow}</p><div style="width:20px;height:1px;background:${GOLD};box-shadow:0 0 6px ${GOLD};"></div></div>` : ""}
-      <h1 style="font-size:130px;font-weight:900;color:#FFFFFF;line-height:0.88;letter-spacing:-0.055em;margin-bottom:40px;max-width:940px;text-shadow:0 4px 60px rgba(0,0,0,0.9);text-align:center;">${accentGlow(s.title)}</h1>
+      <h1 style="font-size:130px;font-weight:900;color:#FFFFFF;line-height:0.88;letter-spacing:-0.055em;margin-bottom:40px;max-width:940px;text-shadow:0 2px 8px rgba(0,0,0,0.95),0 8px 80px rgba(0,0,0,0.9);text-align:center;">${accentGlow(s.title)}</h1>
       ${s.subtitle ? `<div style="width:48px;height:2px;background:${GOLD};border-radius:1px;margin:0 auto 24px;box-shadow:0 0 10px ${GOLD};"></div><p style="font-size:24px;font-weight:400;color:rgba(255,255,255,0.6);line-height:1.55;max-width:620px;text-align:center;text-shadow:0 2px 20px rgba(0,0,0,0.8);">${s.subtitle}</p>` : ""}
     </div>
     ${v3_bottomBar()}
