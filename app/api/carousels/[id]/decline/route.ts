@@ -26,7 +26,7 @@ export async function POST(
         declined_at: new Date().toISOString(),
       })
       .eq("id", id)
-      .eq("status", "pending")
+      .in("status", ["pending", "approved"])
       .select("id, status, topic, declined_at")
       .single();
 
