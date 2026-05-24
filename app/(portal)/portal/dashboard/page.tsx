@@ -44,7 +44,7 @@ export default function PortalDashboard() {
     async function load() {
       try {
         const r = await fetch("/api/portal/me");
-        if (r.status === 401) { router.push("/portal/login"); return; }
+        if (!r.ok) { router.push("/portal/login"); return; }
         const d = await r.json();
         setData(d);
       } catch (e) {

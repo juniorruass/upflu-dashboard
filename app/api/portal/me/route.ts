@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     .eq("id", clientId)
     .single();
 
-  if (clientRes.error || !clientRes.data) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+  if (clientRes.error || !clientRes.data) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const [proposalsRes, paymentsRes] = await Promise.all([
     supabase.from("proposals").select("id, title, type, status, total_value, created_at, valid_until, autentique_short_link").eq("client_id", clientId).order("created_at", { ascending: false }),
