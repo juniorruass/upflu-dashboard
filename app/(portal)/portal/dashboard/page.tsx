@@ -40,10 +40,19 @@ export default function PortalDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/portal/me").then(r => {
-      if (r.status === 401) { router.push("/portal/login"); return null; }
-      return r.json();
-    }).then(d => { if (d) setData(d); setLoading(false); });
+    async function load() {
+      try {
+        const r = await fetch("/api/portal/me");
+        if (r.status === 401) { router.push("/portal/login"); return; }
+        const d = await r.json();
+        setData(d);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, [router]);
 
   async function logout() {
