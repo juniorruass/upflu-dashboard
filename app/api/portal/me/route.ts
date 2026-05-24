@@ -7,13 +7,18 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  const [clientRes, proposalsRes, paymentsRes] = await Promise.all([
-    supabase.from("clients").select("id, name, contact_email, segment, monthly_value, start_date, services:client_services(service)").eq("id", clientId).single(),
+  const clientRes = await supabase
+    .from("clients")
+    .select("id, name, contact_email, segment, monthly_value, start_date, services:client_services(service)")
+    .eq("id", clientId)
+    .single();
+
+  if (clientRes.error || !clientRes.data) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+
+  const [proposalsRes, paymentsRes] = await Promise.all([
     supabase.from("proposals").select("id, title, type, status, total_value, created_at, valid_until, autentique_short_link").eq("client_id", clientId).order("created_at", { ascending: false }),
     supabase.from("payments").select("id, amount, due_date, paid_date, notes").eq("client_id", clientId).order("due_date", { ascending: false }),
   ]);
-
-  if (clientRes.error || !clientRes.data) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
   return NextResponse.json({
     client: clientRes.data,

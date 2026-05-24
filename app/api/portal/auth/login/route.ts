@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const { data: client, error } = await supabase
     .from("clients")
     .select("id, name, contact_email, portal_password")
-    .eq("contact_email", email.trim().toLowerCase())
+    .ilike("contact_email", email.trim())
     .single();
 
   if (error || !client || client.portal_password !== password) {
