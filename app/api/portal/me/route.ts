@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 
   const clientRes = await supabase
     .from("clients")
-    .select("id, name, contact_email, segment, monthly_value, start_date, services:client_services(service)")
+    .select("id, name, contact_email, segment, monthly_value, start_date")
     .eq("id", clientId)
     .single();
 

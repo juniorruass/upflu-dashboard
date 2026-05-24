@@ -67,13 +67,12 @@ export default function PortalDashboard() {
       <p style={{ color: "#777068", fontSize: "13px" }}>Carregando...</p>
     </div>
   );
-  if (error) return (
+  if (error || !data) return (
     <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px" }}>
-      <p style={{ color: "#FF6B6B", fontSize: "14px" }}>{error}</p>
-      <button onClick={() => window.location.reload()} style={{ fontSize: "13px", padding: "8px 20px", borderRadius: "6px", border: "1px solid rgba(0,207,255,0.3)", background: "rgba(0,207,255,0.08)", color: "#00CFFF", cursor: "pointer" }}>Tentar novamente</button>
+      <p style={{ color: "#FF6B6B", fontSize: "14px" }}>{error || "Sessão expirada."}</p>
+      <button onClick={() => { window.location.href = "/portal/login"; }} style={{ fontSize: "13px", padding: "8px 20px", borderRadius: "6px", border: "1px solid rgba(0,207,255,0.3)", background: "rgba(0,207,255,0.08)", color: "#00CFFF", cursor: "pointer" }}>Voltar ao login</button>
     </div>
   );
-  if (!data) return null;
 
   const { client, proposals, payments } = data;
   const pending = payments.filter(p => !p.paid_date && p.due_date >= new Date().toISOString().split("T")[0]);
