@@ -40,7 +40,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
     contact_name: client?.contact_name ?? "",
     contact_phone: client?.contact_phone ?? "",
     contact_email: client?.contact_email ?? "",
-    portal_password: (client as any)?.portal_password ?? "",
+    portal_password: (client as Client & { portal_password?: string })?.portal_password ?? "",
     status: (client?.status ?? "onboarding") as ClientStatus,
     monthly_value: client?.monthly_value ? String(client.monthly_value) : "",
     start_date: client?.start_date ?? "",
