@@ -4,5 +4,10 @@
       "path": "/api/carousels/generate",
       "schedule": "0 12 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "app/api/proposals/[id]/send/route.ts": {
+      "maxDuration": 60
+    }
+  }
 }
