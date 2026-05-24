@@ -3,21 +3,35 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isLoginPage = pathname === "/login";
-  const isApiRoute = pathname.startsWith("/api/");
-  const isPublicAsset =
-    pathname.startsWith("/_next/") || pathname.includes(".");
+  const isApiRoute    = pathname.startsWith("/api/");
+  const isPublicAsset = pathname.startsWith("/_next/") || pathname.includes(".");
 
-  if (isApiRoute || isPublicAsset) {
+  if (isApiRoute || isPublicAsset) return NextResponse.next();
+
+  // ── Portal do cliente ──
+  if (pathname.startsWith("/portal")) {
+    const isPortalLogin   = pathname === "/portal/login";
+    const portalSession   = request.cookies.get("upflu-portal-session")?.value;
+    const portalAuthed    = Boolean(portalSession);
+
+    if (!portalAuthed && !isPortalLogin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/portal/login";
+      return NextResponse.redirect(url);
+    }
+    if (portalAuthed && isPortalLogin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/portal/dashboard";
+      return NextResponse.redirect(url);
+    }
     return NextResponse.next();
   }
 
-  const SESSION_SECRET = (process.env.SESSION_SECRET || "")
-    .replace(/^﻿/, "")
-    .trim();
-  const sessionCookie = request.cookies.get("upflu-session")?.value;
-  const isAuthenticated =
-    Boolean(SESSION_SECRET) && sessionCookie === SESSION_SECRET;
+  // ── Admin ──
+  const isLoginPage = pathname === "/login";
+  const SESSION_SECRET = (process.env.SESSION_SECRET || "").replace(/^﻿/, "").trim();
+  const sessionCookie  = request.cookies.get("upflu-session")?.value;
+  const isAuthenticated = Boolean(SESSION_SECRET) && sessionCookie === SESSION_SECRET;
 
   if (pathname === "/") {
     const url = request.nextUrl.clone();

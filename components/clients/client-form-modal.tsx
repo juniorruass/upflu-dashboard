@@ -40,6 +40,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
     contact_name: client?.contact_name ?? "",
     contact_phone: client?.contact_phone ?? "",
     contact_email: client?.contact_email ?? "",
+    portal_password: (client as any)?.portal_password ?? "",
     status: (client?.status ?? "onboarding") as ClientStatus,
     monthly_value: client?.monthly_value ? String(client.monthly_value) : "",
     start_date: client?.start_date ?? "",
@@ -243,6 +244,28 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                 </div>
               </div>
             )}
+
+            {/* Portal access */}
+            <div style={{ background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px", padding: "16px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: GOLD, margin: "0 0 14px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Acesso ao portal do cliente
+              </p>
+              <p style={{ fontSize: "11px", color: "#777068", margin: "0 0 14px" }}>
+                Email de login: <strong style={{ color: "#9A9288" }}>{form.contact_email || "—"}</strong>
+              </p>
+              <div>
+                <label style={labelStyle}>Senha de acesso</label>
+                <input
+                  value={form.portal_password}
+                  onChange={(e) => setForm({ ...form, portal_password: e.target.value })}
+                  placeholder="Definir senha do cliente"
+                  type="text"
+                  onFocus={() => setFocusField("portal_password")}
+                  onBlur={() => setFocusField(null)}
+                  style={inputStyle("portal_password")}
+                />
+              </div>
+            </div>
 
             {/* Start date */}
             <div>

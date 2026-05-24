@@ -24,7 +24,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const body = await req.json();
   const supabase = createAdminClient();
 
-  const allowed = ["name","segment","contact_name","contact_phone","contact_email","status","monthly_value","start_date","appointment_date","appointment_time","captado_via"];
+  const allowed = ["name","segment","contact_name","contact_phone","contact_email","status","monthly_value","start_date","appointment_date","appointment_time","captado_via","portal_password"];
   const patch = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)));
 
   // Convert empty strings to null for date/time fields
