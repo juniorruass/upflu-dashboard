@@ -22,7 +22,7 @@ export default function PortalLoginPage() {
       body: JSON.stringify({ email, password }),
     });
     if (res.ok) {
-      router.push("/portal/dashboard");
+      window.location.href = "/portal/dashboard";
     } else {
       const d = await res.json();
       setError(d.error ?? "Erro ao entrar");
