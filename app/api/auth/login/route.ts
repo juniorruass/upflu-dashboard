@@ -11,14 +11,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Configuração inválida no servidor" }, { status: 500 });
   }
 
-  if (email !== validEmail || password !== validPassword) {
+  const emailMatch = (email || "").trim().toLowerCase() === validEmail.toLowerCase();
+  const passwordMatch = (password || "").trim() === validPassword;
+
+  if (!emailMatch || !passwordMatch) {
     return NextResponse.json({ error: "Email ou senha incorretos" }, { status: 401 });
   }
 
   const response = NextResponse.json({ success: true });
   response.cookies.set("upflu-session", sessionSecret, {
     httpOnly: true,
-    secure: true,
+    secure: false,
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 30,
     path: "/",
