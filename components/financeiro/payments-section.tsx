@@ -66,6 +66,7 @@ export default function PaymentsSection() {
     due_date: "",
     notes: "",
   });
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPayments();
@@ -96,6 +97,9 @@ export default function PaymentsSection() {
     if (res.ok) {
       const updated = await res.json();
       setPayments(prev => prev.map(x => x.id === updated.id ? updated : x));
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      alert(errData.error || `Erro ao marcar como pago (${res.status})`);
     }
   }
 
@@ -108,16 +112,24 @@ export default function PaymentsSection() {
   async function submitPayment(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    const res = await fetch("/api/payments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (res.ok) {
-      const created = await res.json();
-      setPayments(prev => [...prev, created].sort((a, b) => a.due_date.localeCompare(b.due_date)));
-      setShowModal(false);
-      setForm({ client_id: "", amount: "", due_date: "", notes: "" });
+    setFormError(null);
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setPayments(prev => [...prev, created].sort((a, b) => a.due_date.localeCompare(b.due_date)));
+        setShowModal(false);
+        setForm({ client_id: "", amount: "", due_date: "", notes: "" });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setFormError(errData.error || `Erro ao registrar (${res.status})`);
+      }
+    } catch {
+      setFormError("Erro de conexão. Tente novamente.");
     }
     setSubmitting(false);
   }
@@ -135,7 +147,8 @@ export default function PaymentsSection() {
 
   return (
     <div style={{ marginTop: "14px" }}>
-      <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
+      <style>{`@media (max-width: 640px) { .ps-card { padding: 16px !important; } }`}</style>
+      <div className="ps-card" style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
@@ -149,9 +162,9 @@ export default function PaymentsSection() {
               </span>
             )}
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
             {/* Filters */}
-            <div style={{ display: "flex", gap: "4px" }}>
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
               {FILTER_OPTIONS.map(f => (
                 <button key={f} onClick={() => setFilter(f)}
                   style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "5px", border: "1px solid", cursor: "pointer", fontFamily: "inherit", fontWeight: filter === f ? "600" : "400", background: filter === f ? "rgba(0,207,255,0.1)" : "transparent", color: filter === f ? ACCENT : "#777068", borderColor: filter === f ? "rgba(0,207,255,0.3)" : BORDER }}>
@@ -241,11 +254,11 @@ export default function PaymentsSection() {
 
       {/* Modal */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div style={{ background: "#111111", border: `1px solid rgba(255,255,255,0.12)`, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "440px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
               <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#F0EDE8" }}>Registrar Pagamento</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: "transparent", border: "none", color: "#777068", cursor: "pointer", padding: "4px" }}>
+              <button onClick={() => { setShowModal(false); setFormError(null); }} style={{ background: "transparent", border: "none", color: "#777068", cursor: "pointer", padding: "4px" }}>
                 <X size={18} />
               </button>
             </div>
@@ -292,8 +305,14 @@ export default function PaymentsSection() {
                   style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               </div>
 
+              {formError && (
+                <div style={{ background: "rgba(255,107,107,0.1)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: "6px", padding: "10px 14px", fontSize: "13px", color: "#FF6B6B" }}>
+                  {formError}
+                </div>
+              )}
+
               <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
-                <button type="button" onClick={() => setShowModal(false)}
+                <button type="button" onClick={() => { setShowModal(false); setFormError(null); }}
                   style={{ flex: 1, padding: "11px", borderRadius: "7px", border: `1px solid ${BORDER}`, background: "transparent", color: "#9A9288", fontSize: "13px", fontFamily: "inherit", cursor: "pointer" }}>
                   Cancelar
                 </button>
