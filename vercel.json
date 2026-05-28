@@ -1,13 +1,17 @@
 {
   "crons": [
-    {
-      "path": "/api/carousels/generate",
-      "schedule": "0 12 * * *"
-    }
+    { "path": "/api/cron/daily-summary",  "schedule": "0 12 * * *"   },
+    { "path": "/api/cron/weekly-summary", "schedule": "0 20 * * 5"   },
+    { "path": "/api/cron/check-payments", "schedule": "0 12 * * *"   },
+    { "path": "/api/cron/check-campaigns","schedule": "0 */2 * * *"  },
+    { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   }
   ],
   "functions": {
-    "app/api/proposals/[id]/send/route.ts": {
-      "maxDuration": 60
-    }
+    "app/api/proposals/[id]/send/route.ts":  { "maxDuration": 60 },
+    "app/api/prospeccao/buscar/route.ts":    { "maxDuration": 60 },
+    "app/api/cron/daily-summary/route.ts":   { "maxDuration": 60 },
+    "app/api/cron/weekly-summary/route.ts":  { "maxDuration": 60 },
+    "app/api/cron/check-campaigns/route.ts": { "maxDuration": 60 },
+    "app/api/carousels/generate/route.ts":   { "maxDuration": 60 }
   }
 }

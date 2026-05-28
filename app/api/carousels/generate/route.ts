@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase";
 import { generateCarousel } from "@/lib/claude";
 import { UPFLU_TOPICS } from "@/lib/themes";
 
+export const maxDuration = 60;
+
 // Vercel Cron: 0 12 * * * (12:00 UTC = 09:00 BRT)
 export async function GET(request: Request) {
   const isDev = process.env.NODE_ENV !== "production";
