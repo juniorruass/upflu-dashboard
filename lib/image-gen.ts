@@ -35,7 +35,6 @@ async function generatePhoto(openai: OpenAI, prompt: string): Promise<string> {
     n: 1,
     size: "1024x1792",
     quality: "standard",
-    response_format: "url",
   });
   return response.data?.[0]?.url ?? "";
 }
