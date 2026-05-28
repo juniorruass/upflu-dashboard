@@ -1,39 +1,31 @@
-import OpenAI from "openai";
+// Geração de imagens via Pollinations.ai — gratuito, sem chave, gera por tema
 
 export interface CarouselPhotos {
   cover: string;   // capa + cta
   content: string; // slides internos
 }
 
-// Gera 2 fotos via DALL-E 3 para o carrossel
-export async function generateCarouselPhotos(topic: string): Promise<CarouselPhotos> {
-  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
-  if (!apiKey) return { cover: "", content: "" };
-
-  const openai = new OpenAI({ apiKey });
-
-  try {
-    const [cover, content] = await Promise.all([
-      generatePhoto(openai,
-        `Dramatic cinematic dark background photo for an Instagram post about "${topic}". Very dark scene, deep blue atmospheric glow, dramatic professional lighting, moody ambiance, hyper-realistic. Absolutely NO text, NO typography, NO words, NO logos anywhere in the image.`
-      ),
-      generatePhoto(openai,
-        `Dark professional tech environment photo related to "${topic}". Dark moody workspace or city, blue neon data screens, dramatic shadows, high-tech atmosphere, hyper-realistic photography. Absolutely NO text, NO words, NO logos.`
-      ),
-    ]);
-    return { cover, content };
-  } catch (err) {
-    console.error("[image-gen] Failed to generate photos:", err);
-    return { cover: "", content: "" };
-  }
+function topicSeed(topic: string): number {
+  return Math.abs(topic.split("").reduce((n, c) => n + c.charCodeAt(0), 0));
 }
 
-async function generatePhoto(openai: OpenAI, prompt: string): Promise<string> {
-  const response = await openai.images.generate({
-    model: "dall-e-2",
-    prompt,
-    n: 1,
-    size: "1024x1024",
-  });
-  return response.data?.[0]?.url ?? "";
+function pollinationsUrl(prompt: string, seed: number): string {
+  const encoded = encodeURIComponent(prompt);
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1350&seed=${seed}&nologo=true&model=flux`;
+}
+
+export async function generateCarouselPhotos(topic: string): Promise<CarouselPhotos> {
+  const seed = topicSeed(topic);
+
+  const cover = pollinationsUrl(
+    `dramatic cinematic dark photo, ${topic}, deep blue atmospheric light, dark moody professional, hyper-realistic, no text, no words, no logos`,
+    seed
+  );
+
+  const content = pollinationsUrl(
+    `dark professional tech environment, ${topic}, dark moody workspace, blue neon screens, dramatic shadows, hyper-realistic, no text, no words, no logos`,
+    seed + 1
+  );
+
+  return { cover, content };
 }
