@@ -19,7 +19,6 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 // can render them inside a sandboxed iframe without cross-origin issues.
 async function inlineExternalImages(html: string): Promise<string> {
   // Captura URLs de imagens externas (Unsplash + OpenAI DALL-E)
-  const urlPattern = /url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/g;
   const matches: string[] = [];
   let m: RegExpExecArray | null;
   const re = /url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/g;
