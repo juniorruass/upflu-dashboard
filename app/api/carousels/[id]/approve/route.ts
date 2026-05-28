@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const body = await request.json().catch(() => ({}));
 
   try {
     const supabase = createAdminClient();
@@ -21,13 +22,16 @@ export async function POST(
 
     const nextNumber = (maxRow?.post_number ?? 0) + 1;
 
+    const patch: Record<string, unknown> = {
+      status: "approved",
+      post_number: nextNumber,
+      approved_at: new Date().toISOString(),
+    };
+    if (body.caption !== undefined) patch.caption = body.caption;
+
     const { data, error } = await supabase
       .from("carousels")
-      .update({
-        status: "approved",
-        post_number: nextNumber,
-        approved_at: new Date().toISOString(),
-      })
+      .update(patch)
       .eq("id", id)
       .in("status", ["pending", "approved"])
       .select(

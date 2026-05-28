@@ -80,29 +80,7 @@ async function runGenerate(topic?: string) {
 
     if (slidesError) throw new Error(`Failed to insert slides: ${slidesError.message}`);
 
-    // ── 3. Auto-approve: assign post_number and set status ─────────────────
-    const { data: maxRow } = await supabase
-      .from("carousels")
-      .select("post_number")
-      .not("post_number", "is", null)
-      .order("post_number", { ascending: false })
-      .limit(1)
-      .single();
-
-    const nextNumber = (maxRow?.post_number ?? 0) + 1;
-
-    const { error: approveError } = await supabase
-      .from("carousels")
-      .update({
-        status: "approved",
-        post_number: nextNumber,
-        approved_at: new Date().toISOString(),
-      })
-      .eq("id", carousel.id);
-
-    if (approveError) throw new Error(`Failed to auto-approve: ${approveError.message}`);
-
-    // ── 4. Return full carousel ────────────────────────────────────────────
+    // ── 3. Return full carousel (pending for review) ───────────────────────
     const { data: full, error: fullError } = await supabase
       .from("carousels")
       .select(
@@ -114,7 +92,7 @@ async function runGenerate(topic?: string) {
 
     if (fullError) throw new Error(fullError.message);
 
-    console.log(`[generate] Auto-approved carousel #${nextNumber}: ${carousel.id} — "${generated.topic}"`);
+    console.log(`[generate] Pending carousel: ${carousel.id} — "${generated.topic}"`);
 
     return NextResponse.json(full, { status: 201 });
   } catch (err) {

@@ -35,3 +35,29 @@ export async function GET(
     );
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json().catch(() => ({}));
+  const supabase = createAdminClient();
+
+  const patch: Record<string, unknown> = {};
+  if (body.caption !== undefined) patch.caption = body.caption;
+
+  if (Object.keys(patch).length === 0) {
+    return NextResponse.json({ error: "Nenhum campo para atualizar" }, { status: 400 });
+  }
+
+  const { data, error } = await supabase
+    .from("carousels")
+    .update(patch)
+    .eq("id", id)
+    .select("id, caption")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}

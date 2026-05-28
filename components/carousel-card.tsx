@@ -158,7 +158,11 @@ export function PendingCard({
   async function handleApprove() {
     setLoading("approve");
     try {
-      const res = await fetch(`/api/carousels/${carousel.id}/approve`, { method: "POST" });
+      const res = await fetch(`/api/carousels/${carousel.id}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption }),
+      });
       if (!res.ok) {
         const err = await res.json();
         toast.error(err.error ?? "Erro ao aprovar.");
@@ -434,6 +438,7 @@ export function ApprovedCard({ carousel }: { carousel: Carousel }) {
   const [showCaption, setShowCaption] = useState(false);
   const [caption, setCaption] = useState(carousel.caption ?? "");
   const [captionCopied, setCaptionCopied] = useState(false);
+  const [captionSaving, setCaptionSaving] = useState(false);
   const firstSlide = carousel.slides?.[0];
 
   function handleCopyCaption() {
@@ -441,6 +446,22 @@ export function ApprovedCard({ carousel }: { carousel: Carousel }) {
     navigator.clipboard.writeText(caption);
     setCaptionCopied(true);
     setTimeout(() => setCaptionCopied(false), 2000);
+  }
+
+  async function handleSaveCaption() {
+    setCaptionSaving(true);
+    try {
+      await fetch(`/api/carousels/${carousel.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption }),
+      });
+      toast.success("Legenda salva!");
+    } catch {
+      toast.error("Erro ao salvar legenda.");
+    } finally {
+      setCaptionSaving(false);
+    }
   }
 
   return (
@@ -581,23 +602,25 @@ export function ApprovedCard({ carousel }: { carousel: Carousel }) {
                 <Pencil size={10} />
                 Editável
               </span>
-              <button
-                onClick={handleCopyCaption}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "11px",
-                  color: captionCopied ? "#00C896" : "#888888",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  padding: "2px 0",
-                }}
-              >
-                <Copy size={11} />
-                {captionCopied ? "Copiado!" : "Copiar"}
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  onClick={handleCopyCaption}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "11px",
+                    color: captionCopied ? "#00C896" : "#888888",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    padding: "2px 0",
+                  }}
+                >
+                  <Copy size={11} />
+                  {captionCopied ? "Copiado!" : "Copiar"}
+                </button>
+              </div>
             </div>
             <textarea
               value={caption}
@@ -622,6 +645,25 @@ export function ApprovedCard({ carousel }: { carousel: Carousel }) {
               onBlur={(e) => (e.target.style.borderColor = "#2A2A2A")}
               className="scrollbar-thin"
             />
+            <button
+              onClick={handleSaveCaption}
+              disabled={captionSaving}
+              style={{
+                marginTop: "8px",
+                width: "100%",
+                padding: "8px",
+                background: "#00C896",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "12px",
+                fontWeight: "600",
+                color: "#0D0D0D",
+                cursor: captionSaving ? "not-allowed" : "pointer",
+                opacity: captionSaving ? 0.7 : 1,
+              }}
+            >
+              {captionSaving ? "Salvando..." : "Salvar legenda"}
+            </button>
           </div>
         )}
       </div>
