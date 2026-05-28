@@ -40,5 +40,5 @@ async function generatePhoto(prompt: string): Promise<string> {
     quality: "standard",
     response_format: "url",
   });
-  return response.data[0].url ?? "";
+  return response.data?.[0]?.url ?? "";
 }
