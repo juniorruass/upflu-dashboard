@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Images, Users, FileText, Megaphone, BarChart2, TrendingUp, Settings, X, Search, BookUser, Kanban,
+  LayoutDashboard, Images, Users, FileText, Megaphone, BarChart2, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -15,11 +15,12 @@ const navItems = [
   { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: false },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
-  { label: "Conteúdo",     href: "/dashboard/conteudo",      icon: Images,          disabled: true,  exact: false },
+  { label: "Onboarding",   href: "/dashboard/onboarding",   icon: ListChecks,      disabled: false, exact: false },
+  { label: "Conteúdo",     href: "/dashboard/conteudo",      icon: Images,          disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Propostas",    href: "/dashboard/propostas",     icon: FileText,        disabled: false, exact: false },
-  { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: true,  exact: false },
+  { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
   { label: "Relatórios",   href: "/dashboard/relatorios",    icon: BarChart2,       disabled: true,  exact: false },
 ];
 
