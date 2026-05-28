@@ -30,11 +30,10 @@ export async function generateCarouselPhotos(topic: string): Promise<CarouselPho
 
 async function generatePhoto(openai: OpenAI, prompt: string): Promise<string> {
   const response = await openai.images.generate({
-    model: "dall-e-3",
+    model: "dall-e-2",
     prompt,
     n: 1,
-    size: "1024x1792",
-    quality: "standard",
+    size: "1024x1024",
   });
   return response.data?.[0]?.url ?? "";
 }
