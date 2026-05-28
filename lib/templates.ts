@@ -63,10 +63,13 @@ function grid() {
   return `<div style="position:absolute;inset:0;background-image:linear-gradient(${BORDER} 1px,transparent 1px),linear-gradient(90deg,${BORDER} 1px,transparent 1px);background-size:48px 48px;opacity:0.55;pointer-events:none;"></div>`;
 }
 
-function wrap(bg: string, content: string, photo?: string, coverPhoto = false): string {
+function wrap(bg: string, content: string, photo?: string, isCover = false): string {
   const photoLayers = photo ? `
-    <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center ${coverPhoto ? "top" : "center"};z-index:0;"></div>
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,9,13,0.48) 0%,rgba(5,9,13,0.68) 45%,rgba(5,9,13,0.88) 75%,rgba(5,9,13,0.97) 100%);z-index:1;"></div>` : `${grid()}${glow()}`;
+    <div style="position:absolute;inset:0;background-image:url('${photo}');background-size:cover;background-position:center ${isCover ? "30%" : "center"};z-index:0;"></div>
+    <div style="position:absolute;inset:0;background:${isCover
+      ? "linear-gradient(180deg,rgba(5,9,13,0.25) 0%,rgba(5,9,13,0.45) 30%,rgba(5,9,13,0.82) 58%,rgba(5,9,13,0.97) 80%)"
+      : "linear-gradient(180deg,rgba(5,9,13,0.55) 0%,rgba(5,9,13,0.72) 40%,rgba(5,9,13,0.90) 70%,rgba(5,9,13,0.98) 100%)"
+    };z-index:1;"></div>` : `${grid()}${glow()}`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8">${FONTS}<style>${BASE}body{font-family:${BODY};}</style></head><body>
 <div style="width:1080px;height:1350px;background:${bg};position:relative;overflow:hidden;">${photoLayers}${content}</div></body></html>`;
 }
@@ -76,20 +79,16 @@ function wrap(bg: string, content: string, photo?: string, coverPhoto = false): 
    ═══════════════════════════════════════════════════════ */
 function slide_capa(s: SlideContent, n: number, total: number, photo?: string) {
   return wrap(BG1, `
-  ${grid()}${glow("82% 15%")}
-  <div style="position:absolute;left:0;top:0;height:100%;width:4px;background:linear-gradient(180deg,${TEAL} 0%,transparent 100%);"></div>
-  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:64px 80px;">
+  <div style="position:absolute;left:0;bottom:0;height:60%;width:4px;background:linear-gradient(180deg,transparent,${TEAL});z-index:3;"></div>
+  <div style="position:relative;z-index:2;display:flex;flex-direction:column;height:100%;padding:56px 72px;">
     ${topBar(n, total)}
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0;">
-      ${s.eyebrow ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;">
-        <div style="width:28px;height:2px;background:${TEAL};border-radius:1px;"></div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:48px;">
+      ${s.eyebrow ? `<div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+        <div style="width:28px;height:2px;background:${TEAL};border-radius:1px;flex-shrink:0;"></div>
         <span style="font-size:12px;font-weight:700;color:${TEAL};letter-spacing:0.38em;text-transform:uppercase;font-family:${BODY};">${s.eyebrow}</span>
       </div>` : ""}
-      <h1 style="font-size:112px;font-weight:700;color:${TEXT};line-height:0.92;letter-spacing:-0.04em;margin-bottom:36px;max-width:900px;font-family:${HEAD};">${hl(s.title)}</h1>
-      ${s.subtitle ? `<div style="display:flex;gap:18px;align-items:flex-start;">
-        <div style="width:3px;flex-shrink:0;align-self:stretch;background:${TEAL};border-radius:1px;margin-top:4px;"></div>
-        <p style="font-size:24px;font-weight:400;color:${MUTED};line-height:1.55;max-width:660px;font-family:${BODY};">${s.subtitle}</p>
-      </div>` : ""}
+      <h1 style="font-size:144px;font-weight:700;color:${TEXT};line-height:0.88;letter-spacing:-0.045em;margin-bottom:32px;max-width:960px;font-family:${HEAD};text-shadow:0 4px 40px rgba(0,0,0,0.8);">${hl(s.title)}</h1>
+      ${s.subtitle ? `<p style="font-size:26px;font-weight:400;color:rgba(245,242,236,0.65);line-height:1.5;max-width:700px;font-family:${BODY};text-shadow:0 2px 16px rgba(0,0,0,0.8);">${s.subtitle}</p>` : ""}
     </div>
     ${bottomBar()}
   </div>`, photo, true);
@@ -141,12 +140,10 @@ function slide_texto(s: SlideContent, n: number, total: number, photo?: string) 
    ═══════════════════════════════════════════════════════ */
 function slide_lista(s: SlideContent, n: number, total: number, photo?: string) {
   const items = (s.body || "").split("|").map(i => i.trim()).filter(Boolean);
-  const listHtml = items.map((item, i) => `
-    <div style="display:flex;align-items:flex-start;gap:18px;padding:16px 20px;background:rgba(5,9,13,0.5);border-radius:2px;border-left:3px solid ${i % 2 === 0 ? TEAL : "rgba(10,126,140,0.3)"};">
-      <div style="width:22px;height:22px;background:${TEAL_BG};border:1px solid ${TEAL_BD};border-radius:2px;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:3px;">
-        <div style="width:7px;height:7px;background:${TEAL};border-radius:1px;"></div>
-      </div>
-      <span style="font-size:21px;font-weight:400;color:${TEXT};line-height:1.45;font-family:${BODY};">${item}</span>
+  const listHtml = items.map((item) => `
+    <div style="display:flex;align-items:center;gap:20px;padding:18px 24px;background:rgba(5,9,13,0.55);border-bottom:1px solid rgba(10,126,140,0.15);">
+      <div style="width:8px;height:8px;background:${TEAL};border-radius:50%;flex-shrink:0;box-shadow:0 0 8px ${TEAL};"></div>
+      <span style="font-size:26px;font-weight:500;color:${TEXT};line-height:1.35;font-family:${HEAD};">${item}</span>
     </div>`).join("");
 
   return wrap(BG1, `
@@ -157,8 +154,8 @@ function slide_lista(s: SlideContent, n: number, total: number, photo?: string) 
         <div style="width:28px;height:2px;background:${TEAL};border-radius:1px;"></div>
         <span style="font-size:12px;font-weight:700;color:${TEAL};letter-spacing:0.38em;text-transform:uppercase;font-family:${BODY};">${s.eyebrow}</span>
       </div>` : ""}
-      <h2 style="font-size:70px;font-weight:700;color:${TEXT};line-height:0.94;letter-spacing:-0.035em;margin-bottom:32px;max-width:900px;font-family:${HEAD};">${hl(s.title)}</h2>
-      <div style="display:flex;flex-direction:column;gap:8px;">${listHtml}</div>
+      <h2 style="font-size:78px;font-weight:700;color:${TEXT};line-height:0.93;letter-spacing:-0.037em;margin-bottom:28px;max-width:900px;font-family:${HEAD};">${hl(s.title)}</h2>
+      <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid rgba(10,126,140,0.2);">${listHtml}</div>
     </div>
     ${bottomBar()}
   </div>`, photo);

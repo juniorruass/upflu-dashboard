@@ -18,12 +18,12 @@ export async function generateCarouselPhotos(topic: string): Promise<CarouselPho
   const seed = topicSeed(topic);
 
   const cover = pollinationsUrl(
-    `dramatic cinematic dark photo, ${topic}, deep blue atmospheric light, dark moody professional, hyper-realistic, no text, no words, no logos`,
+    `dramatic cinematic aerial city at night, blue neon lights, skyscrapers, dark sky, atmospheric fog, ultra realistic photography, no people, no text`,
     seed
   );
 
   const content = pollinationsUrl(
-    `dark professional tech environment, ${topic}, dark moody workspace, blue neon screens, dramatic shadows, hyper-realistic, no text, no words, no logos`,
+    `dark futuristic control room, multiple blue glowing screens showing data dashboards, moody dramatic lighting, no people, no text, ultra realistic`,
     seed + 1
   );
 
