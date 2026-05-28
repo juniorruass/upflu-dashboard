@@ -84,8 +84,8 @@ async function waitForRender(iframe: HTMLIFrameElement): Promise<void> {
   } catch {
     // ignore
   }
-  // Buffer for fonts + CSS paint
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  // Buffer for fonts + CSS paint (Google Fonts pode demorar um pouco)
+  await new Promise((resolve) => setTimeout(resolve, 2500));
 }
 
 export async function downloadCarouselAsZip(
