@@ -1,6 +1,7 @@
 import Groq from "groq-sdk";
 import { GeneratedCarousel } from "@/types";
-import { renderSlide, SlideContent, SlidePhotos } from "@/lib/templates";
+import { renderSlide, SlideContent } from "@/lib/templates";
+import type { SlidePhotos } from "@/lib/templates";
 export { UPFLU_TOPICS, getTopicByIndex } from "@/lib/themes";
 
 const groq = new Groq({

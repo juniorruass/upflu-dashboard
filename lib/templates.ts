@@ -33,8 +33,10 @@ export interface SlideContent {
 }
 
 export interface SlidePhotos {
-  cover: string;   // capa + cta
-  content: string; // slides internos
+  cover: string;
+  slide2: string;
+  slide3: string;
+  cta: string;
 }
 
 function hl(t: string): string {
@@ -239,16 +241,20 @@ function slide_cta(s: SlideContent, photo?: string) {
    Public API
    ═══════════════════════════════════════════════════════ */
 export function renderSlide(s: SlideContent, n: number, total: number, photos?: SlidePhotos): string {
-  const cover   = photos?.cover   || "";
-  const content = photos?.content || "";
+  // Foto por posição do slide
+  const photo = n === 1 ? (photos?.cover || "")
+              : n === 2 ? (photos?.slide2 || "")
+              : n === 3 ? (photos?.slide3 || "")
+              : (photos?.cta || "");
+
   switch (s.type) {
-    case "capa":     return slide_capa(s, n, total, cover);
-    case "numero":   return slide_numero(s, n, total, content);
-    case "texto":    return slide_texto(s, n, total, content);
-    case "lista":    return slide_lista(s, n, total, content);
-    case "stats":    return slide_stats(s, n, total, content);
-    case "destaque": return slide_destaque(s, n, total, content);
+    case "capa":     return slide_capa(s, n, total, photo);
+    case "numero":   return slide_numero(s, n, total, photo);
+    case "texto":    return slide_texto(s, n, total, photo);
+    case "lista":    return slide_lista(s, n, total, photo);
+    case "stats":    return slide_stats(s, n, total, photo);
+    case "destaque": return slide_destaque(s, n, total, photo);
     case "cta":
-    default:         return slide_cta(s, cover);
+    default:         return slide_cta(s, photo);
   }
 }
