@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { generateCarousel } from "@/lib/claude";
+import { generateCarouselPhotos } from "@/lib/image-gen";
 import { UPFLU_TOPICS } from "@/lib/themes";
 
 export const maxDuration = 60;
@@ -52,7 +53,12 @@ async function runGenerate(topic?: string) {
       topicToUse = UPFLU_TOPICS[topicIndex];
     }
 
-    const generated = await generateCarousel(topicToUse);
+    // Gera texto e fotos em paralelo para economizar tempo
+    const [photos] = await Promise.all([
+      generateCarouselPhotos(topicToUse),
+    ]);
+
+    const generated = await generateCarousel(topicToUse, photos);
 
     // ── 1. Insert carousel as pending ──────────────────────────────────────
     const { data: carousel, error: carouselError } = await supabase

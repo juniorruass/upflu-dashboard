@@ -1,6 +1,6 @@
 import Groq from "groq-sdk";
 import { GeneratedCarousel } from "@/types";
-import { renderSlide, SlideContent } from "@/lib/templates";
+import { renderSlide, SlideContent, SlidePhotos } from "@/lib/templates";
 export { UPFLU_TOPICS, getTopicByIndex } from "@/lib/themes";
 
 const groq = new Groq({
@@ -81,7 +81,7 @@ interface RawGenerated {
   slides: RawSlide[];
 }
 
-export async function generateCarousel(topic: string): Promise<GeneratedCarousel> {
+export async function generateCarousel(topic: string, photos?: SlidePhotos): Promise<GeneratedCarousel> {
   const userPrompt = `Tema: "${topic}"\n\nCrie um carrossel direto e impactante. Retorne apenas o JSON com exatamente 4 slides.`;
 
   const completion = await groq.chat.completions.create({
@@ -113,7 +113,7 @@ export async function generateCarousel(topic: string): Promise<GeneratedCarousel
   const total = raw.slides.length;
   const slides = raw.slides.map((s, i) => ({
     slide_number: i + 1,
-    html: renderSlide(s as SlideContent, i + 1, total),
+    html: renderSlide(s as SlideContent, i + 1, total, photos),
   }));
 
   return {

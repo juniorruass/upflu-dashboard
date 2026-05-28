@@ -18,9 +18,13 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 // Pre-fetch external images and replace with base64 data URLs so html2canvas
 // can render them inside a sandboxed iframe without cross-origin issues.
 async function inlineExternalImages(html: string): Promise<string> {
-  const urlPattern = /https:\/\/images\.unsplash\.com\/[^'")\s]+/g;
-  const matched = html.match(urlPattern) ?? [];
-  const urls = Array.from(new Set(matched));
+  // Captura URLs de imagens externas (Unsplash + OpenAI DALL-E)
+  const urlPattern = /url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/g;
+  const matches: string[] = [];
+  let m: RegExpExecArray | null;
+  const re = /url\(['"]?(https:\/\/[^'")\s]+)['"]?\)/g;
+  while ((m = re.exec(html)) !== null) matches.push(m[1]);
+  const urls = Array.from(new Set(matches));
   if (urls.length === 0) return html;
 
   const pairs = await Promise.all(
