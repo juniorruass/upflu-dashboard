@@ -1,9 +1,5 @@
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: (process.env.OPENAI_API_KEY || "").trim(),
-});
-
 export interface CarouselPhotos {
   cover: string;   // capa + cta
   content: string; // slides internos
@@ -11,16 +7,17 @@ export interface CarouselPhotos {
 
 // Gera 2 fotos via DALL-E 3 para o carrossel
 export async function generateCarouselPhotos(topic: string): Promise<CarouselPhotos> {
-  if (!process.env.OPENAI_API_KEY) {
-    return { cover: "", content: "" };
-  }
+  const apiKey = (process.env.OPENAI_API_KEY || "").trim();
+  if (!apiKey) return { cover: "", content: "" };
+
+  const openai = new OpenAI({ apiKey });
 
   try {
     const [cover, content] = await Promise.all([
-      generatePhoto(
+      generatePhoto(openai,
         `Dramatic cinematic dark background photo for an Instagram post about "${topic}". Very dark scene, deep blue atmospheric glow, dramatic professional lighting, moody ambiance, hyper-realistic. Absolutely NO text, NO typography, NO words, NO logos anywhere in the image.`
       ),
-      generatePhoto(
+      generatePhoto(openai,
         `Dark professional tech environment photo related to "${topic}". Dark moody workspace or city, blue neon data screens, dramatic shadows, high-tech atmosphere, hyper-realistic photography. Absolutely NO text, NO words, NO logos.`
       ),
     ]);
@@ -31,7 +28,7 @@ export async function generateCarouselPhotos(topic: string): Promise<CarouselPho
   }
 }
 
-async function generatePhoto(prompt: string): Promise<string> {
+async function generatePhoto(openai: OpenAI, prompt: string): Promise<string> {
   const response = await openai.images.generate({
     model: "dall-e-3",
     prompt,
