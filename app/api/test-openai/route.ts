@@ -17,10 +17,18 @@ export async function GET() {
       prompt: "A dark professional background, no text",
       n: 1,
       size: "1024x1024",
+      quality: "low",
+      output_format: "jpeg",
     });
 
-    const url = response.data?.[0]?.url ?? "";
-    return NextResponse.json({ ok: true, url, keyPrefix: key.slice(0, 8) + "..." });
+    const b64 = response.data?.[0]?.b64_json ?? "";
+    const dataUrl = b64 ? `data:image/jpeg;base64,${b64}` : "";
+    return NextResponse.json({
+      ok: true,
+      hasImage: !!dataUrl,
+      sizeKB: Math.round(b64.length * 0.75 / 1024),
+      keyPrefix: key.slice(0, 8) + "...",
+    });
   } catch (err) {
     return NextResponse.json({
       ok: false,
