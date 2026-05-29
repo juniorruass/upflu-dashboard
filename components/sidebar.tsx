@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, FileText, Megaphone, BarChart2, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks,
+  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -20,7 +20,6 @@ const navItems = [
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Propostas",    href: "/dashboard/propostas",     icon: FileText,        disabled: false, exact: false },
   { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
-  { label: "Relatórios",   href: "/dashboard/relatorios",    icon: BarChart2,       disabled: true,  exact: false },
 ];
 
 export default function Sidebar() {
