@@ -24,11 +24,11 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const body = await req.json();
   const supabase = createAdminClient();
 
-  const allowed = ["name","segment","contact_name","contact_phone","contact_email","status","monthly_value","start_date","appointment_date","appointment_time","captado_via","portal_password"];
+  const allowed = ["name","segment","contact_name","contact_phone","contact_email","status","monthly_value","start_date","appointment_date","appointment_time","captado_via","portal_password","meta_account_id","slug"];
   const patch = Object.fromEntries(Object.entries(body).filter(([k]) => allowed.includes(k)));
 
-  // Convert empty strings to null for date/time fields
-  for (const field of ["start_date", "appointment_date", "appointment_time"]) {
+  // Convert empty strings to null for optional fields
+  for (const field of ["start_date", "appointment_date", "appointment_time", "meta_account_id", "contact_name", "contact_phone", "contact_email", "captado_via", "slug"]) {
     if (patch[field] === "") patch[field] = null;
   }
 
@@ -36,6 +36,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     .from("clients").update(patch).eq("id", id).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
   return NextResponse.json(data);
 }
 

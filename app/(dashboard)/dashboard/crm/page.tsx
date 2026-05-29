@@ -8,6 +8,7 @@ const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  potencial:     { label: "Potencial",     color: "#FF9500", bg: "rgba(255,149,0,0.1)"  },
   novo:          { label: "Novo",          color: "#00CFFF", bg: "rgba(0,207,255,0.1)"  },
   contatado:     { label: "Contatado",     color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
   respondeu:     { label: "Respondeu",     color: "#a064ff", bg: "rgba(160,100,255,0.1)"},
@@ -15,7 +16,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
   sem_interesse: { label: "Sem interesse", color: "#666",    bg: "rgba(100,100,100,0.1)"},
 };
 
-const ALL_STATUS = ["todos", "novo", "contatado", "respondeu", "fechado", "sem_interesse"];
+const ALL_STATUS = ["todos", "potencial", "novo", "contatado", "respondeu", "fechado", "sem_interesse"];
 
 type Prospect = {
   id: string;

@@ -46,6 +46,8 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
     start_date: client?.start_date ?? "",
     appointment_date: client?.appointment_date ?? "",
     appointment_time: client?.appointment_time ?? "",
+    meta_account_id: client?.meta_account_id ?? "",
+    slug: client?.slug ?? "",
   });
 
   const [captadoChannels, setCaptadoChannels] = useState<string[]>(
@@ -244,6 +246,30 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                 </div>
               </div>
             )}
+
+            {/* Slug + Meta Ads */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              <div>
+                <label style={labelStyle}>Slug do portal</label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#777068", pointerEvents: "none" }}>adm.upflu.digital/</span>
+                  <input
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    placeholder="nomeCliente"
+                    onFocus={() => setFocusField("slug")}
+                    onBlur={() => setFocusField(null)}
+                    style={{ ...inputStyle("slug"), paddingLeft: "130px" }}
+                  />
+                </div>
+                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>URL pública do cliente. Só letras, números e hífen.</p>
+              </div>
+              <div>
+                <label style={labelStyle}>ID Conta Meta Ads</label>
+                <input value={form.meta_account_id} onChange={(e) => setForm({ ...form, meta_account_id: e.target.value })} placeholder="Ex: 123456789012345" onFocus={() => setFocusField("meta")} onBlur={() => setFocusField(null)} style={inputStyle("meta")} />
+                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Gerenciador → Configurações</p>
+              </div>
+            </div>
 
             {/* Portal access */}
             <div style={{ background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px", padding: "16px" }}>

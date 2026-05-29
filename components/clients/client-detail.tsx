@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Edit2, Phone, Mail, Calendar, Plus, Send, Trash2, Clock, Share2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ArrowLeft, Edit2, Phone, Mail, Calendar, Plus, Send, Trash2, Clock, Share2, Link2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Client, ClientMetric, ClientNote, ServiceType } from "@/types";
 import { STATUS_LABELS, STATUS_COLORS } from "./clients-view";
 import ClientFormModal from "./client-form-modal";
+import MetaAdsPanel from "./meta-ads-panel";
 
 const GOLD = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
@@ -39,6 +40,39 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [showMetricForm, setShowMetricForm] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  async function refreshMetrics() {
+    try {
+      const res = await fetch(`/api/clients/${client.id}/metrics`);
+      if (!res.ok) return;
+      const data: ClientMetric[] = await res.json();
+      setClient((prev) => ({ ...prev, metrics: data }));
+      setLastSync(new Date());
+    } catch { /* silent */ }
+  }
+
+  useEffect(() => {
+    pollRef.current = setInterval(refreshMetrics, 30_000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [client.id]);
+
+  function clientSlug(name: string) {
+    return name.toLowerCase().normalize("NFD").split("").filter((c) => c.charCodeAt(0) < 0x0300 || c.charCodeAt(0) > 0x036f).join("").replace(/[^a-z0-9]/g, "");
+  }
+
+
+  function copyLink() {
+    const slug = clientSlug(client.name);
+    const url = `${window.location.origin}/${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }
   const [metricForm, setMetricForm] = useState({ month: "", leads: "", conversions: "", revenue: "", ad_spend: "" });
   const [savingMetric, setSavingMetric] = useState(false);
 
@@ -112,6 +146,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
         const existing = (prev.metrics ?? []).filter((x) => x.month !== m.month);
         return { ...prev, metrics: [...existing, m].sort((a, b) => a.month.localeCompare(b.month)) };
       });
+      setLastSync(new Date());
       setShowMetricForm(false);
       setMetricForm({ month: "", leads: "", conversions: "", revenue: "", ad_spend: "" });
     }
@@ -137,13 +172,16 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
   );
 
   return (
-    <div style={{ padding: "32px 40px 60px", flex: 1 }}>
+    <div className="cd-wrapper" style={{ padding: "32px 40px 60px", flex: 1 }}>
       {/* Back + actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
+      <div className="cd-actions" style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px", flexWrap: "wrap" }}>
         <Link href="/dashboard/clientes" style={{ display: "flex", alignItems: "center", gap: "6px", color: "#777068", textDecoration: "none", fontSize: "13px" }}>
           <ArrowLeft size={14} /> Clientes
         </Link>
         <div style={{ flex: 1 }} />
+        <button onClick={copyLink} style={{ display: "flex", alignItems: "center", gap: "7px", background: linkCopied ? "rgba(0,207,255,0.1)" : "transparent", border: `1px solid ${linkCopied ? "rgba(0,207,255,0.3)" : BORDER}`, borderRadius: "8px", padding: "9px 16px", color: linkCopied ? "#00CFFF" : "#9A9288", fontSize: "13px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif", transition: "all 0.2s" }}>
+          <Link2 size={13} /> {linkCopied ? "Copiado!" : "Copiar link"}
+        </button>
         <button onClick={handleDeleteClient} disabled={deleting} style={{ display: "flex", alignItems: "center", gap: "7px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.18)", borderRadius: "8px", padding: "9px 16px", color: "#EF4444", fontSize: "13px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif", opacity: deleting ? 0.6 : 1 }}>
           <Trash2 size={13} /> {deleting ? "Excluindo..." : "Excluir"}
         </button>
@@ -152,7 +190,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "20px", alignItems: "start" }}>
+      <div className="cd-grid" style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "20px", alignItems: "start" }}>
         {/* LEFT COLUMN */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {/* Identity */}
@@ -225,9 +263,19 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
           {/* Metrics */}
           {card(<>
             {sectionTitle("Metricas mensais",
-              <button onClick={() => setShowMetricForm(!showMetricForm)} style={{ display: "flex", alignItems: "center", gap: "5px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 12px", color: GOLD, fontSize: "11px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
-                <Plus size={11} /> Adicionar
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {lastSync && (
+                  <span style={{ fontSize: "10px", color: "#777068" }}>
+                    atualizado {lastSync.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                )}
+                <button onClick={refreshMetrics} title="Atualizar agora" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 8px", color: "#777068", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
+                  <RefreshCw size={11} />
+                </button>
+                <button onClick={() => setShowMetricForm(!showMetricForm)} style={{ display: "flex", alignItems: "center", gap: "5px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 12px", color: GOLD, fontSize: "11px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
+                  <Plus size={11} /> Adicionar
+                </button>
+              </div>
             )}
 
             {showMetricForm && (
@@ -339,6 +387,24 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
         </div>
       </div>
 
+      {/* ── Meta Ads full panel ── */}
+      {client.meta_account_id && (
+        <div style={{ marginTop: "20px" }}>
+          <p style={{ fontSize: "10px", fontWeight: "600", color: "#777068", margin: "0 0 14px", letterSpacing: "0.18em", textTransform: "uppercase" }}>Meta Ads — conta {client.meta_account_id}</p>
+          <MetaAdsPanel clientId={client.id} />
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          .cd-wrapper { padding: 16px 16px 40px !important; }
+          .cd-grid { grid-template-columns: 1fr !important; }
+          .cd-actions { gap: 8px !important; }
+          .cd-actions a { font-size: 12px !important; }
+          .cd-actions button { font-size: 12px !important; padding: 8px 12px !important; }
+        }
+      `}</style>
       {showEdit && (
         <ClientFormModal
           client={client}

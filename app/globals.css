@@ -39,15 +39,35 @@
   }
 
   body {
-    background-color: #111111;
-    color: #F5F5F5;
-    font-family: 'Inter', sans-serif;
+    background-color: #080808;
+    color: #F0EDE8;
+    font-family: var(--font-outfit), 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
 
   html {
     font-family: 'Inter', sans-serif;
   }
+}
+
+/* ─── Responsive layout ─────────────────────────────────────────────────────── */
+.page-wrap { padding: 32px 40px 60px; }
+
+.r-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+  .page-wrap { padding: 16px 16px 40px; }
+
+  /* Stack grids on mobile */
+  .mob-col1 { grid-template-columns: 1fr !important; }
+  .mob-col2 { grid-template-columns: 1fr 1fr !important; }
+  .mob-hide { display: none !important; }
+  .mob-show { display: flex !important; }
+  .mob-stack { flex-direction: column !important; }
+  .mob-full { width: 100% !important; min-width: 0 !important; }
+  .mob-pad { padding: 16px !important; }
+  .mob-gap8 { gap: 8px !important; }
+  .mob-text-sm { font-size: 12px !important; }
 }
 
 @layer utilities {

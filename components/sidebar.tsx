@@ -16,7 +16,7 @@ const navItems = [
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Onboarding",   href: "/dashboard/onboarding",   icon: ListChecks,      disabled: false, exact: false },
-  { label: "Conteúdo",     href: "/dashboard/conteudo",      icon: Images,          disabled: false, exact: false },
+  { label: "Conteúdo",     href: "/dashboard/conteudo",      icon: Images,          disabled: true,  exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Propostas",    href: "/dashboard/propostas",     icon: FileText,        disabled: false, exact: false },

@@ -1,37 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 
+export const maxDuration = 60;
+
 const SERPAPI_URL = "https://serpapi.com/search.json";
 
 const SEARCH_TERMS: Record<string, string[]> = {
-  "clínica estética": ["clínica estética", "estética facial", "centro estético", "clínica de beleza"],
-  "clínica odontológica": ["clínica odontológica", "dentista", "odontologia", "consultório dentário"],
+  "clínica estética": ["clínica estética", "centro estético"],
+  "clínica odontológica": ["clínica odontológica", "dentista"],
+  "psicólogo": ["psicólogo", "psicologia clínica"],
+  "psiquiatra": ["psiquiatra"],
+  "fisioterapeuta": ["fisioterapia", "fisioterapeuta"],
+  "nutricionista": ["nutricionista"],
 };
 
 const ABERTURAS_ESTETICA = [
   "Vi que a {nome} atua no mercado de estética em {cidade} e queria trazer algo que pode fazer diferença.",
   "A {nome} está presente em {cidade}, mas será que está aparecendo para quem pesquisa no Google?",
-  "Clínicas de estética em {cidade} estão perdendo pacientes para concorrentes que aparecem antes no Google.",
 ];
-
 const ABERTURAS_ODONTO = [
   "Vi que a {nome} atende pacientes em {cidade} e queria compartilhar algo relevante.",
-  "Clínicas odontológicas em {cidade} estão perdendo pacientes para concorrentes com melhor presença digital.",
   "A {nome} está em {cidade}, mas quando alguém pesquisa dentista na região — ela aparece?",
 ];
-
 const FECHAMENTOS = [
   "A Upflu oferece um diagnóstico digital gratuito de 2 minutos, sem compromisso. Posso enviar o link?",
   "Temos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?",
-  "Posso enviar um diagnóstico gratuito mostrando como a {nome} está posicionada digitalmente agora?",
 ];
 
-function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function generateMessage(nome: string, cidade: string, tipo: string): string {
-  const aberturas = tipo.includes("estética") ? ABERTURAS_ESTETICA : ABERTURAS_ODONTO;
+  const aberturas = tipo.includes("estética") || tipo.includes("nutri") || tipo.includes("fisiо") ? ABERTURAS_ESTETICA : ABERTURAS_ODONTO;
   const abertura = pick(aberturas).replace(/{nome}/g, nome).replace(/{cidade}/g, cidade);
   const fechamento = pick(FECHAMENTOS).replace(/{nome}/g, nome);
   return `Olá! ${abertura}\n\n${fechamento}\n\nUpflu | upflu.digital`;
@@ -42,7 +41,7 @@ async function extractEmail(url: string): Promise<string> {
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3000),
     });
     const html = await res.text();
     const mailtoMatch = html.match(/href=["']mailto:([^"'?]+)/i);
@@ -55,37 +54,31 @@ async function extractEmail(url: string): Promise<string> {
   return "";
 }
 
-async function searchMaps(query: string, apiKey: string, maxPages = 2): Promise<Record<string, unknown>[]> {
-  const allResults: Record<string, unknown>[] = [];
-
-  // Página 1
-  const params = new URLSearchParams({ engine: "google_maps", q: query, api_key: apiKey, hl: "pt", gl: "br", type: "search" });
-  const res = await fetch(`${SERPAPI_URL}?${params}`);
-  const data = await res.json();
-  allResults.push(...((data.local_results as Record<string, unknown>[]) || []));
-
-  // Páginas seguintes via next_page_token
-  let nextToken = data?.serpapi_pagination?.next_page_token;
-  let page = 1;
-
-  while (nextToken && page < maxPages) {
-    const nextParams = new URLSearchParams({ engine: "google_maps", next_page_token: nextToken, api_key: apiKey });
-    const nextRes = await fetch(`${SERPAPI_URL}?${nextParams}`);
-    const nextData = await nextRes.json();
-    allResults.push(...((nextData.local_results as Record<string, unknown>[]) || []));
-    nextToken = nextData?.serpapi_pagination?.next_page_token;
-    page++;
+async function searchMaps(query: string, apiKey: string): Promise<Record<string, unknown>[]> {
+  try {
+    const params = new URLSearchParams({
+      engine: "google_maps", q: query, api_key: apiKey,
+      hl: "pt", gl: "br", type: "search",
+    });
+    const res = await fetch(`${SERPAPI_URL}?${params}`, { signal: AbortSignal.timeout(10000) });
+    const data = await res.json();
+    const results = (data.local_results as Record<string, unknown>[]) || [];
+    return results.slice(0, 5); // max 5 per term
+  } catch {
+    return [];
   }
-
-  return allResults;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { cities, types } = await req.json();
-    const apiKey = process.env.SERPAPI_KEY!;
+    const apiKey = process.env.SERPAPI_KEY;
 
-    // Buscar place_ids já existentes — falha silenciosa se Supabase não conectar
+    if (!apiKey) {
+      return NextResponse.json({ error: "SERPAPI_KEY não configurada.", clinics: [] }, { status: 500 });
+    }
+
+    // Load existing IDs
     let existingIds = new Set<string>();
     try {
       const supabase = createAdminClient();
@@ -95,64 +88,114 @@ export async function POST(req: NextRequest) {
       console.error("Supabase fetch error:", e);
     }
 
-    const seen = new Set<string>(existingIds);
-    const newClinics: Record<string, unknown>[] = [];
-
+    // Build all search queries
+    const queries: { city: string; type: string; term: string }[] = [];
     for (const city of cities as string[]) {
       for (const type of types as string[]) {
         const terms = SEARCH_TERMS[type] || [type];
-        const allPlaces: Record<string, unknown>[] = [];
         for (const term of terms) {
-          const results = await searchMaps(`${term} em ${city}`, apiKey);
-          allPlaces.push(...results);
-        }
-        const places = allPlaces;
-
-        for (const place of places) {
-          const id = (place.place_id as string) || (place.title as string);
-          if (!id || seen.has(id)) continue;
-          seen.add(id);
-
-          const website = (place.website as string) || "";
-          const email = await extractEmail(website);
-          const nome = (place.title as string) || "";
-          const cidadeShort = city.split(",")[0].trim();
-
-          newClinics.push({
-            place_id: id,
-            nome,
-            tipo: type,
-            cidade: city,
-            telefone: (place.phone as string) || "",
-            website,
-            endereco: (place.address as string) || "",
-            avaliacao: place.rating ?? null,
-            total_avaliacoes: (place.reviews as number) || 0,
-            email,
-            mensagem: generateMessage(nome, cidadeShort, type),
-            status: "novo",
-            email_enviado: false,
-          });
+          queries.push({ city, type, term });
         }
       }
     }
 
-    // Salvar no Supabase — falha silenciosa
-    if (newClinics.length > 0) {
+    // Run all searches in parallel (max 8 at a time)
+    const BATCH = 8;
+    const allPlaces: { place: Record<string, unknown>; city: string; type: string }[] = [];
+
+    for (let i = 0; i < queries.length; i += BATCH) {
+      const batch = queries.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map(({ city, type, term }) =>
+          searchMaps(`${term} em ${city}`, apiKey).then((places) =>
+            places.map((place) => ({ place, city, type }))
+          )
+        )
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled") allPlaces.push(...r.value);
+      }
+    }
+
+    // Deduplicate
+    const seen = new Set<string>(existingIds);
+    const uniquePlaces: { place: Record<string, unknown>; city: string; type: string }[] = [];
+    for (const item of allPlaces) {
+      const id = (item.place.place_id as string) || (item.place.title as string);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      uniquePlaces.push(item);
+    }
+
+    // Extract emails in parallel (max 10 at a time)
+    const EMAIL_BATCH = 10;
+    const withEmails: Record<string, unknown>[] = [];
+
+    for (let i = 0; i < uniquePlaces.length; i += EMAIL_BATCH) {
+      const batch = uniquePlaces.slice(i, i + EMAIL_BATCH);
+      const emails = await Promise.allSettled(
+        batch.map(({ place }) => extractEmail((place.website as string) || ""))
+      );
+
+      for (let j = 0; j < batch.length; j++) {
+        const { place, city, type } = batch[j];
+        const emailResult = emails[j];
+        const email = emailResult.status === "fulfilled" ? emailResult.value : "";
+        const nome = (place.title as string) || "";
+        const cidadeShort = city.split(",")[0].trim();
+        const id = (place.place_id as string) || nome;
+
+        withEmails.push({
+          place_id: id,
+          nome,
+          tipo: type,
+          cidade: city,
+          telefone: (place.phone as string) || "",
+          website: (place.website as string) || "",
+          endereco: (place.address as string) || "",
+          avaliacao: place.rating ?? null,
+          total_avaliacoes: (place.reviews as number) || 0,
+          email,
+          mensagem: generateMessage(nome, cidadeShort, type),
+          status: "potencial",
+          email_enviado: false,
+        });
+      }
+    }
+
+    // Save to Supabase
+    if (withEmails.length > 0) {
       try {
         const supabase = createAdminClient();
-        const { error } = await supabase.from("prospects").insert(newClinics);
+        const { error } = await supabase.from("prospects").insert(withEmails);
         if (error) console.error("Supabase insert error:", error);
       } catch (e) {
         console.error("Supabase save error:", e);
       }
     }
 
+    // Map to frontend shape
+    const clinics = withEmails.map((c) => ({
+      id: c.place_id,
+      nome: c.nome,
+      tipo: c.tipo,
+      cidade: c.cidade,
+      telefone: c.telefone,
+      website: c.website,
+      endereco: c.endereco,
+      avaliacao: c.avaliacao,
+      totalAvaliacoes: c.total_avaliacoes,
+      email: c.email,
+      mensagem: c.mensagem,
+      emailEnviado: false,
+    }));
+
     return NextResponse.json({
-      clinics: newClinics,
-      total_new: newClinics.length,
+      clinics,
+      total_new: clinics.length,
       total_existing: existingIds.size,
     });
+
   } catch (e) {
     console.error("Buscar route error:", e);
     return NextResponse.json({ error: String(e), clinics: [] }, { status: 500 });

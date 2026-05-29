@@ -46,6 +46,9 @@ export async function POST(req: Request) {
     appointment_date: body.appointment_date || null,
     appointment_time: body.appointment_time || null,
     captado_via: body.captado_via || null,
+    meta_account_id: body.meta_account_id || null,
+    portal_password: body.portal_password || null,
+    slug: body.slug || null,
   };
 
   let { data, error } = await supabase

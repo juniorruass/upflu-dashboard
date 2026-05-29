@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
-const GOLD = "#BEA06A";
+const GOLD = "#00CFFF";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -52,7 +52,7 @@ export default function LoginPage() {
       {/* Subtle radial glow */}
       <div style={{
         position: "fixed", inset: 0,
-        background: `radial-gradient(ellipse 80% 50% at 50% -10%, rgba(190,160,106,0.07) 0%, transparent 60%)`,
+        background: `radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,207,255,0.07) 0%, transparent 60%)`,
         pointerEvents: "none",
       }} />
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 style={{
                   width: "100%",
                   background: "#080808",
-                  border: `1px solid ${focusField === "email" ? "rgba(190,160,106,0.5)" : "rgba(255,255,255,0.07)"}`,
+                  border: `1px solid ${focusField === "email" ? "rgba(0,207,255,0.5)" : "rgba(255,255,255,0.07)"}`,
                   borderRadius: "8px",
                   padding: "13px 16px",
                   fontSize: "14px",
@@ -133,7 +133,7 @@ export default function LoginPage() {
                 style={{
                   width: "100%",
                   background: "#080808",
-                  border: `1px solid ${focusField === "password" ? "rgba(190,160,106,0.5)" : "rgba(255,255,255,0.07)"}`,
+                  border: `1px solid ${focusField === "password" ? "rgba(0,207,255,0.5)" : "rgba(255,255,255,0.07)"}`,
                   borderRadius: "8px",
                   padding: "13px 16px",
                   fontSize: "14px",
@@ -165,7 +165,7 @@ export default function LoginPage() {
               disabled={loading}
               style={{
                 width: "100%",
-                background: loading ? "rgba(190,160,106,0.6)" : GOLD,
+                background: loading ? "rgba(0,207,255,0.6)" : GOLD,
                 border: "none",
                 borderRadius: "8px",
                 padding: "14px",

@@ -6,7 +6,16 @@ export async function middleware(request: NextRequest) {
   const isApiRoute    = pathname.startsWith("/api/");
   const isPublicAsset = pathname.startsWith("/_next/") || pathname.includes(".");
 
-  if (isApiRoute || isPublicAsset) return NextResponse.next();
+  // Página pública de agendamento — sem auth
+  const isPublicBooking = pathname.startsWith("/agendar");
+
+  // Páginas públicas de cliente (slug único, ex: /arthur)
+  const ADMIN_PREFIXES = ["/dashboard", "/login", "/portal", "/api", "/agendar", "/_next"];
+  const isClientSlug =
+    !ADMIN_PREFIXES.some((p) => pathname.startsWith(p)) &&
+    pathname.split("/").filter(Boolean).length === 1;
+
+  if (isApiRoute || isPublicAsset || isPublicBooking || isClientSlug) return NextResponse.next();
 
   // ── Portal do cliente ──
   if (pathname.startsWith("/portal")) {

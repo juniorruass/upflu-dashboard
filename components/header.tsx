@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { useSidebar } from "./sidebar-context";
+import { PushSubscribe } from "./push-subscribe";
 
-const GOLD = "#BEA06A";
+const GOLD = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
 export default function Header({ title }: { title: string }) {
@@ -58,7 +59,7 @@ export default function Header({ title }: { title: string }) {
           {pendingCount > 0 && (
             <span className="header-pending" style={{
               fontSize: "10px", fontWeight: "600", color: GOLD,
-              background: "rgba(190,160,106,0.1)", border: `1px solid rgba(190,160,106,0.2)`,
+              background: "rgba(0,207,255,0.1)", border: `1px solid rgba(0,207,255,0.2)`,
               padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.04em",
             }}>
               {pendingCount} pendente{pendingCount > 1 ? "s" : ""}
@@ -67,9 +68,10 @@ export default function Header({ title }: { title: string }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <PushSubscribe />
           <div style={{ width: "1px", height: "20px", background: BORDER }} />
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "32px", height: "32px", background: "rgba(190,160,106,0.10)", border: `1px solid rgba(190,160,106,0.20)`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "600", color: GOLD, flexShrink: 0 }}>
+            <div style={{ width: "32px", height: "32px", background: "rgba(0,207,255,0.10)", border: `1px solid rgba(0,207,255,0.20)`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "600", color: GOLD, flexShrink: 0 }}>
               JR
             </div>
             <div className="header-user-name">

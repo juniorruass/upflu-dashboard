@@ -9,6 +9,7 @@ const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
 const COLUMNS = [
+  { id: "potencial",       label: "Potencial",        color: "#FF9500" },
   { id: "prospectado",     label: "Prospectado",      color: "#555"    },
   { id: "ignorado",        label: "Ignorado",         color: "#444"    },
   { id: "reuniao",         label: "Reunião Agendada", color: "#a064ff" },
