@@ -12,11 +12,11 @@ export async function GET() {
     const openai = new OpenAI({ apiKey: key });
 
     const response = await openai.images.generate({
-      model: "dall-e-2",
+      model: "gpt-image-1",
       prompt: "A dark professional background, no text",
       n: 1,
       size: "1024x1024",
-    });
+    } as Parameters<typeof openai.images.generate>[0]);
 
     const url = response.data?.[0]?.url ?? "";
     return NextResponse.json({ ok: true, url, keyPrefix: key.slice(0, 8) + "..." });
