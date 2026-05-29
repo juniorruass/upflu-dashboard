@@ -23,22 +23,32 @@ PROIBIDO: usar "numero" nos slides 2 e 3. Conteúdo educativo e didático, não 
 
 ━━━ TIPOS DISPONÍVEIS PARA SLIDES 2 E 3 ━━━
 
-"texto" — explicação direta
-  eyebrow (max 4 palavras UPPERCASE), title com 1 {{palavra}}, body (2 frases que ensinam algo)
+"texto" — explicação educativa
+  Campos: eyebrow, title, body
+  eyebrow: máx 4 palavras UPPERCASE
+  title: frase com 1 {{palavra}} em destaque — pode ter 8-12 palavras
+  body: 2 frases que ENSINAM algo concreto sobre o tema
+  Exemplo:
+  { "type": "texto", "eyebrow": "O QUE NINGUÉM FALA", "title": "Responder {{rápido}} é a diferença entre vender e perder.", "body": "Estudos mostram que leads respondidos em até 5 minutos convertem 9x mais. Depois disso, a chance cai drasticamente." }
 
-"lista" — pontos práticos (4 a 5 itens)
-  eyebrow, title com 1 {{palavra}}
-  body: itens separados por "|" — cada item é uma ação ou sinal concreto
-  Exemplo: "Responde cliente depois de 1h | Perde contato após orçamento | Não faz follow-up | Depende 100% da memória"
+"lista" — pontos práticos (4 a 5 itens curtos)
+  Campos: eyebrow, title, body
+  body: itens separados por "|" — cada item tem 5-8 palavras
+  Exemplo:
+  { "type": "lista", "eyebrow": "ERROS QUE CUSTAM CARO", "title": "Sinais de que você está {{perdendo}} clientes agora.", "body": "Não faz follow-up depois do orçamento | Responde WhatsApp só quando lembra | Sem processo de pós-venda | Depende 100% da memória | Lead esfria sem perceber" }
 
-"stats" — múltiplos dados em grade (3 a 4 dados)
-  eyebrow, title com 1 {{palavra}}
-  body formato "número§descrição|número§descrição|número§descrição"
-  Exemplo: "+3x§mais velocidade para crescer|67%§redução de tarefas manuais|R$4.200§economizados por mês"
-  subtitle: frase de fechamento
+"stats" — grade de dados (3 a 4 métricas)
+  Campos: eyebrow, title, body, subtitle
+  body formato: "valor§descrição curta|valor§descrição|valor§descrição"
+  Exemplo:
+  { "type": "stats", "eyebrow": "DADOS DO MERCADO", "title": "Negócios que {{automatizam}} crescem mais.", "body": "+3x§velocidade para atender leads|67%§menos tarefas manuais|R$4.200§economizados por mês|94%§mais satisfação dos clientes", "subtitle": "Automação não é custo. É investimento com retorno medido." }
 
-"destaque" — frase de impacto para repost
-  title (frase poderosa SEM {{}}, SEM destaques), body (complemento direto)
+"destaque" — frase forte para screenshot
+  Campos: title, body
+  title: frase poderosa com 8-14 palavras, SEM {{}}, SEM highlights
+  body: frase de apoio em teal
+  Exemplo:
+  { "type": "destaque", "title": "Negócio que não automatiza trabalha o dobro para crescer a metade.", "body": "Isso vale para qualquer segmento, qualquer porte." }
 
 ━━━ TIPOS DA CAPA E CTA ━━━
 
