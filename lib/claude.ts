@@ -66,13 +66,27 @@ PROIBIDO: usar "numero" nos slides 2 e 3. Conteúdo educativo e didático, não 
 }
 
 ━━━ REGRAS ABSOLUTAS ━━━
-1. SEMPRE exatamente 4 slides: capa → conteúdo → conteúdo → cta.
-2. Slides 2 e 3: NUNCA use "numero". Use lista, texto, stats ou destaque.
-3. Slides 2 e 3: tipos DIFERENTES entre si.
-4. {{highlight}}: 1 palavra por título, a mais impactante. NUNCA no slide "destaque".
-5. handle do cta: SEMPRE "@upfluagencia".
-6. NUNCA aspas duplas dentro de strings JSON.
-7. lista e stats: separar com "|" e stats com "§".`;
+1. SEMPRE exatamente 4 slides.
+2. Slide 1: OBRIGATÓRIO type "capa".
+3. Slide 2: OBRIGATÓRIO type "lista" OU "texto" OU "stats" OU "destaque". NUNCA "cta", NUNCA "numero", NUNCA "capa".
+4. Slide 3: OBRIGATÓRIO type "lista" OU "texto" OU "stats" OU "destaque". NUNCA "cta", NUNCA "numero", NUNCA "capa". Tipo DIFERENTE do slide 2.
+5. Slide 4: OBRIGATÓRIO type "cta".
+6. {{highlight}}: 1 palavra por título. NUNCA no "destaque".
+7. handle do cta: SEMPRE "@upfluagencia".
+8. NUNCA aspas duplas dentro de strings JSON.
+9. lista e stats: separar com "|" e stats com "§".
+
+EXEMPLO DE RESPOSTA CORRETA:
+{
+  "topic": "automação whatsapp",
+  "caption": "...",
+  "slides": [
+    { "type": "capa", "eyebrow": "IA & AUTOMAÇÃO", "title": "Seu WhatsApp pode {{vender}} enquanto você dorme.", "subtitle": "A maioria dos negócios perde cliente por demora. Tem solução." },
+    { "type": "lista", "eyebrow": "ERROS QUE CUSTAM CARO", "title": "Sinais de que seu {{atendimento}} está afastando clientes.", "body": "Responde mensagem horas depois | Esquece de fazer follow-up | Perde contato após enviar orçamento | Depende 100% de você estar online | Sem resposta automática fora do horário" },
+    { "type": "texto", "eyebrow": "COMO RESOLVER", "title": "Automação não substitui você — {{liberta}} você.", "body": "Um assistente no WhatsApp responde em segundos, 24h por dia, sem erro. Você foca no que só você pode fazer." },
+    { "type": "cta", "title": "Pronto para {{automatizar}} seu negócio?", "handle": "@upfluagencia" }
+  ]
+}`;
 
 interface RawSlide {
   type: "capa" | "numero" | "texto" | "lista" | "stats" | "destaque" | "cta";
@@ -117,6 +131,20 @@ export async function generateCarousel(topic: string, photos?: SlidePhotos): Pro
 
   if (!Array.isArray(raw.slides) || raw.slides.length === 0) {
     throw new Error("Nenhum slide gerado");
+  }
+
+  // Garante estrutura correta independente do que a IA gerou
+  const validContent = ["lista", "texto", "stats", "destaque"] as const;
+  if (raw.slides.length >= 4) {
+    raw.slides[0].type = "capa";
+    if (!validContent.includes(raw.slides[1].type as typeof validContent[number])) {
+      raw.slides[1].type = "lista";
+    }
+    if (!validContent.includes(raw.slides[2].type as typeof validContent[number])) {
+      raw.slides[2].type = "texto";
+    }
+    raw.slides[raw.slides.length - 1].type = "cta";
+    raw.slides[raw.slides.length - 1].handle = raw.slides[raw.slides.length - 1].handle || "@upfluagencia";
   }
 
   const total = raw.slides.length;
