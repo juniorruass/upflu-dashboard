@@ -2,21 +2,63 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
-import { RefreshCw, Trash2, Mail, Phone, Globe, MessageSquare, X } from "lucide-react";
+import { RefreshCw, Trash2, Mail, Phone, Globe, MessageSquare, X, Search, MessageCircle, Calendar, FileText } from "lucide-react";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  potencial:     { label: "Potencial",     color: "#FF9500", bg: "rgba(255,149,0,0.1)"  },
-  novo:          { label: "Novo",          color: "#00CFFF", bg: "rgba(0,207,255,0.1)"  },
-  contatado:     { label: "Contatado",     color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-  respondeu:     { label: "Respondeu",     color: "#a064ff", bg: "rgba(160,100,255,0.1)"},
-  fechado:       { label: "Fechado",       color: "#22c55e", bg: "rgba(34,197,94,0.1)"  },
-  sem_interesse: { label: "Sem interesse", color: "#666",    bg: "rgba(100,100,100,0.1)"},
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  potencial:     { label: "Potencial",     color: "#FF9500" },
+  novo:          { label: "Novo",          color: "#00CFFF" },
+  contatado:     { label: "Contatado",     color: "#f59e0b" },
+  respondeu:     { label: "Respondeu",     color: "#a064ff" },
+  fechado:       { label: "Fechado",       color: "#22c55e" },
+  sem_interesse: { label: "Sem interesse", color: "#666"    },
 };
 
 const ALL_STATUS = ["todos", "potencial", "novo", "contatado", "respondeu", "fechado", "sem_interesse"];
+
+const TIPO_OPTIONS = [
+  { value: "todos",                label: "Todos os tipos"  },
+  { value: "clínica estética",     label: "Estética"        },
+  { value: "clínica odontológica", label: "Odonto"          },
+  { value: "psicólogo",            label: "Psicólogo"       },
+  { value: "psiquiatra",           label: "Psiquiatra"      },
+  { value: "fisioterapeuta",       label: "Fisioterapia"    },
+  { value: "nutricionista",        label: "Nutrição"        },
+];
+
+function tipoLabel(tipo: string) {
+  const found = TIPO_OPTIONS.find((o) => o.value === tipo);
+  if (found && found.value !== "todos") return found.label;
+  if (tipo.includes("estética"))  return "Estética";
+  if (tipo.includes("odontológ")) return "Odonto";
+  if (tipo.includes("psicólog") || tipo.includes("psiquiat")) return "Psic";
+  if (tipo.includes("fisioter"))  return "Fisio";
+  if (tipo.includes("nutri"))     return "Nutrição";
+  return tipo;
+}
+
+function tipoBadgeStyle(tipo: string) {
+  if (tipo.includes("estética"))  return { bg: "rgba(0,207,255,0.1)",   color: ACCENT,    bd: "rgba(0,207,255,0.2)"   };
+  if (tipo.includes("odontológ")) return { bg: "rgba(160,100,255,0.1)", color: "#a064ff", bd: "rgba(160,100,255,0.2)" };
+  if (tipo.includes("psicólog") || tipo.includes("psiquiat")) return { bg: "rgba(255,183,77,0.1)", color: "#FFB74D", bd: "rgba(255,183,77,0.2)" };
+  if (tipo.includes("fisioter")) return { bg: "rgba(76,175,80,0.1)",    color: "#4CAF50", bd: "rgba(76,175,80,0.2)"  };
+  if (tipo.includes("nutri"))    return { bg: "rgba(255,138,101,0.1)",  color: "#FF8A65", bd: "rgba(255,138,101,0.2)" };
+  return { bg: "rgba(255,255,255,0.05)", color: "#9A9288", bd: "rgba(255,255,255,0.1)" };
+}
+
+function waLink(phone: string, msg: string) {
+  const num = phone.replace(/\D/g, "");
+  const intl = num.startsWith("55") ? num : `55${num}`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+}
+
+function isOverdue(date: string | null) {
+  if (!date) return false;
+  const today = new Date().toISOString().split("T")[0];
+  return date < today;
+}
 
 type Prospect = {
   id: string;
@@ -32,47 +74,77 @@ type Prospect = {
   avaliacao: number;
   total_avaliacoes: number;
   created_at: string;
+  cnae: string | null;
+  cnae_descricao: string | null;
+  proximo_contato: string | null;
+  anotacoes: string | null;
 };
 
 export default function CRMPage() {
-  const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [prospects, setProspects]       = useState<Prospect[]>([]);
+  const [loading, setLoading]           = useState(true);
   const [filterStatus, setFilterStatus] = useState("todos");
   const [filterCidade, setFilterCidade] = useState("todas");
-  const [filterTipo, setFilterTipo] = useState("todos");
-  const [selected, setSelected] = useState<Prospect | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
+  const [filterTipo, setFilterTipo]     = useState("todos");
+  const [busca, setBusca]               = useState("");
+  const [buscaDebounced, setBuscaDebounced] = useState("");
+  const [selected, setSelected]         = useState<Prospect | null>(null);
+  const [updating, setUpdating]         = useState<string | null>(null);
+  const [noteDraft, setNoteDraft]       = useState("");
+  const [savingNote, setSavingNote]     = useState(false);
 
-  const cidades = ["todas", ...Array.from(new Set(prospects.map((p) => p.cidade)))];
+  const cidades = ["todas", ...Array.from(new Set(prospects.map((p) => p.cidade).filter(Boolean)))];
+
+  useEffect(() => {
+    const t = setTimeout(() => setBuscaDebounced(busca), 350);
+    return () => clearTimeout(t);
+  }, [busca]);
 
   const fetchProspects = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
     if (filterStatus !== "todos") params.set("status", filterStatus);
     if (filterCidade !== "todas") params.set("cidade", filterCidade);
-    if (filterTipo !== "todos") params.set("tipo", filterTipo);
+    if (filterTipo !== "todos")   params.set("tipo", filterTipo);
+    if (buscaDebounced)           params.set("busca", buscaDebounced);
     const res = await fetch(`/api/crm/prospects?${params}`);
     const data = await res.json();
     setProspects(data.prospects || []);
     setLoading(false);
-  }, [filterStatus, filterCidade, filterTipo]);
+  }, [filterStatus, filterCidade, filterTipo, buscaDebounced]);
 
   useEffect(() => { fetchProspects(); }, [fetchProspects]);
 
-  async function updateStatus(id: string, status: string) {
-    setUpdating(id);
+  useEffect(() => {
+    setNoteDraft(selected?.anotacoes || "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected?.id]);
+
+  async function patchProspect(id: string, patch: Partial<Prospect>) {
     await fetch(`/api/crm/prospects/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(patch),
     });
-    setProspects((prev) => prev.map((p) => p.id === id ? { ...p, status } : p));
-    if (selected?.id === id) setSelected((prev) => prev ? { ...prev, status } : null);
+    setProspects((prev) => prev.map((p) => p.id === id ? { ...p, ...patch } : p));
+    if (selected?.id === id) setSelected((prev) => prev ? { ...prev, ...patch } : null);
+  }
+
+  async function updateStatus(id: string, status: string) {
+    setUpdating(id);
+    await patchProspect(id, { status });
     setUpdating(null);
   }
 
+  async function saveNote() {
+    if (!selected) return;
+    setSavingNote(true);
+    await patchProspect(selected.id, { anotacoes: noteDraft });
+    setSavingNote(false);
+  }
+
   async function deleteProspect(id: string) {
-    if (!confirm("Remover esta clínica do CRM?")) return;
+    if (!confirm("Remover este prospect do CRM?")) return;
     await fetch(`/api/crm/prospects/${id}`, { method: "DELETE" });
     setProspects((prev) => prev.filter((p) => p.id !== id));
     if (selected?.id === id) setSelected(null);
@@ -96,11 +168,22 @@ export default function CRMPage() {
         .filter-btn { background: transparent; border: 1px solid ${BORDER}; border-radius: 6px; padding: 7px 14px; font-size: 12px; color: #888; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .filter-btn:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
         .filter-btn.active { border-color: ${ACCENT}; color: ${ACCENT}; background: rgba(0,207,255,0.06); }
-        .status-select { background: #1a1a1a; border: 1px solid ${BORDER}; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #ccc; cursor: pointer; outline: none; }
-        .detail-panel { position: fixed; top: 0; right: 0; width: 420px; height: 100vh; background: #111; border-left: 1px solid ${BORDER}; z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
+        .crm-select { background: #1a1a1a; border: 1px solid ${BORDER}; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #ccc; cursor: pointer; outline: none; }
+        .detail-panel { position: fixed; top: 0; right: 0; width: 440px; height: 100vh; background: #111; border-left: 1px solid ${BORDER}; z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+        .search-input { background: #111; border: 1px solid ${BORDER}; border-radius: 6px; padding: 7px 12px 7px 34px; font-size: 12px; color: #ccc; outline: none; width: 220px; transition: border-color 0.15s; }
+        .search-input:focus { border-color: rgba(0,207,255,0.4); }
+        .search-input::placeholder { color: #444; }
+        .note-textarea { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 12px; font-size: 13px; color: #aaa; line-height: 1.6; resize: vertical; width: 100%; min-height: 90px; outline: none; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
+        .note-textarea:focus { border-color: rgba(0,207,255,0.3); }
+        .date-input { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 6px; padding: 8px 10px; font-size: 12px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; color-scheme: dark; }
+        .date-input:focus { border-color: rgba(0,207,255,0.3); }
+        .detail-label { font-size: 11px; color: #555; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
         @media (max-width: 900px) {
           .crm-pad { padding: 20px 16px; }
           .detail-panel { width: 100%; }
+          .search-input { width: 160px; }
         }
       `}</style>
 
@@ -119,14 +202,41 @@ export default function CRMPage() {
         {/* Cards de status */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-            <div key={key} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px 20px", minWidth: "120px" }}>
+            <div key={key} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px 20px", minWidth: "110px" }}>
               <p style={{ fontSize: "10px", color: "#555", margin: "0 0 6px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{cfg.label}</p>
               <p style={{ fontSize: "28px", fontWeight: "700", color: cfg.color, margin: 0, lineHeight: 1, letterSpacing: "-0.03em" }}>{counts[key] || 0}</p>
             </div>
           ))}
         </div>
 
-        {/* Filtros */}
+        {/* Filtros — linha 1: busca + cidade + tipo + refresh */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "10px", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="search-wrap">
+            <span className="search-icon"><Search size={13} color="#444" /></span>
+            <input
+              className="search-input"
+              placeholder="Buscar por nome..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+            />
+          </div>
+
+          <div style={{ width: "1px", height: "20px", background: BORDER, margin: "0 4px" }} />
+
+          <select className="crm-select" value={filterCidade} onChange={(e) => setFilterCidade(e.target.value)}>
+            {cidades.map((c) => <option key={c} value={c}>{c === "todas" ? "Todas as cidades" : c}</option>)}
+          </select>
+
+          <select className="crm-select" value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
+            {TIPO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+
+          <button onClick={fetchProspects} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "7px 12px", color: "#666", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <RefreshCw size={13} /> Atualizar
+          </button>
+        </div>
+
+        {/* Filtros — linha 2: status */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <span style={{ fontSize: "11px", color: "#555", marginRight: "4px" }}>STATUS</span>
           {ALL_STATUS.map((s) => (
@@ -134,22 +244,6 @@ export default function CRMPage() {
               {s === "todos" ? "Todos" : STATUS_CONFIG[s]?.label}
             </button>
           ))}
-
-          <div style={{ width: "1px", height: "20px", background: BORDER, margin: "0 8px" }} />
-
-          <select className="status-select" value={filterCidade} onChange={(e) => setFilterCidade(e.target.value)}>
-            {cidades.map((c) => <option key={c} value={c}>{c === "todas" ? "Todas as cidades" : c}</option>)}
-          </select>
-
-          <select className="status-select" value={filterTipo} onChange={(e) => setFilterTipo(e.target.value)}>
-            <option value="todos">Todos os tipos</option>
-            <option value="clínica estética">Estética</option>
-            <option value="clínica odontológica">Odonto</option>
-          </select>
-
-          <button onClick={fetchProspects} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "7px 12px", color: "#666", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
-            <RefreshCw size={13} /> Atualizar
-          </button>
         </div>
 
         {/* Tabela */}
@@ -158,48 +252,62 @@ export default function CRMPage() {
             <div style={{ padding: "60px", textAlign: "center", color: "#555", fontSize: "13px" }}>Carregando...</div>
           ) : prospects.length === 0 ? (
             <div style={{ padding: "60px", textAlign: "center", color: "#555", fontSize: "13px" }}>
-              Nenhuma clínica encontrada. Vá em Prospecção para buscar novas.
+              Nenhum prospect encontrado. {!busca && "Vá em Prospecção para buscar novos."}
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
               <table className="crm-table">
                 <thead>
                   <tr>
-                    <th>Clínica</th>
+                    <th>Empresa</th>
                     <th>Cidade</th>
                     <th>Tipo</th>
                     <th>Contato</th>
+                    <th>Follow-up</th>
                     <th>Status</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {prospects.map((p) => {
-                    const cfg = STATUS_CONFIG[p.status];
+                    const cfg   = STATUS_CONFIG[p.status];
+                    const badge = tipoBadgeStyle(p.tipo);
+                    const overdue = isOverdue(p.proximo_contato);
                     return (
                       <tr key={p.id} onClick={() => setSelected(p)}>
                         <td>
                           <div style={{ fontWeight: "500", color: "#F0EDE8" }}>{p.nome}</div>
-                          {p.avaliacao && <div style={{ fontSize: "11px", color: "#555" }}>★ {p.avaliacao} ({p.total_avaliacoes})</div>}
+                          <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
+                            {p.avaliacao ? <span style={{ fontSize: "11px", color: "#555" }}>★ {p.avaliacao} ({p.total_avaliacoes})</span> : null}
+                            {p.anotacoes ? <span style={{ fontSize: "11px", color: "#555" }}>· nota</span> : null}
+                          </div>
                         </td>
                         <td style={{ whiteSpace: "nowrap", color: "#888" }}>{p.cidade}</td>
                         <td>
-                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.06em", background: p.tipo.includes("estética") ? "rgba(0,207,255,0.1)" : "rgba(160,100,255,0.1)", color: p.tipo.includes("estética") ? ACCENT : "#a064ff", border: `1px solid ${p.tipo.includes("estética") ? "rgba(0,207,255,0.2)" : "rgba(160,100,255,0.2)"}` }}>
-                            {p.tipo.includes("estética") ? "Estética" : "Odonto"}
+                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.06em", background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>
+                            {tipoLabel(p.tipo)}
                           </span>
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: "8px" }}>
                             {p.telefone && <Phone size={13} color="#555" />}
-                            {p.email && <Mail size={13} color="#555" />}
-                            {p.website && <Globe size={13} color="#555" />}
+                            {p.email    && <Mail  size={13} color="#555" />}
+                            {p.website  && <Globe size={13} color="#555" />}
                           </div>
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {p.proximo_contato ? (
+                            <span style={{ fontSize: "12px", color: overdue ? "#ef4444" : "#888", fontWeight: overdue ? "600" : "400" }}>
+                              {overdue && "⚠ "}
+                              {new Date(p.proximo_contato + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                            </span>
+                          ) : <span style={{ color: "#333" }}>—</span>}
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: cfg?.color, flexShrink: 0 }} />
                             <select
-                              className="status-select"
+                              className="crm-select"
                               value={p.status}
                               disabled={updating === p.id}
                               onChange={(e) => updateStatus(p.id, e.target.value)}
@@ -230,11 +338,11 @@ export default function CRMPage() {
       {selected && (
         <div className="detail-panel">
           <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: "11px", color: "#555", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Detalhes</p>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>{selected.nome}</h3>
+              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "#F0EDE8", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selected.nome}</h3>
             </div>
-            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555", padding: "4px" }}>
+            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555", padding: "4px", flexShrink: 0 }}>
               <X size={18} />
             </button>
           </div>
@@ -242,9 +350,9 @@ export default function CRMPage() {
           <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
 
             {/* Status */}
-            <div style={{ marginBottom: "24px" }}>
-              <p style={{ fontSize: "11px", color: "#555", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Status</p>
-              <select className="status-select" value={selected.status} style={{ width: "100%", padding: "10px 12px" }}
+            <div style={{ marginBottom: "20px" }}>
+              <p className="detail-label">Status</p>
+              <select className="crm-select" value={selected.status} style={{ width: "100%", padding: "10px 12px" }}
                 onChange={(e) => updateStatus(selected.id, e.target.value)}>
                 {Object.entries(STATUS_CONFIG).map(([k, v]) => (
                   <option key={k} value={k}>{v.label}</option>
@@ -252,31 +360,70 @@ export default function CRMPage() {
               </select>
             </div>
 
-            {/* Info */}
-            {[
-              { icon: Phone, label: "Telefone", value: selected.telefone },
-              { icon: Mail, label: "Email", value: selected.email },
-              { icon: Globe, label: "Website", value: selected.website },
-            ].map(({ icon: Icon, label, value }) => value ? (
-              <div key={label} style={{ marginBottom: "16px" }}>
-                <p style={{ fontSize: "11px", color: "#555", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Icon size={13} color="#555" />
-                  <span style={{ fontSize: "13px", color: "#ccc" }}>{value}</span>
-                </div>
-              </div>
-            ) : null)}
-
-            <div style={{ marginBottom: "16px" }}>
-              <p style={{ fontSize: "11px", color: "#555", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Cidade / Tipo</p>
-              <p style={{ fontSize: "13px", color: "#ccc", margin: 0 }}>{selected.cidade} · {selected.tipo}</p>
+            {/* Follow-up */}
+            <div style={{ marginBottom: "20px" }}>
+              <p className="detail-label"><Calendar size={11} /> Próximo contato</p>
+              <input
+                type="date"
+                className="date-input"
+                value={selected.proximo_contato || ""}
+                onChange={(e) => patchProspect(selected.id, { proximo_contato: e.target.value || null })}
+              />
             </div>
 
-            {/* Mensagem */}
-            <div style={{ marginTop: "24px" }}>
-              <p style={{ fontSize: "11px", color: "#555", margin: "0 0 8px", textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <MessageSquare size={12} /> Mensagem gerada
-              </p>
+            {/* Contatos */}
+            {selected.telefone && (
+              <div style={{ marginBottom: "14px" }}>
+                <p className="detail-label"><Phone size={11} /> Telefone</p>
+                <span style={{ fontSize: "13px", color: "#ccc" }}>{selected.telefone}</span>
+              </div>
+            )}
+            {selected.email && (
+              <div style={{ marginBottom: "14px" }}>
+                <p className="detail-label"><Mail size={11} /> Email</p>
+                <span style={{ fontSize: "13px", color: "#ccc" }}>{selected.email}</span>
+              </div>
+            )}
+            {selected.website && (
+              <div style={{ marginBottom: "14px" }}>
+                <p className="detail-label"><Globe size={11} /> Website</p>
+                <a href={selected.website} target="_blank" rel="noopener noreferrer" style={{ fontSize: "13px", color: ACCENT, textDecoration: "none" }}>
+                  {selected.website.replace(/^https?:\/\//, "")}
+                </a>
+              </div>
+            )}
+
+            <div style={{ marginBottom: "20px" }}>
+              <p className="detail-label">Cidade / Tipo</p>
+              <p style={{ fontSize: "13px", color: "#ccc", margin: 0 }}>{selected.cidade} · {tipoLabel(selected.tipo)}</p>
+            </div>
+
+            {/* CNAE — só aparece quando preenchido (fase 2) */}
+            {selected.cnae && (
+              <div style={{ marginBottom: "20px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
+                <p className="detail-label">CNAE</p>
+                <p style={{ fontSize: "13px", color: "#ccc", margin: 0, fontFamily: "monospace" }}>{selected.cnae}</p>
+                {selected.cnae_descricao && <p style={{ fontSize: "12px", color: "#666", margin: "4px 0 0" }}>{selected.cnae_descricao}</p>}
+              </div>
+            )}
+
+            {/* WhatsApp */}
+            {selected.telefone && (
+              <div style={{ marginBottom: "20px" }}>
+                <a
+                  href={waLink(selected.telefone, selected.mensagem)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.2)", borderRadius: "8px", padding: "10px 14px", color: "#25D366", fontSize: "13px", fontWeight: "500", textDecoration: "none" }}
+                >
+                  <MessageCircle size={15} /> Abrir no WhatsApp
+                </a>
+              </div>
+            )}
+
+            {/* Mensagem gerada */}
+            <div style={{ marginBottom: "20px" }}>
+              <p className="detail-label"><MessageSquare size={11} /> Mensagem gerada</p>
               <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px", fontSize: "13px", color: "#aaa", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                 {selected.mensagem}
               </div>
@@ -288,7 +435,34 @@ export default function CRMPage() {
               </button>
             </div>
 
-            <div style={{ marginTop: "20px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
+            {/* Anotações */}
+            <div style={{ marginBottom: "20px" }}>
+              <p className="detail-label"><FileText size={11} /> Anotações</p>
+              <textarea
+                className="note-textarea"
+                placeholder="O que aconteceu? Próximos passos..."
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+              />
+              <button
+                onClick={saveNote}
+                disabled={savingNote || noteDraft === (selected.anotacoes || "")}
+                style={{
+                  marginTop: "8px",
+                  background: noteDraft !== (selected.anotacoes || "") ? ACCENT : "transparent",
+                  border: `1px solid ${noteDraft !== (selected.anotacoes || "") ? ACCENT : BORDER}`,
+                  borderRadius: "6px", padding: "6px 12px", fontSize: "12px",
+                  color: noteDraft !== (selected.anotacoes || "") ? "#000" : "#555",
+                  cursor: "pointer", width: "100%", fontWeight: "500",
+                  transition: "all 0.15s",
+                }}
+              >
+                {savingNote ? "Salvando..." : "Salvar anotação"}
+              </button>
+            </div>
+
+            {/* Rodapé */}
+            <div style={{ padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
               <p style={{ fontSize: "11px", color: "#555", margin: "0 0 2px" }}>Adicionado em</p>
               <p style={{ fontSize: "12px", color: "#888", margin: 0 }}>
                 {new Date(selected.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
