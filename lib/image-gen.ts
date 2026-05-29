@@ -26,11 +26,6 @@ const CONTENT_PROMPTS = [
   `dark high-tech workspace with glowing screens showing analytics and charts, blue neon desk, cinematic, no text`,
 ];
 
-const CTA_PROMPTS = [
-  `rocket launching from dark city at night with dramatic blue light explosion, ultra realistic photography, cinematic, no text`,
-  `earth from space with blue city lights visible, dramatic atmosphere, ultra realistic satellite photography, no text`,
-  `dark cityscape at night with blue neon lights from above, aerial dramatic shot, ultra realistic, no text`,
-];
 
 export async function generateCarouselPhotos(topic: string): Promise<CarouselPhotos> {
   const s = seed(topic);
