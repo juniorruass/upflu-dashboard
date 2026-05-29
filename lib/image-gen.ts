@@ -1,10 +1,8 @@
 // Geração de imagens via Pollinations.ai — gratuito, sem chave
 
 export interface CarouselPhotos {
-  cover: string;
-  slide2: string;
-  slide3: string;
-  cta: string;
+  cover: string;   // capa + cta
+  content: string; // slides 2 + 3
 }
 
 function seed(s: string, offset = 0): number {
@@ -36,15 +34,9 @@ const CTA_PROMPTS = [
 
 export async function generateCarouselPhotos(topic: string): Promise<CarouselPhotos> {
   const s = seed(topic);
-  const ci = s % COVER_PROMPTS.length;
-  const s2i = (s + 1) % CONTENT_PROMPTS.length;
-  const s3i = (s + 2) % CONTENT_PROMPTS.length;
-  const ctai = s % CTA_PROMPTS.length;
 
   return {
-    cover:  url(COVER_PROMPTS[ci],   s),
-    slide2: url(CONTENT_PROMPTS[s2i], s + 1),
-    slide3: url(CONTENT_PROMPTS[s3i], s + 2),
-    cta:    url(CTA_PROMPTS[ctai],    s + 3),
+    cover:   url(COVER_PROMPTS[s % COVER_PROMPTS.length],     s),
+    content: url(CONTENT_PROMPTS[s % CONTENT_PROMPTS.length], s + 1),
   };
 }
