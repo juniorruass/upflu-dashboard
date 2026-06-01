@@ -76,11 +76,14 @@ type Prospect = {
   created_at: string;
   cnae: string | null;
   cnae_descricao: string | null;
+  cnpj: string | null;
+  situacao_cadastral: string | null;
   proximo_contato: string | null;
   anotacoes: string | null;
 };
 
 export default function CRMPage() {
+  const [aba, setAba]                   = useState<"todos" | "cnae">("todos");
   const [prospects, setProspects]       = useState<Prospect[]>([]);
   const [loading, setLoading]           = useState(true);
   const [filterStatus, setFilterStatus] = useState("todos");
@@ -107,11 +110,12 @@ export default function CRMPage() {
     if (filterCidade !== "todas") params.set("cidade", filterCidade);
     if (filterTipo !== "todos")   params.set("tipo", filterTipo);
     if (buscaDebounced)           params.set("busca", buscaDebounced);
+    if (aba === "cnae")           params.set("fonte", "cnae");
     const res = await fetch(`/api/crm/prospects?${params}`);
     const data = await res.json();
     setProspects(data.prospects || []);
     setLoading(false);
-  }, [filterStatus, filterCidade, filterTipo, buscaDebounced]);
+  }, [filterStatus, filterCidade, filterTipo, buscaDebounced, aba]);
 
   useEffect(() => { fetchProspects(); }, [fetchProspects]);
 
@@ -190,13 +194,29 @@ export default function CRMPage() {
       <div className="crm-pad" style={{ flex: 1 }}>
 
         {/* Título */}
-        <div style={{ marginBottom: "28px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <p style={{ fontSize: "11px", fontWeight: "500", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 8px" }}>
             Gestão de relacionamento
           </p>
           <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>
             CRM de Prospecção
           </h2>
+        </div>
+
+        {/* Abas */}
+        <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, marginBottom: "24px" }}>
+          <button
+            onClick={() => { setAba("todos"); setSelected(null); }}
+            style={{ background: "transparent", border: "none", borderBottom: `2px solid ${aba === "todos" ? ACCENT : "transparent"}`, padding: "8px 18px", fontSize: "13px", color: aba === "todos" ? ACCENT : "#666", cursor: "pointer", fontWeight: aba === "todos" ? "600" : "400", transition: "all 0.15s" }}
+          >
+            Google Maps
+          </button>
+          <button
+            onClick={() => { setAba("cnae"); setSelected(null); }}
+            style={{ background: "transparent", border: "none", borderBottom: `2px solid ${aba === "cnae" ? ACCENT : "transparent"}`, padding: "8px 18px", fontSize: "13px", color: aba === "cnae" ? ACCENT : "#666", cursor: "pointer", fontWeight: aba === "cnae" ? "600" : "400", transition: "all 0.15s" }}
+          >
+            Por CNAE
+          </button>
         </div>
 
         {/* Cards de status */}
@@ -260,6 +280,7 @@ export default function CRMPage() {
                 <thead>
                   <tr>
                     <th>Empresa</th>
+                    {aba === "cnae" && <th>CNPJ</th>}
                     <th>Cidade</th>
                     <th>Tipo</th>
                     <th>Contato</th>
@@ -282,6 +303,11 @@ export default function CRMPage() {
                             {p.anotacoes ? <span style={{ fontSize: "11px", color: "#555" }}>· nota</span> : null}
                           </div>
                         </td>
+                        {aba === "cnae" && (
+                          <td style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", whiteSpace: "nowrap" }}>
+                            {p.cnpj ? p.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : "—"}
+                          </td>
+                        )}
                         <td style={{ whiteSpace: "nowrap", color: "#888" }}>{p.cidade}</td>
                         <td>
                           <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.06em", background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>

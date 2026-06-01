@@ -104,6 +104,27 @@ export async function POST(req: NextRequest) {
       ),
     }));
 
+    // Auto-salvar todos no CRM
+    if (resultados.length > 0) {
+      const toInsert = resultados.map((r) => ({
+        place_id: `cnpj:${r.cnpj}`,
+        nome: r.nome,
+        tipo: r.tipo,
+        cidade: r.cidade,
+        telefone: r.telefone,
+        website: "",
+        email: r.email,
+        mensagem: r.mensagem,
+        status: "potencial",
+        email_enviado: false,
+        cnpj: r.cnpj,
+        cnae: r.cnae,
+        situacao_cadastral: "ATIVA",
+      }));
+      const { error: insertError } = await supabase.from("prospects").insert(toInsert);
+      if (insertError) console.error("Auto-save CRM error:", insertError);
+    }
+
     return NextResponse.json({
       empresas: resultados,
       total: resultados.length,

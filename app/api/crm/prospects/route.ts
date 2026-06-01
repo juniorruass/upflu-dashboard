@@ -50,6 +50,7 @@ export async function GET(req: NextRequest) {
   const tipo   = searchParams.get("tipo");
   const busca  = searchParams.get("busca");
   const cnae   = searchParams.get("cnae");
+  const fonte  = searchParams.get("fonte"); // "cnae" | "maps"
 
   const supabase = createAdminClient();
   let query = supabase.from("prospects").select("*").order("created_at", { ascending: false });
@@ -59,6 +60,8 @@ export async function GET(req: NextRequest) {
   if (tipo   && tipo   !== "todos") query = query.eq("tipo", tipo);
   if (busca)                        query = query.ilike("nome", `%${busca}%`);
   if (cnae)                         query = query.eq("cnae", cnae);
+  if (fonte === "cnae")             query = query.not("cnpj", "is", null);
+  if (fonte === "maps")             query = query.is("cnpj", null);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
