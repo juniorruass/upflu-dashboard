@@ -37,43 +37,53 @@ function findFollowerValue(actions: { action_type: string; value: string }[]): n
   return fallback ? parseInt(fallback.value) : 0;
 }
 
-async function tryGetInstagramId(accountId: string, token: string): Promise<string | null> {
-  // Tenta 1: via instagram_accounts do ad account
+async function tryGetInstagramFollowers(accountId: string, token: string): Promise<{ followers: number; username: string | null } | null> {
+  // Estratégia 1: page_id dos anúncios → instagram_business_account da página
   try {
-    const r = await fetch(`${META_BASE}/act_${accountId}?fields=instagram_accounts{id,username}&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
-    const j = await r.json();
-    const id = j.instagram_accounts?.data?.[0]?.id;
-    if (id) return id;
-  } catch { /* ignora */ }
-
-  // Tenta 2: via instagram_actors (contas usadas nos anúncios)
-  try {
-    const r = await fetch(`${META_BASE}/act_${accountId}/ads?fields=instagram_actor_id&limit=10&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
-    const j = await r.json();
-    for (const ad of j.data ?? []) {
-      if (ad.instagram_actor_id) return ad.instagram_actor_id;
+    const adsR = await fetch(`${META_BASE}/act_${accountId}/ads?fields=page_id&limit=20&access_token=${token}`, { signal: AbortSignal.timeout(8000) });
+    const adsJ = await adsR.json();
+    const pageIds = Array.from(new Set<string>((adsJ.data ?? []).map((a: { page_id?: string }) => a.page_id).filter(Boolean) as string[]));
+    for (const pageId of pageIds) {
+      try {
+        const pgR = await fetch(`${META_BASE}/${pageId}?fields=instagram_business_account{id,username,followers_count}&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+        const pgJ = await pgR.json();
+        const ig = pgJ.instagram_business_account;
+        if (ig?.followers_count) return { followers: ig.followers_count, username: ig.username ?? null };
+        // fallback: fan_count da própria página Facebook
+        if (pgJ.fan_count) return { followers: pgJ.fan_count, username: null };
+      } catch { /* ignora */ }
     }
   } catch { /* ignora */ }
 
-  // Tenta 3: via promoted_object das campanhas
+  // Estratégia 2: instagram_actor_id direto nos anúncios
   try {
-    const r = await fetch(`${META_BASE}/act_${accountId}/campaigns?fields=promoted_object&limit=10&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
-    const j = await r.json();
-    for (const c of j.data ?? []) {
-      if (c.promoted_object?.instagram_profile_id) return c.promoted_object.instagram_profile_id;
+    const adsR = await fetch(`${META_BASE}/act_${accountId}/ads?fields=instagram_actor_id&limit=20&access_token=${token}`, { signal: AbortSignal.timeout(8000) });
+    const adsJ = await adsR.json();
+    for (const ad of adsJ.data ?? []) {
+      if (!ad.instagram_actor_id) continue;
+      try {
+        const igR = await fetch(`${META_BASE}/${ad.instagram_actor_id}?fields=id,username,followers_count&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+        const igJ = await igR.json();
+        if (igJ.followers_count) return { followers: igJ.followers_count, username: igJ.username ?? null };
+      } catch { /* ignora */ }
     }
   } catch { /* ignora */ }
 
-  // Tenta 4: pages conectadas à conta
+  // Estratégia 3: instagram_accounts do ad account
   try {
-    const r = await fetch(`${META_BASE}/act_${accountId}?fields=owner_business&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(`${META_BASE}/act_${accountId}?fields=instagram_accounts{id,username,followers_count}&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
     const j = await r.json();
-    const bizId = j.owner_business?.id;
-    if (bizId) {
-      const r2 = await fetch(`${META_BASE}/${bizId}/instagram_accounts?fields=id,username&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
-      const j2 = await r2.json();
-      const id = j2.data?.[0]?.id;
-      if (id) return id;
+    const acc = j.instagram_accounts?.data?.[0];
+    if (acc?.followers_count) return { followers: acc.followers_count, username: acc.username ?? null };
+  } catch { /* ignora */ }
+
+  // Estratégia 4: me/accounts → páginas do usuário → Instagram vinculado
+  try {
+    const meR = await fetch(`${META_BASE}/me/accounts?fields=id,instagram_business_account{id,username,followers_count}&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+    const meJ = await meR.json();
+    for (const page of meJ.data ?? []) {
+      const ig = page.instagram_business_account;
+      if (ig?.followers_count) return { followers: ig.followers_count, username: ig.username ?? null };
     }
   } catch { /* ignora */ }
 
@@ -171,17 +181,10 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     let igUsername: string | null = null;
 
     if (!totalFollowers) {
-      const igId = await tryGetInstagramId(client.meta_account_id, token);
-      if (igId) {
-        try {
-          const profileQP = new URLSearchParams({ fields: "id,username,followers_count", access_token: token });
-          const profileRes = await fetch(`${META_BASE}/${igId}?${profileQP}`, { signal: AbortSignal.timeout(8000) });
-          const profileJson = await profileRes.json();
-          if (profileJson.followers_count) {
-            igFollowers = profileJson.followers_count;
-            igUsername = profileJson.username ?? null;
-          }
-        } catch { /* ignora */ }
+      const igResult = await tryGetInstagramFollowers(client.meta_account_id, token);
+      if (igResult) {
+        igFollowers = igResult.followers;
+        igUsername = igResult.username;
       }
     }
 
