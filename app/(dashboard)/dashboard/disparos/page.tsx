@@ -3,11 +3,26 @@
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import {
-  Send, CheckSquare, Square, Loader2, CheckCircle2, XCircle, RefreshCw,
+  Send, CheckSquare, Square, Loader2, CheckCircle2, XCircle, RefreshCw, MessageCircle, Wifi, WifiOff,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
+
+const WA_TEMPLATES: Record<string, { label: string; corpo: string }> = {
+  prospeccao: {
+    label: "Prospecção inicial",
+    corpo: "{mensagem}",
+  },
+  followup: {
+    label: "Follow-up",
+    corpo: "Olá! Passei para ver se tiveram a oportunidade de analisar o que apresentei sobre crescimento digital.\n\nEstamos com agenda aberta para novos projetos. Faz sentido conversar esta semana?\n\nUpflu | upflu.digital",
+  },
+  retomada: {
+    label: "Retomada de contato",
+    corpo: "Olá! Sei que o momento pode não ter sido o melhor quando falamos. Surgiu uma novidade que pode fazer diferença pro seu negócio agora.\n\nValeria 5 minutos?\n\nUpflu | upflu.digital",
+  },
+};
 
 const TEMPLATES: Record<string, { label: string; assunto: string; corpo: string }> = {
   prospeccao: {
@@ -37,7 +52,7 @@ const STATUS_OPTIONS = [
 ];
 
 type Prospect = {
-  id: string; nome: string; email: string; tipo: string; cidade: string; status: string;
+  id: string; nome: string; email: string; telefone: string; tipo: string; cidade: string; status: string;
 };
 
 type LogEntry = {
@@ -46,7 +61,7 @@ type LogEntry = {
 };
 
 export default function DisparosPage() {
-  const [tab, setTab] = useState<"compor" | "historico">("compor");
+  const [tab, setTab] = useState<"email" | "whatsapp" | "historico">("email");
 
   // Template
   const [templateKey, setTemplateKey] = useState("prospeccao");
@@ -60,9 +75,19 @@ export default function DisparosPage() {
   const [filterTipo, setFilterTipo] = useState("todos");
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
 
-  // Send
+  // Send email
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ sent: number; failed: number } | null>(null);
+
+  // WhatsApp
+  const [waTemplateKey, setWaTemplateKey]   = useState("prospeccao");
+  const [waCorpo, setWaCorpo]               = useState(WA_TEMPLATES.prospeccao.corpo);
+  const [waProspects, setWaProspects]       = useState<Prospect[]>([]);
+  const [loadingWa, setLoadingWa]           = useState(false);
+  const [waSelecionados, setWaSelecionados] = useState<Set<string>>(new Set());
+  const [enviandoWa, setEnviandoWa]         = useState(false);
+  const [resultadoWa, setResultadoWa]       = useState<{ sent: number; failed: number } | null>(null);
+  const [zapiStatus, setZapiStatus]         = useState<"unknown" | "connected" | "disconnected">("unknown");
 
   // History
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -91,9 +116,74 @@ export default function DisparosPage() {
     setLoadingLogs(false);
   }, []);
 
+  const fetchWaProspects = useCallback(async () => {
+    setLoadingWa(true);
+    const res = await fetch("/api/crm/prospects");
+    const data = await res.json();
+    const comTel = (data.prospects || []).filter((p: Prospect) => p.telefone);
+    setWaProspects(comTel);
+    setWaSelecionados(new Set());
+    setLoadingWa(false);
+  }, []);
+
+  const checkZapiStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/disparos/whatsapp");
+      const data = await res.json();
+      const connected = data.connected === true || data.status === "connected" || data.value === "CONNECTED";
+      setZapiStatus(connected ? "connected" : "disconnected");
+    } catch {
+      setZapiStatus("disconnected");
+    }
+  }, []);
+
   useEffect(() => {
+    if (tab === "whatsapp") { fetchWaProspects(); checkZapiStatus(); }
     if (tab === "historico") fetchLogs();
-  }, [tab, fetchLogs]);
+  }, [tab, fetchLogs, fetchWaProspects, checkZapiStatus]);
+
+  function selecionarWaTemplate(key: string) {
+    setWaTemplateKey(key);
+    setWaCorpo(WA_TEMPLATES[key].corpo);
+    setResultadoWa(null);
+  }
+
+  function toggleWaProspect(id: string) {
+    setWaSelecionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleWaTodos() {
+    setWaSelecionados(
+      waSelecionados.size === waProspects.length
+        ? new Set()
+        : new Set(waProspects.map((p) => p.id))
+    );
+  }
+
+  async function enviarWhatsApp() {
+    if (!waSelecionados.size) return;
+    setEnviandoWa(true);
+    setResultadoWa(null);
+    try {
+      const res = await fetch("/api/disparos/whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prospectIds: Array.from(waSelecionados),
+          mensagem: waCorpo,
+          template: WA_TEMPLATES[waTemplateKey].label,
+        }),
+      });
+      const data = await res.json();
+      setResultadoWa({ sent: data.sent, failed: data.failed });
+    } finally {
+      setEnviandoWa(false);
+    }
+  }
 
   function selecionarTemplate(key: string) {
     setTemplateKey(key);
@@ -140,7 +230,8 @@ export default function DisparosPage() {
     }
   }
 
-  const todosSel = selecionados.size > 0 && selecionados.size === prospects.length;
+  const todosSel   = selecionados.size > 0 && selecionados.size === prospects.length;
+  const watodosSel = waSelecionados.size > 0 && waSelecionados.size === waProspects.length;
 
   return (
     <>
@@ -188,16 +279,19 @@ export default function DisparosPage() {
 
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, marginBottom: "28px" }}>
-          <button className={`tab-btn${tab === "compor" ? " active" : ""}`} onClick={() => setTab("compor")}>
-            Compor
+          <button className={`tab-btn${tab === "email" ? " active" : ""}`} onClick={() => setTab("email")}>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><Send size={13} /> Email</span>
+          </button>
+          <button className={`tab-btn${tab === "whatsapp" ? " active" : ""}`} onClick={() => setTab("whatsapp")}>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}><MessageCircle size={13} /> WhatsApp</span>
           </button>
           <button className={`tab-btn${tab === "historico" ? " active" : ""}`} onClick={() => setTab("historico")}>
             Histórico
           </button>
         </div>
 
-        {/* ── COMPOR ── */}
-        {tab === "compor" && (
+        {/* ── EMAIL ── */}
+        {tab === "email" && (
           <div className="disp-grid">
 
             {/* Esquerda: template + enviar */}
@@ -312,6 +406,115 @@ export default function DisparosPage() {
                                 <div style={{ fontSize: "11px", color: "#555", marginTop: "1px" }}>{p.cidade}</div>
                               </td>
                               <td style={{ fontSize: "12px", color: "#666" }}>{p.email}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── WHATSAPP ── */}
+        {tab === "whatsapp" && (
+          <div className="disp-grid">
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+              {/* Status Z-API */}
+              <div className="panel" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {zapiStatus === "connected"
+                  ? <><Wifi size={15} color="#22c55e" /><span style={{ fontSize: "13px", color: "#22c55e" }}>WhatsApp conectado</span></>
+                  : zapiStatus === "disconnected"
+                  ? <><WifiOff size={15} color="#ef4444" /><span style={{ fontSize: "13px", color: "#ef4444" }}>Desconectado — reconecte no Z-API</span></>
+                  : <><Loader2 size={15} color="#555" className="animate-spin" /><span style={{ fontSize: "13px", color: "#555" }}>Verificando conexão...</span></>}
+                <button onClick={checkZapiStatus} style={{ marginLeft: "auto", background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+                  <RefreshCw size={13} />
+                </button>
+              </div>
+
+              {/* Templates */}
+              <div className="panel">
+                <p className="panel-label">Template</p>
+                {Object.entries(WA_TEMPLATES).map(([key, tpl]) => (
+                  <button key={key} className={`tpl-btn${waTemplateKey === key ? " active" : ""}`} onClick={() => selecionarWaTemplate(key)}>
+                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", border: `2px solid ${waTemplateKey === key ? ACCENT : "#444"}`, flexShrink: 0, background: waTemplateKey === key ? ACCENT : "transparent" }} />
+                    <span style={{ fontSize: "13px", color: waTemplateKey === key ? "#F0EDE8" : "#777" }}>{tpl.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Mensagem */}
+              <div className="panel">
+                <p className="panel-label">Mensagem</p>
+                <textarea className="disp-textarea" value={waCorpo} onChange={(e) => setWaCorpo(e.target.value)} style={{ minHeight: "160px" }} />
+                <p style={{ fontSize: "11px", color: "#444", margin: "6px 0 0" }}>
+                  Variáveis: <span style={{ color: "#666" }}>{"{nome}"}</span> · <span style={{ color: "#666" }}>{"{mensagem}"}</span> · <span style={{ color: "#666" }}>{"{cidade}"}</span>
+                </p>
+              </div>
+
+              {/* Enviar */}
+              <div className="panel">
+                <button className="btn-primary" onClick={enviarWhatsApp} disabled={enviandoWa || waSelecionados.size === 0} style={{ background: "#25D366", color: "#fff" }}>
+                  {enviandoWa ? <Loader2 size={15} className="animate-spin" /> : <MessageCircle size={15} />}
+                  {enviandoWa ? "Enviando..." : waSelecionados.size === 0 ? "Selecione destinatários" : `Enviar para ${waSelecionados.size} prospect${waSelecionados.size !== 1 ? "s" : ""}`}
+                </button>
+                {resultadoWa && (
+                  <div style={{ marginTop: "12px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", display: "flex", gap: "16px" }}>
+                    <span style={{ fontSize: "13px", color: "#22c55e", display: "flex", alignItems: "center", gap: "5px" }}>
+                      <CheckCircle2 size={13} /> {resultadoWa.sent} enviados
+                    </span>
+                    {resultadoWa.failed > 0 && (
+                      <span style={{ fontSize: "13px", color: "#ef4444", display: "flex", alignItems: "center", gap: "5px" }}>
+                        <XCircle size={13} /> {resultadoWa.failed} falhas
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Destinatários WA */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+                <span style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>Destinatários</span>
+                <button onClick={fetchWaProspects} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 10px", color: "#666", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                  <RefreshCw size={12} />
+                </button>
+                <span style={{ marginLeft: "auto", fontSize: "12px", color: "#555" }}>
+                  {waProspects.length} com telefone · <span style={{ color: waSelecionados.size > 0 ? ACCENT : "#555" }}>{waSelecionados.size} selecionados</span>
+                </span>
+              </div>
+
+              <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", overflow: "hidden" }}>
+                <div style={{ padding: "10px 16px", borderBottom: `1px solid ${BORDER}` }}>
+                  <button onClick={toggleWaTodos} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#888", fontSize: "12px", padding: 0 }}>
+                    {watodosSel ? <CheckSquare size={14} color={ACCENT} /> : <Square size={14} color="#555" />}
+                    {watodosSel ? "Desmarcar todos" : `Selecionar todos (${waProspects.length})`}
+                  </button>
+                </div>
+                {loadingWa ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#555", fontSize: "13px" }}>Carregando...</div>
+                ) : waProspects.length === 0 ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#555", fontSize: "13px" }}>Nenhum prospect com telefone encontrado.</div>
+                ) : (
+                  <div style={{ maxHeight: "480px", overflowY: "auto" }}>
+                    <table className="disp-table">
+                      <tbody>
+                        {waProspects.map((p) => {
+                          const sel = waSelecionados.has(p.id);
+                          return (
+                            <tr key={p.id} onClick={() => toggleWaProspect(p.id)}>
+                              <td style={{ width: "36px", paddingRight: 0 }}>
+                                {sel ? <CheckSquare size={14} color={ACCENT} /> : <Square size={14} color="#444" />}
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: "500", color: sel ? "#F0EDE8" : "#ccc" }}>{p.nome}</div>
+                                <div style={{ fontSize: "11px", color: "#555" }}>{p.cidade}</div>
+                              </td>
+                              <td style={{ fontSize: "12px", color: "#666", whiteSpace: "nowrap" }}>{p.telefone}</td>
                             </tr>
                           );
                         })}
