@@ -12,6 +12,10 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+function emailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
 function criarHTML(corpo: string): string {
   const html = corpo.replace(/\n/g, "<br/>");
   return `<!DOCTYPE html>
@@ -53,11 +57,14 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const comEmail = (prospects || []).filter((p) => p.email);
-  const results: { id: string; nome: string; email: string; ok: boolean }[] = [];
+  const comEmail = (prospects || []).filter(
+    (p) => p.email && emailValido(p.email.trim())
+  );
+  const results: { id: string; nome: string; email: string; ok: boolean; erro?: string }[] = [];
   const logs: Record<string, unknown>[] = [];
 
   for (const p of comEmail) {
+    const emailLimpo = p.email.trim().toLowerCase();
     const assuntoFinal = assunto.replace(/\{nome\}/g, p.nome);
     const corpoFinal = corpo
       .replace(/\{nome\}/g, p.nome)
@@ -66,16 +73,17 @@ export async function POST(req: NextRequest) {
     try {
       await transporter.sendMail({
         from: `Upflu <${process.env.GMAIL_USER}>`,
-        to: p.email,
+        to: emailLimpo,
         subject: assuntoFinal,
         text: corpoFinal,
         html: criarHTML(corpoFinal),
       });
-      results.push({ id: p.id, nome: p.nome, email: p.email, ok: true });
-      logs.push({ prospect_id: p.id, nome: p.nome, email: p.email, assunto: assuntoFinal, template, status: "enviado" });
-    } catch {
-      results.push({ id: p.id, nome: p.nome, email: p.email, ok: false });
-      logs.push({ prospect_id: p.id, nome: p.nome, email: p.email, assunto: assuntoFinal, template, status: "falhou" });
+      results.push({ id: p.id, nome: p.nome, email: emailLimpo, ok: true });
+      logs.push({ prospect_id: p.id, nome: p.nome, email: emailLimpo, assunto: assuntoFinal, template, status: "enviado" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      results.push({ id: p.id, nome: p.nome, email: emailLimpo, ok: false, erro: msg });
+      logs.push({ prospect_id: p.id, nome: p.nome, email: emailLimpo, assunto: assuntoFinal, template, status: "falhou" });
     }
 
     await new Promise((r) => setTimeout(r, 1500));

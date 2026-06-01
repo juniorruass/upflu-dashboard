@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
+function emailValido(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+}
+
 export async function POST(req: NextRequest) {
   const { clinics } = await req.json();
 
@@ -15,7 +19,7 @@ export async function POST(req: NextRequest) {
   const results: { nome: string; email: string; ok: boolean }[] = [];
 
   for (const clinic of clinics) {
-    if (!clinic.email) continue;
+    if (!clinic.email || !emailValido(clinic.email)) continue;
 
     try {
       await transporter.sendMail({
