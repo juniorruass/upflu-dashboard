@@ -32,6 +32,20 @@ function fmtMonth(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
 }
 
+const PORTAL_METRIC_OPTIONS: { key: string; label: string; group: string }[] = [
+  { key: "leads_chart",    label: "Gráfico de Leads",       group: "Gráficos" },
+  { key: "leads",          label: "Leads",                  group: "Resultados" },
+  { key: "conversations",  label: "Conversas por mensagem", group: "Resultados" },
+  { key: "profile_visits", label: "Visitas ao perfil",      group: "Resultados" },
+  { key: "followers",      label: "Seguidores",             group: "Resultados" },
+  { key: "spend",          label: "Investimento",           group: "Métricas Gerais" },
+  { key: "roas",           label: "ROAS",                   group: "Métricas Gerais" },
+  { key: "clicks",         label: "Cliques",                group: "Métricas Gerais" },
+  { key: "ctr",            label: "CTR",                    group: "Métricas Gerais" },
+  { key: "impressions",    label: "Impressões",             group: "Métricas Gerais" },
+  { key: "reach",          label: "Alcance",                group: "Métricas Gerais" },
+];
+
 export default function ClientDetail({ initialClient }: { initialClient: Client }) {
   const router = useRouter();
   const [client, setClient] = useState<Client>(initialClient);
@@ -43,6 +57,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
   const [linkCopied, setLinkCopied] = useState(false);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [savingPortalMetrics, setSavingPortalMetrics] = useState(false);
 
   async function refreshMetrics() {
     try {
@@ -125,6 +140,41 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
     const res = await fetch(`/api/clients/${client.id}`, { method: "DELETE" });
     if (res.ok) router.push("/dashboard/clientes");
     else setDeleting(false);
+  }
+
+  async function togglePortalMetric(key: string) {
+    const current = client.portal_metrics ?? null;
+    let next: string[] | null;
+    if (current === null) {
+      // null = todas visíveis → desmarcar uma = criar array sem ela
+      next = PORTAL_METRIC_OPTIONS.map((m) => m.key).filter((k) => k !== key);
+    } else if (current.includes(key)) {
+      const without = current.filter((k) => k !== key);
+      // se ficou com todas → volta para null
+      next = without.length === PORTAL_METRIC_OPTIONS.length ? null : without;
+    } else {
+      const withKey = [...current, key];
+      next = withKey.length === PORTAL_METRIC_OPTIONS.length ? null : withKey;
+    }
+    setSavingPortalMetrics(true);
+    const res = await fetch(`/api/clients/${client.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ portal_metrics: next }),
+    });
+    if (res.ok) {
+      setClient((prev) => ({ ...prev, portal_metrics: next }));
+    }
+    setSavingPortalMetrics(false);
+  }
+
+  async function resetPortalMetrics() {
+    setSavingPortalMetrics(true);
+    const res = await fetch(`/api/clients/${client.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ portal_metrics: null }),
+    });
+    if (res.ok) setClient((prev) => ({ ...prev, portal_metrics: null }));
+    setSavingPortalMetrics(false);
   }
 
   async function saveMetric() {
@@ -386,6 +436,60 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
           </>)}
         </div>
       </div>
+
+      {/* ── Portal: Métricas visíveis ── */}
+      {client.meta_account_id && (
+        <div style={{ marginTop: "20px" }}>
+          {card(<>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              {sectionTitle("Portal — Métricas Visíveis")}
+              {savingPortalMetrics && (
+                <span style={{ fontSize: "11px", color: "#777068" }}>Salvando...</span>
+              )}
+            </div>
+            <p style={{ fontSize: "12px", color: "#777068", margin: "0 0 16px" }}>
+              Escolha o que o cliente vê no portal de anúncios.{" "}
+              {client.portal_metrics !== null && (
+                <button onClick={resetPortalMetrics} style={{ background: "none", border: "none", color: GOLD, fontSize: "12px", cursor: "pointer", padding: 0, fontFamily: "var(--font-outfit),sans-serif", textDecoration: "underline" }}>
+                  Exibir tudo
+                </button>
+              )}
+              {client.portal_metrics === null && <span style={{ color: GOLD }}>Exibindo tudo (padrão)</span>}
+            </p>
+            {(() => {
+              const groups = Array.from(new Set(PORTAL_METRIC_OPTIONS.map((m) => m.group)));
+              return groups.map((group) => (
+                <div key={group} style={{ marginBottom: "14px" }}>
+                  <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{group}</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
+                    {PORTAL_METRIC_OPTIONS.filter((m) => m.group === group).map((m) => {
+                      const active = client.portal_metrics === null || client.portal_metrics.includes(m.key);
+                      return (
+                        <button
+                          key={m.key}
+                          onClick={() => togglePortalMetric(m.key)}
+                          disabled={savingPortalMetrics}
+                          style={{
+                            padding: "6px 12px", borderRadius: "6px", cursor: "pointer",
+                            border: `1px solid ${active ? "rgba(0,207,255,0.4)" : BORDER}`,
+                            background: active ? "rgba(0,207,255,0.09)" : "transparent",
+                            color: active ? GOLD : "#777068",
+                            fontSize: "11px", fontWeight: "500",
+                            fontFamily: "var(--font-outfit),sans-serif", transition: "all 0.15s",
+                            opacity: savingPortalMetrics ? 0.6 : 1,
+                          }}
+                        >
+                          {active ? "✓ " : ""}{m.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
+          </>)}
+        </div>
+      )}
 
       {/* ── Meta Ads full panel ── */}
       {client.meta_account_id && (

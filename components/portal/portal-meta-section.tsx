@@ -156,7 +156,7 @@ function CategoryBlock({ label, count, cost, color, icon }: { label: string; cou
 }
 
 // ── Main component ─────────────────────────────────────────
-export function PortalMetaSection({ clientId }: { clientId: string }) {
+export function PortalMetaSection({ clientId, portalMetrics }: { clientId: string; portalMetrics?: string[] | null }) {
   const [preset, setPreset] = useState<Preset>("last_30d");
   const [data, setData] = useState<MetaData | null>(null);
   const [followerData, setFollowerData] = useState<FollowerData | null>(null);
@@ -164,6 +164,9 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+
+  // null = show all; array = show only listed keys
+  const show = (key: string) => !portalMetrics || portalMetrics.includes(key);
 
   const load = useCallback(async (p: Preset) => {
     setLoading(true);
@@ -208,6 +211,12 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   }
 
   const totalLeads = daily.reduce((s, d) => s + d.leads, 0);
+
+  // Resolve followers combining followerData + main data
+  const fl = (followerData?.followers ?? 0) > 0 ? followerData!.followers! : (data?.followers ?? null);
+  const flc = (followerData?.followers ?? 0) > 0 ? followerData!.cost_per_follower : data?.cost_per_follower ?? null;
+  const pv = (followerData?.profile_visits ?? 0) > 0 ? followerData!.profile_visits! : (data?.profile_visits ?? 0);
+  const pvc = (followerData?.profile_visits ?? 0) > 0 ? followerData!.cost_per_profile_visit : data?.cost_per_profile_visit ?? null;
 
   return (
     <div>
@@ -266,7 +275,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
           {/* Leads chart */}
-          {daily.length > 0 && (
+          {show("leads_chart") && daily.length > 0 && (
             <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
                 <div>
@@ -280,7 +289,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
           )}
 
           {/* ── Leads (principal) ─────────────────────────── */}
-          {(data.leads != null || data.cost_per_lead != null) && (
+          {show("leads") && (data.leads != null || data.cost_per_lead != null) && (
             <CategoryBlock
               label="Leads"
               count={data.leads ?? 0}
@@ -290,8 +299,8 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             />
           )}
 
-          {/* ── Conversa por mensagem (só se existir) ─────── */}
-          {data.conversations != null && data.conversations > 0 && (
+          {/* ── Conversa por mensagem ─────────────────────── */}
+          {show("conversations") && data.conversations != null && data.conversations > 0 && (
             <CategoryBlock
               label="Conversa por mensagem"
               count={data.conversations}
@@ -302,37 +311,37 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
           )}
 
           {/* ── Visitas ao perfil ─────────────────────────── */}
-          {(() => {
-            const pv = (followerData?.profile_visits ?? 0) > 0 ? followerData!.profile_visits! : (data.profile_visits ?? 0);
-            const pvc = (followerData?.profile_visits ?? 0) > 0 ? followerData!.cost_per_profile_visit : data.cost_per_profile_visit;
-            return pv > 0 ? (
-              <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />
-            ) : null;
-          })()}
+          {show("profile_visits") && pv > 0 && (
+            <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />
+          )}
 
           {/* ── Seguidores ────────────────────────────────── */}
-          {(() => {
-            const fl = (followerData?.followers ?? 0) > 0 ? followerData!.followers! : (data.followers ?? 0);
-            const flc = (followerData?.followers ?? 0) > 0 ? followerData!.cost_per_follower : data.cost_per_follower;
-            return fl > 0 ? (
-              <CategoryBlock label="Novos seguidores" count={fl} cost={flc} color={PURPLE} icon="👥" />
-            ) : null;
-          })()}
+          {show("followers") && fl != null && fl > 0 && (
+            <CategoryBlock label="Novos seguidores" count={fl} cost={flc} color={PURPLE} icon="👥" />
+          )}
 
           {/* ── Métricas gerais ───────────────────────────── */}
-          <div>
-            <p style={{ fontSize: "10px", color: MUTED, letterSpacing: "0.14em", textTransform: "uppercase", margin: "8px 0 10px", fontWeight: "600" }}>Métricas gerais</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px", marginBottom: "8px" }}>
-              <MetricCard label="Investimento" value={fmt(data.spend, "R$ ","",0)} accent />
-              <MetricCard label="ROAS" value={fmt(data.roas, "","x",2)} accent={data.roas != null && data.roas >= 2} />
-              <MetricCard label="Cliques" value={fmt(data.clicks)} />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "8px" }}>
-              <MetricCard label="CTR" value={fmt(data.ctr, "","%",2)} />
-              <MetricCard label="Impressões" value={fmt(data.impressions)} />
-              <MetricCard label="Alcance" value={fmt(data.reach)} />
-            </div>
-          </div>
+          {(() => {
+            const generalMetrics: { key: string; label: string; value: string; accent?: boolean }[] = [];
+            if (show("spend"))      generalMetrics.push({ key: "spend",      label: "Investimento", value: fmt(data.spend, "R$ ","",0),    accent: true });
+            if (show("roas"))       generalMetrics.push({ key: "roas",       label: "ROAS",          value: fmt(data.roas, "","x",2),       accent: data.roas != null && data.roas >= 2 });
+            if (show("followers"))  generalMetrics.push({ key: "followers",  label: "Seguidores",    value: fmt(fl, "","",0) });
+            if (show("clicks"))     generalMetrics.push({ key: "clicks",     label: "Cliques",       value: fmt(data.clicks) });
+            if (show("ctr"))        generalMetrics.push({ key: "ctr",        label: "CTR",           value: fmt(data.ctr, "","%",2) });
+            if (show("impressions"))generalMetrics.push({ key: "impressions",label: "Impressões",    value: fmt(data.impressions) });
+            if (show("reach"))      generalMetrics.push({ key: "reach",      label: "Alcance",       value: fmt(data.reach) });
+            if (generalMetrics.length === 0) return null;
+            return (
+              <div>
+                <p style={{ fontSize: "10px", color: MUTED, letterSpacing: "0.14em", textTransform: "uppercase", margin: "8px 0 10px", fontWeight: "600" }}>Métricas gerais</p>
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(generalMetrics.length, 3)}, 1fr)`, gap: "8px" }}>
+                  {generalMetrics.map((m) => (
+                    <MetricCard key={m.key} label={m.label} value={m.value} accent={m.accent} />
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
         </div>
       )}

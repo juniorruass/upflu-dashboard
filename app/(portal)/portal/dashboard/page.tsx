@@ -29,7 +29,7 @@ function paymentStatus(p: { due_date: string; paid_date: string | null }) {
 }
 
 type ClientData = {
-  client: { id: string; name: string; contact_email: string; segment: string; monthly_value: number; start_date: string; services: { service: string }[] };
+  client: { id: string; name: string; contact_email: string; segment: string; monthly_value: number; start_date: string; portal_metrics: string[] | null; services: { service: string }[] };
   proposals: { id: string; title: string; type: string; status: string; total_value: number; created_at: string; valid_until: string | null; autentique_short_link: string | null }[];
   payments: { id: string; amount: number; due_date: string; paid_date: string | null; notes: string | null }[];
 };

@@ -197,7 +197,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
         {client.meta_account_id && (
           <div className="p-section p-fade-2">
             <p className="p-label">Meta Ads — conta {client.meta_account_id}</p>
-            <PortalMetaSection clientId={client.id} />
+            <PortalMetaSection clientId={client.id} portalMetrics={client.portal_metrics ?? null} />
           </div>
         )}
 

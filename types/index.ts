@@ -21,6 +21,7 @@ export interface Client {
   meta_account_id: string | null;
   slug: string | null;
   portal_password: string | null;
+  portal_metrics: string[] | null;
   created_at: string;
   updated_at: string;
   services?: ClientService[];
