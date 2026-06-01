@@ -485,13 +485,35 @@ export default function DisparosPage() {
                 </div>
 
                 {/* QR Code para conectar */}
-                {zapiStatus === "disconnected" && qrCodeUrl && (
-                  <div style={{ marginTop: "14px", padding: "14px", background: "#fff", borderRadius: "10px", display: "inline-block" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={qrCodeUrl} alt="QR Code WhatsApp" style={{ width: "180px", height: "180px", display: "block" }} />
-                    <p style={{ fontSize: "11px", color: "#555", textAlign: "center", margin: "8px 0 0" }}>
-                      Escaneie com o WhatsApp
-                    </p>
+                {zapiStatus === "disconnected" && (
+                  <div style={{ marginTop: "14px" }}>
+                    {qrCodeUrl && (
+                      <div style={{ padding: "14px", background: "#fff", borderRadius: "10px", display: "inline-block", marginBottom: "10px" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={qrCodeUrl}
+                          alt="QR Code WhatsApp"
+                          style={{ width: "180px", height: "180px", display: "block" }}
+                          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                        />
+                        <p style={{ fontSize: "11px", color: "#555", textAlign: "center", margin: "8px 0 0" }}>
+                          Escaneie com o WhatsApp
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <a
+                        href="https://app.z-api.io"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "12px", color: ACCENT, textDecoration: "none", border: `1px solid rgba(0,207,255,0.3)`, borderRadius: "6px", padding: "7px 12px" }}
+                      >
+                        Abrir painel Z-API →
+                      </a>
+                      <p style={{ fontSize: "11px", color: "#555", margin: "6px 0 0" }}>
+                        No painel: clique na instância → Conectar → escaneie com WhatsApp
+                      </p>
+                    </div>
                   </div>
                 )}
 

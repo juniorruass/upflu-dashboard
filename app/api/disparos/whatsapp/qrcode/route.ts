@@ -12,23 +12,36 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Z-API retorna JSON com campo base64, não imagem direta
     const res = await fetch(
-      `${ZAPI_BASE}/${instanceId}/token/${token}/qr-code/image`,
+      `${ZAPI_BASE}/${instanceId}/token/${token}/qr-code`,
       { signal: AbortSignal.timeout(10000) }
     );
 
-    if (!res.ok) {
-      return new NextResponse("QR Code indisponível", { status: 502 });
+    const data = await res.json();
+
+    // Extrai base64 — pode vir com ou sem prefixo data:image
+    const raw: string = data.base64 || data.qrCode || data.value || "";
+
+    if (!raw) {
+      return NextResponse.json({ error: "QR Code não disponível", raw: data }, { status: 404 });
     }
 
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/png";
+    let b64 = raw;
+    let mime = "image/png";
 
+    if (raw.startsWith("data:")) {
+      const match = raw.match(/^data:(.*?);base64,(.*)$/);
+      if (match) { mime = match[1]; b64 = match[2]; }
+    }
+
+    const buffer = Buffer.from(b64, "base64");
     return new NextResponse(buffer, {
       status: 200,
-      headers: { "Content-Type": contentType, "Cache-Control": "no-store" },
+      headers: { "Content-Type": mime, "Cache-Control": "no-store" },
     });
+
   } catch (e) {
-    return new NextResponse(String(e), { status: 500 });
+    return NextResponse.json({ error: String(e) }, { status: 500 });
   }
 }
