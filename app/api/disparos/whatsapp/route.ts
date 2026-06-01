@@ -68,17 +68,34 @@ export async function POST(req: NextRequest) {
   const {
     prospectIds, mensagem, template,
     instanceId: bodyInstance, token: bodyToken, clientToken: bodyClientToken,
+    config,
   } = await req.json();
 
   const instanceId  = bodyInstance    || process.env.ZAPI_INSTANCE_ID;
   const token       = bodyToken       || process.env.ZAPI_TOKEN;
   const clientToken = bodyClientToken || process.env.ZAPI_CLIENT_TOKEN || "";
 
+  // Configurações anti-ban
+  const minDelay     = Number(config?.minDelay     ?? 30);
+  const maxDelay     = Number(config?.maxDelay     ?? 90);
+  const maxSessao    = Number(config?.maxSessao    ?? 30);
+  const startHour    = Number(config?.startHour    ?? 8);
+  const endHour      = Number(config?.endHour      ?? 18);
+
   if (!instanceId || !token) {
     return NextResponse.json({ error: "Instance ID e Token são obrigatórios." }, { status: 400 });
   }
   if (!prospectIds?.length) {
     return NextResponse.json({ error: "Nenhum prospect selecionado." }, { status: 400 });
+  }
+
+  // Verificar horário permitido (fuso Brasil -3h)
+  const agora = new Date();
+  const horaBR = (agora.getUTCHours() - 3 + 24) % 24;
+  if (horaBR < startHour || horaBR >= endHour) {
+    return NextResponse.json({
+      error: `Fora do horário configurado (${startHour}h–${endHour}h). Agora são ${horaBR}h (horário de Brasília).`
+    }, { status: 400 });
   }
 
   const supabase = createAdminClient();
@@ -89,19 +106,26 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const comTelefone = (prospects || []).filter(
-    (p) => p.telefone && telefoneValido(p.telefone)
-  );
+  const comTelefone = (prospects || [])
+    .filter((p) => p.telefone && telefoneValido(p.telefone))
+    .slice(0, maxSessao); // Limite por sessão
 
   const results: { id: string; nome: string; telefone: string; ok: boolean; erro?: string }[] = [];
   const logs: Record<string, unknown>[] = [];
 
-  for (const p of comTelefone) {
+  for (let i = 0; i < comTelefone.length; i++) {
+    const p = comTelefone[i];
     const phone = normalizarTelefone(p.telefone);
     const texto = mensagem
       .replace(/\{nome\}/g, p.nome)
       .replace(/\{mensagem\}/g, p.mensagem || "")
       .replace(/\{cidade\}/g, p.cidade || "");
+
+    // Delay aleatório entre mensagens (exceto na primeira)
+    if (i > 0) {
+      const delayMs = (Math.random() * (maxDelay - minDelay) + minDelay) * 1000;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
 
     try {
       await zapiSend(instanceId, token, clientToken, phone, texto);
@@ -112,8 +136,6 @@ export async function POST(req: NextRequest) {
       results.push({ id: p.id, nome: p.nome, telefone: phone, ok: false, erro: msg });
       logs.push({ prospect_id: p.id, nome: p.nome, telefone: phone, template, status: "falhou" });
     }
-
-    await new Promise((r) => setTimeout(r, 3000));
   }
 
   if (logs.length > 0) {
@@ -121,5 +143,10 @@ export async function POST(req: NextRequest) {
   }
 
   const sent = results.filter((r) => r.ok).length;
-  return NextResponse.json({ sent, failed: results.length - sent, total: comTelefone.length, results });
+  return NextResponse.json({
+    sent, failed: results.length - sent,
+    total: comTelefone.length,
+    limitado: prospects!.length > maxSessao,
+    results,
+  });
 }

@@ -86,10 +86,18 @@ export default function DisparosPage() {
   const [waTemplateKey, setWaTemplateKey]   = useState("prospeccao");
   const [waCorpo, setWaCorpo]               = useState(WA_TEMPLATES.prospeccao.corpo);
   const [waProspects, setWaProspects]       = useState<Prospect[]>([]);
+  const [waContatados, setWaContatados]     = useState<Set<string>>(new Set());
   const [loadingWa, setLoadingWa]           = useState(false);
   const [waSelecionados, setWaSelecionados] = useState<Set<string>>(new Set());
   const [enviandoWa, setEnviandoWa]         = useState(false);
-  const [resultadoWa, setResultadoWa]       = useState<{ sent: number; failed: number } | null>(null);
+  const [resultadoWa, setResultadoWa]       = useState<{ sent: number; failed: number; limitado?: boolean } | null>(null);
+  // Config anti-ban
+  const [minDelay, setMinDelay]   = useState(30);
+  const [maxDelay, setMaxDelay]   = useState(90);
+  const [maxSessao, setMaxSessao] = useState(30);
+  const [startHour, setStartHour] = useState(8);
+  const [endHour, setEndHour]     = useState(18);
+  const [showConfig, setShowConfig] = useState(false);
   const [zapiStatus, setZapiStatus]         = useState<"unknown" | "connected" | "disconnected">("unknown");
   const [zapiRawValue, setZapiRawValue]     = useState("");
   const [zapiRawDebug, setZapiRawDebug]     = useState("");
@@ -124,10 +132,15 @@ export default function DisparosPage() {
 
   const fetchWaProspects = useCallback(async () => {
     setLoadingWa(true);
-    const res = await fetch("/api/crm/prospects");
-    const data = await res.json();
-    const comTel = (data.prospects || []).filter((p: Prospect) => p.telefone);
+    const [prosRes, histRes] = await Promise.all([
+      fetch("/api/crm/prospects"),
+      fetch("/api/disparos/whatsapp/historico"),
+    ]);
+    const prosData = await prosRes.json();
+    const histData = await histRes.json();
+    const comTel   = (prosData.prospects || []).filter((p: Prospect) => p.telefone);
     setWaProspects(comTel);
+    setWaContatados(new Set<string>(histData.contatados || []));
     setWaSelecionados(new Set());
     setLoadingWa(false);
   }, []);
@@ -180,9 +193,9 @@ export default function DisparosPage() {
 
   function toggleWaTodos() {
     setWaSelecionados(
-      waSelecionados.size === waProspects.length
+      waSelecionados.size === waProspectsFiltrados.length
         ? new Set()
-        : new Set(waProspects.map((p) => p.id))
+        : new Set(waProspectsFiltrados.map((p) => p.id))
     );
   }
 
@@ -201,6 +214,7 @@ export default function DisparosPage() {
           instanceId: waInstanceId.trim(),
           token: waToken.trim(),
           clientToken: waClientToken.trim(),
+          config: { minDelay, maxDelay, maxSessao, startHour, endHour },
         }),
       });
       const data = await res.json();
@@ -256,7 +270,11 @@ export default function DisparosPage() {
   }
 
   const todosSel   = selecionados.size > 0 && selecionados.size === prospects.length;
-  const watodosSel = waSelecionados.size > 0 && waSelecionados.size === waProspects.length;
+  // Para prospecção inicial, filtra somente quem nunca foi contatado via WA
+  const waProspectsFiltrados = waTemplateKey === "prospeccao"
+    ? waProspects.filter((p) => !waContatados.has(p.id))
+    : waProspects;
+  const watodosSel = waSelecionados.size > 0 && waSelecionados.size === waProspectsFiltrados.length;
 
   return (
     <>
@@ -543,6 +561,59 @@ export default function DisparosPage() {
                 </p>
               </div>
 
+              {/* Config anti-ban */}
+              <div className="panel">
+                <button
+                  onClick={() => setShowConfig(!showConfig)}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: 0 }}
+                >
+                  <p className="panel-label" style={{ margin: 0 }}>⚙ Configurações de disparo</p>
+                  <span style={{ fontSize: "11px", color: "#555" }}>{showConfig ? "▲" : "▼"}</span>
+                </button>
+
+                {showConfig && (
+                  <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div>
+                      <p style={{ fontSize: "11px", color: "#555", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Intervalo entre mensagens</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input type="number" min={10} max={300} value={minDelay} onChange={(e) => setMinDelay(Number(e.target.value))} className="disp-input" style={{ width: "70px", textAlign: "center" }} />
+                        <span style={{ fontSize: "12px", color: "#555" }}>a</span>
+                        <input type="number" min={10} max={600} value={maxDelay} onChange={(e) => setMaxDelay(Number(e.target.value))} className="disp-input" style={{ width: "70px", textAlign: "center" }} />
+                        <span style={{ fontSize: "12px", color: "#555" }}>segundos</span>
+                      </div>
+                      <p style={{ fontSize: "10px", color: "#444", margin: "4px 0 0" }}>Tempo aleatório entre cada envio — evita bloqueio</p>
+                    </div>
+
+                    <div>
+                      <p style={{ fontSize: "11px", color: "#555", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Máximo por sessão</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input type="number" min={1} max={100} value={maxSessao} onChange={(e) => setMaxSessao(Number(e.target.value))} className="disp-input" style={{ width: "70px", textAlign: "center" }} />
+                        <span style={{ fontSize: "12px", color: "#555" }}>mensagens por vez</span>
+                      </div>
+                      <p style={{ fontSize: "10px", color: "#444", margin: "4px 0 0" }}>Recomendado: máx 30 por sessão para conta nova</p>
+                    </div>
+
+                    <div>
+                      <p style={{ fontSize: "11px", color: "#555", margin: "0 0 6px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Horário permitido</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input type="number" min={0} max={23} value={startHour} onChange={(e) => setStartHour(Number(e.target.value))} className="disp-input" style={{ width: "60px", textAlign: "center" }} />
+                        <span style={{ fontSize: "12px", color: "#555" }}>h até</span>
+                        <input type="number" min={1} max={23} value={endHour} onChange={(e) => setEndHour(Number(e.target.value))} className="disp-input" style={{ width: "60px", textAlign: "center" }} />
+                        <span style={{ fontSize: "12px", color: "#555" }}>h (Brasília)</span>
+                      </div>
+                      <p style={{ fontSize: "10px", color: "#444", margin: "4px 0 0" }}>Bloqueia disparos fora desse horário automaticamente</p>
+                    </div>
+
+                    <div style={{ padding: "10px", background: "rgba(255,149,0,0.06)", border: "1px solid rgba(255,149,0,0.15)", borderRadius: "6px" }}>
+                      <p style={{ fontSize: "11px", color: "#FF9500", margin: 0, lineHeight: 1.5 }}>
+                        Conta nova: use 30–90s de intervalo, máx 20/sessão, máx 50/dia.<br/>
+                        Após 30 dias: pode aumentar gradualmente.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Templates */}
               <div className="panel">
                 <p className="panel-label">Template</p>
@@ -592,7 +663,7 @@ export default function DisparosPage() {
                   <RefreshCw size={12} />
                 </button>
                 <span style={{ marginLeft: "auto", fontSize: "12px", color: "#555" }}>
-                  {waProspects.length} com telefone · <span style={{ color: waSelecionados.size > 0 ? ACCENT : "#555" }}>{waSelecionados.size} selecionados</span>
+                  {waProspectsFiltrados.length}{waTemplateKey === "prospeccao" ? " não contatados" : " com telefone"} · <span style={{ color: waSelecionados.size > 0 ? ACCENT : "#555" }}>{waSelecionados.size} selecionados</span>
                 </span>
               </div>
 
@@ -600,18 +671,20 @@ export default function DisparosPage() {
                 <div style={{ padding: "10px 16px", borderBottom: `1px solid ${BORDER}` }}>
                   <button onClick={toggleWaTodos} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", color: "#888", fontSize: "12px", padding: 0 }}>
                     {watodosSel ? <CheckSquare size={14} color={ACCENT} /> : <Square size={14} color="#555" />}
-                    {watodosSel ? "Desmarcar todos" : `Selecionar todos (${waProspects.length})`}
+                    {watodosSel ? "Desmarcar todos" : `Selecionar todos (${waProspectsFiltrados.length})`}
                   </button>
                 </div>
                 {loadingWa ? (
                   <div style={{ padding: "40px", textAlign: "center", color: "#555", fontSize: "13px" }}>Carregando...</div>
-                ) : waProspects.length === 0 ? (
-                  <div style={{ padding: "40px", textAlign: "center", color: "#555", fontSize: "13px" }}>Nenhum prospect com telefone encontrado.</div>
+                ) : waProspectsFiltrados.length === 0 ? (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#555", fontSize: "13px" }}>
+                    {waTemplateKey === "prospeccao" ? "Todos os prospects com telefone já foram contatados via WhatsApp." : "Nenhum prospect com telefone encontrado."}
+                  </div>
                 ) : (
                   <div style={{ maxHeight: "480px", overflowY: "auto" }}>
                     <table className="disp-table">
                       <tbody>
-                        {waProspects.map((p) => {
+                        {waProspectsFiltrados.map((p) => {
                           const sel = waSelecionados.has(p.id);
                           return (
                             <tr key={p.id} onClick={() => toggleWaProspect(p.id)}>
