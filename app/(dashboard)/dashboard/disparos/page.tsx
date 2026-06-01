@@ -146,9 +146,9 @@ export default function DisparosPage() {
         setQrCodeUrl("");
       } else {
         setZapiStatus("disconnected");
-        // Tenta buscar QR code para conectar
-        const qrUrl = `https://api.z-api.io/instances/${id}/token/${tok}/qr-code/image`;
-        setQrCodeUrl(qrUrl);
+        // Proxy interno para evitar erro de autenticação no browser
+        const params = new URLSearchParams({ instanceId: id, token: tok });
+        setQrCodeUrl(`/api/disparos/whatsapp/qrcode?${params}`);
       }
     } catch {
       setZapiStatus("disconnected");
