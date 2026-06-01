@@ -36,6 +36,8 @@ interface FollowerData {
   cost_per_follower: number | null;
   profile_visits: number | null;
   cost_per_profile_visit: number | null;
+  instagram_username?: string | null;
+  is_organic?: boolean;
 }
 
 interface DailyRow {
@@ -326,7 +328,13 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
 
           {/* ── Seguidores ────────────────────────────────── */}
           {show("followers") && fl != null && fl > 0 && (
-            <CategoryBlock label="Novos seguidores" count={fl} cost={flc} color={PURPLE} icon="👥" />
+            <CategoryBlock
+              label={followerData?.is_organic ? "Seguidores no Instagram" : "Novos seguidores"}
+              count={fl}
+              cost={followerData?.is_organic ? null : flc}
+              color={PURPLE}
+              icon="👥"
+            />
           )}
 
           {/* ── Métricas gerais ───────────────────────────── */}
@@ -334,7 +342,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             const generalMetrics: { key: string; label: string; value: string; accent?: boolean }[] = [];
             if (show("spend"))      generalMetrics.push({ key: "spend",      label: "Investimento", value: fmt(data.spend, "R$ ","",0),    accent: true });
             if (show("roas"))       generalMetrics.push({ key: "roas",       label: "ROAS",          value: fmt(data.roas, "","x",2),       accent: data.roas != null && data.roas >= 2 });
-            if (show("followers"))  generalMetrics.push({ key: "followers",  label: "Seguidores",    value: fmt(fl, "","",0) });
+            if (show("followers"))  generalMetrics.push({ key: "followers",  label: followerData?.is_organic ? "Seguidores" : "Seguidores", value: fmt(fl, "","",0) });
             if (show("clicks"))     generalMetrics.push({ key: "clicks",     label: "Cliques",       value: fmt(data.clicks) });
             if (show("ctr"))        generalMetrics.push({ key: "ctr",        label: "CTR",           value: fmt(data.ctr, "","%",2) });
             if (show("impressions"))generalMetrics.push({ key: "impressions",label: "Impressões",    value: fmt(data.impressions) });

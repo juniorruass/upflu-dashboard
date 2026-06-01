@@ -123,12 +123,53 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       ? profileCampSpend / totalProfileVisits
       : null;
 
+    // 4. Se campanhas não retornaram seguidores via actions, busca total de seguidores
+    //    do Instagram vinculado à conta de anúncios (seguidores orgânicos + pagos totais)
+    let igFollowers: number | null = null;
+    let igUsername: string | null = null;
+
+    if (!totalFollowers) {
+      try {
+        // Tenta via instagram_accounts do ad account
+        const igQP = new URLSearchParams({
+          fields: "instagram_accounts{id,username,followers_count}",
+          access_token: token,
+        });
+        const igRes = await fetch(`${META_BASE}/act_${client.meta_account_id}?${igQP}`, { signal: AbortSignal.timeout(8000) });
+        const igJson = await igRes.json();
+        const igAcc = igJson.instagram_accounts?.data?.[0];
+        if (igAcc?.followers_count) {
+          igFollowers = igAcc.followers_count;
+          igUsername = igAcc.username ?? null;
+        }
+      } catch { /* ignora */ }
+
+      // Fallback: busca via connected_instagram_account da página principal
+      if (!igFollowers) {
+        try {
+          const pageQP = new URLSearchParams({
+            fields: "connected_instagram_account{id,username,followers_count}",
+            access_token: token,
+          });
+          const pageRes = await fetch(`${META_BASE}/act_${client.meta_account_id}?${pageQP}`, { signal: AbortSignal.timeout(8000) });
+          const pageJson = await pageRes.json();
+          const igAcc = pageJson.connected_instagram_account;
+          if (igAcc?.followers_count) {
+            igFollowers = igAcc.followers_count;
+            igUsername = igAcc.username ?? null;
+          }
+        } catch { /* ignora */ }
+      }
+    }
+
     return NextResponse.json({
-      followers: totalFollowers || null,
-      cost_per_follower: costPerFollower,
+      followers: totalFollowers || igFollowers || null,
+      cost_per_follower: totalFollowers ? costPerFollower : null,
       profile_visits: totalProfileVisits || null,
       cost_per_profile_visit: costPerProfileVisit,
       profile_camp_spend: profileCampSpend || null,
+      instagram_username: igUsername,
+      is_organic: !totalFollowers && !!igFollowers,
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
