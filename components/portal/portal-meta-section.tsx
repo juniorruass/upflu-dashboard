@@ -156,7 +156,7 @@ function CategoryBlock({ label, count, cost, color, icon }: { label: string; cou
 }
 
 // ── Main component ─────────────────────────────────────────
-export function PortalMetaSection({ clientId, portalMetrics }: { clientId: string; portalMetrics?: string[] | null }) {
+export function PortalMetaSection({ clientId }: { clientId: string }) {
   const [preset, setPreset] = useState<Preset>("last_30d");
   const [data, setData] = useState<MetaData | null>(null);
   const [followerData, setFollowerData] = useState<FollowerData | null>(null);
@@ -164,9 +164,18 @@ export function PortalMetaSection({ clientId, portalMetrics }: { clientId: strin
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [portalMetrics, setPortalMetrics] = useState<string[] | null | undefined>(undefined);
 
-  // null = show all; array = show only listed keys
-  const show = (key: string) => !portalMetrics || portalMetrics.includes(key);
+  // Busca config de métricas visíveis direto da API (sempre fresco)
+  useEffect(() => {
+    fetch(`/api/portal/config/${clientId}`)
+      .then((r) => r.json())
+      .then((d) => setPortalMetrics(d.portal_metrics ?? null))
+      .catch(() => setPortalMetrics(null));
+  }, [clientId]);
+
+  // undefined = ainda carregando config; null = mostrar tudo; array = filtrado
+  const show = (key: string) => portalMetrics === undefined || !portalMetrics || portalMetrics.includes(key);
 
   const load = useCallback(async (p: Preset) => {
     setLoading(true);
