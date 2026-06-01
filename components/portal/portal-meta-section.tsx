@@ -174,8 +174,8 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
       .catch(() => setPortalMetrics(null));
   }, [clientId]);
 
-  // undefined = ainda carregando config; null = mostrar tudo; array = filtrado
-  const show = (key: string) => portalMetrics === undefined || !portalMetrics || portalMetrics.includes(key);
+  // undefined = carregando; null = mostrar tudo; array = mostrar só os listados
+  const show = (key: string) => portalMetrics === undefined || portalMetrics === null || portalMetrics.includes(key);
 
   const load = useCallback(async (p: Preset) => {
     setLoading(true);

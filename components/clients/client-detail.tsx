@@ -142,20 +142,18 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
     else setDeleting(false);
   }
 
+  const ALL_PORTAL_KEYS = PORTAL_METRIC_OPTIONS.map((m) => m.key);
+
+  // Nunca usa null — sempre salva array. "Mostrar tudo" = array com todos os 11 itens.
   async function togglePortalMetric(key: string) {
-    const current = client.portal_metrics ?? null;
-    let next: string[] | null;
-    if (current === null) {
-      // null = todas visíveis → desmarcar uma = criar array sem ela
-      next = PORTAL_METRIC_OPTIONS.map((m) => m.key).filter((k) => k !== key);
-    } else if (current.includes(key)) {
-      const without = current.filter((k) => k !== key);
-      // se ficou com todas → volta para null
-      next = without.length === PORTAL_METRIC_OPTIONS.length ? null : without;
+    const current = client.portal_metrics ?? ALL_PORTAL_KEYS;
+    let next: string[];
+    if (current.includes(key)) {
+      next = current.filter((k) => k !== key);
     } else {
-      const withKey = [...current, key];
-      next = withKey.length === PORTAL_METRIC_OPTIONS.length ? null : withKey;
+      next = [...current, key];
     }
+    if (next.length === 0) return; // não deixa esvaziar tudo
     setSavingPortalMetrics(true);
     const res = await fetch(`/api/clients/${client.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -163,7 +161,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
     });
     const json = await res.json();
     if (res.ok) {
-      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics ?? next }));
+      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics as string[] ?? next }));
     } else {
       alert("Erro ao salvar: " + (json.error ?? res.status));
     }
@@ -174,11 +172,11 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
     setSavingPortalMetrics(true);
     const res = await fetch(`/api/clients/${client.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ portal_metrics: null }),
+      body: JSON.stringify({ portal_metrics: ALL_PORTAL_KEYS }),
     });
     const json = await res.json();
     if (res.ok) {
-      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics ?? null }));
+      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics as string[] ?? ALL_PORTAL_KEYS }));
     } else {
       alert("Erro ao salvar: " + (json.error ?? res.status));
     }
@@ -457,12 +455,12 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
             </div>
             <p style={{ fontSize: "12px", color: "#777068", margin: "0 0 16px" }}>
               Escolha o que o cliente vê no portal de anúncios.{" "}
-              {client.portal_metrics !== null && (
+              {client.portal_metrics !== null && client.portal_metrics.length < PORTAL_METRIC_OPTIONS.length && (
                 <button onClick={resetPortalMetrics} style={{ background: "none", border: "none", color: GOLD, fontSize: "12px", cursor: "pointer", padding: 0, fontFamily: "var(--font-outfit),sans-serif", textDecoration: "underline" }}>
                   Exibir tudo
                 </button>
               )}
-              {client.portal_metrics === null && <span style={{ color: GOLD }}>Exibindo tudo (padrão)</span>}
+              {(client.portal_metrics === null || client.portal_metrics.length === PORTAL_METRIC_OPTIONS.length) && <span style={{ color: GOLD }}>Exibindo tudo (padrão)</span>}
             </p>
             {(() => {
               const groups = Array.from(new Set(PORTAL_METRIC_OPTIONS.map((m) => m.group)));
@@ -471,7 +469,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
                   <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{group}</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "7px" }}>
                     {PORTAL_METRIC_OPTIONS.filter((m) => m.group === group).map((m) => {
-                      const active = client.portal_metrics === null || client.portal_metrics.includes(m.key);
+                      const active = !client.portal_metrics || client.portal_metrics.includes(m.key);
                       return (
                         <button
                           key={m.key}
