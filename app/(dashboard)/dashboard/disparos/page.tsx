@@ -90,6 +90,8 @@ export default function DisparosPage() {
   const [enviandoWa, setEnviandoWa]         = useState(false);
   const [resultadoWa, setResultadoWa]       = useState<{ sent: number; failed: number } | null>(null);
   const [zapiStatus, setZapiStatus]         = useState<"unknown" | "connected" | "disconnected">("unknown");
+  const [zapiRawValue, setZapiRawValue]     = useState("");
+  const [qrCodeUrl, setQrCodeUrl]           = useState("");
 
   // History
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -133,12 +135,21 @@ export default function DisparosPage() {
     const tok = token      || waToken;
     if (!id || !tok) return;
     setZapiStatus("unknown");
+    setQrCodeUrl("");
     try {
       const params = new URLSearchParams({ instanceId: id, token: tok });
       const res  = await fetch(`/api/disparos/whatsapp?${params}`);
       const data = await res.json();
-      const connected = data.connected === true || data.status === "connected" || data.value === "CONNECTED";
-      setZapiStatus(connected ? "connected" : "disconnected");
+      setZapiRawValue(data.rawValue || "");
+      if (data.connected) {
+        setZapiStatus("connected");
+        setQrCodeUrl("");
+      } else {
+        setZapiStatus("disconnected");
+        // Tenta buscar QR code para conectar
+        const qrUrl = `https://api.z-api.io/instances/${id}/token/${tok}/qr-code/image`;
+        setQrCodeUrl(qrUrl);
+      }
     } catch {
       setZapiStatus("disconnected");
     }
@@ -450,7 +461,7 @@ export default function DisparosPage() {
                   onChange={(e) => { setWaToken(e.target.value); setZapiStatus("unknown"); }}
                   style={{ marginBottom: "12px", fontFamily: "monospace", fontSize: "12px" }}
                 />
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                   <button
                     onClick={() => checkZapiStatus()}
                     disabled={!waInstanceId || !waToken}
@@ -458,11 +469,33 @@ export default function DisparosPage() {
                   >
                     <RefreshCw size={12} /> Verificar conexão
                   </button>
-                  {zapiStatus === "connected" && <span style={{ fontSize: "12px", color: "#22c55e", display: "flex", alignItems: "center", gap: "4px" }}><Wifi size={12} /> Conectado</span>}
-                  {zapiStatus === "disconnected" && <span style={{ fontSize: "12px", color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}><WifiOff size={12} /> Desconectado</span>}
-                  {zapiStatus === "unknown" && waInstanceId && waToken && <span style={{ fontSize: "12px", color: "#555" }}>Clique para verificar</span>}
+                  {zapiStatus === "connected" && (
+                    <span style={{ fontSize: "12px", color: "#22c55e", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Wifi size={12} /> Conectado
+                    </span>
+                  )}
+                  {zapiStatus === "disconnected" && (
+                    <span style={{ fontSize: "12px", color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <WifiOff size={12} /> {zapiRawValue || "Desconectado"}
+                    </span>
+                  )}
+                  {zapiStatus === "unknown" && waInstanceId && waToken && (
+                    <span style={{ fontSize: "11px", color: "#555" }}>Clique para verificar</span>
+                  )}
                 </div>
-                <p style={{ fontSize: "11px", color: "#444", margin: "8px 0 0" }}>
+
+                {/* QR Code para conectar */}
+                {zapiStatus === "disconnected" && qrCodeUrl && (
+                  <div style={{ marginTop: "14px", padding: "14px", background: "#fff", borderRadius: "10px", display: "inline-block" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qrCodeUrl} alt="QR Code WhatsApp" style={{ width: "180px", height: "180px", display: "block" }} />
+                    <p style={{ fontSize: "11px", color: "#555", textAlign: "center", margin: "8px 0 0" }}>
+                      Escaneie com o WhatsApp
+                    </p>
+                  </div>
+                )}
+
+                <p style={{ fontSize: "11px", color: "#444", margin: "10px 0 0" }}>
                   Troque a instância a qualquer momento para rotacionar os disparos.
                 </p>
               </div>

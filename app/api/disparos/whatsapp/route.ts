@@ -40,9 +40,13 @@ export async function GET(req: NextRequest) {
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json();
-    return NextResponse.json(data);
+    // Normaliza o status para o frontend
+    const val = String(data.value || data.status || data.state || "").toUpperCase();
+    const connected = val === "CONNECTED" || data.connected === true;
+    const needsQr   = val === "QRCODE" || val === "DISCONNECTED" || val === "" || !connected;
+    return NextResponse.json({ connected, needsQr, rawValue: val, raw: data });
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 502 });
+    return NextResponse.json({ connected: false, needsQr: true, rawValue: "ERRO", error: String(e) }, { status: 502 });
   }
 }
 
