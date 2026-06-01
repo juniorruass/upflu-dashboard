@@ -16,10 +16,16 @@ function telefoneValido(tel: string): boolean {
   return n.length >= 12 && n.length <= 14;
 }
 
-async function zapiSend(instanceId: string, token: string, phone: string, message: string) {
+function zapiHeaders(clientToken: string): Record<string, string> {
+  const h: Record<string, string> = { "Content-Type": "application/json" };
+  if (clientToken) h["Client-Token"] = clientToken;
+  return h;
+}
+
+async function zapiSend(instanceId: string, token: string, clientToken: string, phone: string, message: string) {
   const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/send-text`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: zapiHeaders(clientToken),
     body: JSON.stringify({ phone, message }),
     signal: AbortSignal.timeout(10000),
   });
@@ -30,17 +36,19 @@ async function zapiSend(instanceId: string, token: string, phone: string, messag
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const instanceId = searchParams.get("instanceId") || process.env.ZAPI_INSTANCE_ID;
-  const token      = searchParams.get("token")      || process.env.ZAPI_TOKEN;
+  const instanceId  = searchParams.get("instanceId")  || process.env.ZAPI_INSTANCE_ID;
+  const token       = searchParams.get("token")        || process.env.ZAPI_TOKEN;
+  const clientToken = searchParams.get("clientToken")  || process.env.ZAPI_CLIENT_TOKEN || "";
+
   if (!instanceId || !token) {
     return NextResponse.json({ error: "Instance ID e Token são obrigatórios." }, { status: 400 });
   }
   try {
     const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/status`, {
+      headers: zapiHeaders(clientToken),
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json();
-    // Tenta todos os formatos possíveis do Z-API
     const val = String(
       data.value || data.status || data.state || data.session || ""
     ).toUpperCase();
@@ -50,18 +58,21 @@ export async function GET(req: NextRequest) {
       val === "CONNECTED" ||
       val === "OPEN" ||
       val === "AUTHENTICATED";
-    const needsQr = !connected;
-    return NextResponse.json({ connected, needsQr, rawValue: val, raw: data });
+    return NextResponse.json({ connected, needsQr: !connected, rawValue: val, raw: data });
   } catch (e) {
     return NextResponse.json({ connected: false, needsQr: true, rawValue: "ERRO", error: String(e) }, { status: 502 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  const { prospectIds, mensagem, template, instanceId: bodyInstance, token: bodyToken } = await req.json();
+  const {
+    prospectIds, mensagem, template,
+    instanceId: bodyInstance, token: bodyToken, clientToken: bodyClientToken,
+  } = await req.json();
 
-  const instanceId = bodyInstance || process.env.ZAPI_INSTANCE_ID;
-  const token      = bodyToken    || process.env.ZAPI_TOKEN;
+  const instanceId  = bodyInstance    || process.env.ZAPI_INSTANCE_ID;
+  const token       = bodyToken       || process.env.ZAPI_TOKEN;
+  const clientToken = bodyClientToken || process.env.ZAPI_CLIENT_TOKEN || "";
 
   if (!instanceId || !token) {
     return NextResponse.json({ error: "Instance ID e Token são obrigatórios." }, { status: 400 });
@@ -93,7 +104,7 @@ export async function POST(req: NextRequest) {
       .replace(/\{cidade\}/g, p.cidade || "");
 
     try {
-      await zapiSend(instanceId, token, phone, texto);
+      await zapiSend(instanceId, token, clientToken, phone, texto);
       results.push({ id: p.id, nome: p.nome, telefone: phone, ok: true });
       logs.push({ prospect_id: p.id, nome: p.nome, telefone: phone, template, status: "enviado" });
     } catch (err) {

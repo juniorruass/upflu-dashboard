@@ -82,6 +82,7 @@ export default function DisparosPage() {
   // WhatsApp
   const [waInstanceId, setWaInstanceId]     = useState("");
   const [waToken, setWaToken]               = useState("");
+  const [waClientToken, setWaClientToken]   = useState("");
   const [waTemplateKey, setWaTemplateKey]   = useState("prospeccao");
   const [waCorpo, setWaCorpo]               = useState(WA_TEMPLATES.prospeccao.corpo);
   const [waProspects, setWaProspects]       = useState<Prospect[]>([]);
@@ -138,7 +139,7 @@ export default function DisparosPage() {
     setZapiStatus("unknown");
     setQrCodeUrl("");
     try {
-      const params = new URLSearchParams({ instanceId: id, token: tok });
+      const params = new URLSearchParams({ instanceId: id, token: tok, clientToken: waClientToken });
       const res  = await fetch(`/api/disparos/whatsapp?${params}`);
       const data = await res.json();
       setZapiRawValue(data.rawValue || "");
@@ -149,7 +150,7 @@ export default function DisparosPage() {
         setZapiRawDebug("");
       } else {
         setZapiStatus("disconnected");
-        const params = new URLSearchParams({ instanceId: id, token: tok });
+        const params = new URLSearchParams({ instanceId: id, token: tok, clientToken: waClientToken });
         setQrCodeUrl(`/api/disparos/whatsapp/qrcode?${params}`);
       }
     } catch {
@@ -199,6 +200,7 @@ export default function DisparosPage() {
           template: WA_TEMPLATES[waTemplateKey].label,
           instanceId: waInstanceId.trim(),
           token: waToken.trim(),
+          clientToken: waClientToken.trim(),
         }),
       });
       const data = await res.json();
@@ -461,6 +463,13 @@ export default function DisparosPage() {
                   placeholder="Token"
                   value={waToken}
                   onChange={(e) => { setWaToken(e.target.value); setZapiStatus("unknown"); }}
+                  style={{ marginBottom: "8px", fontFamily: "monospace", fontSize: "12px" }}
+                />
+                <input
+                  className="disp-input"
+                  placeholder="Client-Token (Segurança → Security Token)"
+                  value={waClientToken}
+                  onChange={(e) => { setWaClientToken(e.target.value); setZapiStatus("unknown"); }}
                   style={{ marginBottom: "12px", fontFamily: "monospace", fontSize: "12px" }}
                 />
                 <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
