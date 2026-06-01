@@ -88,7 +88,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("meta_account_id")
+    .select("meta_account_id, instagram_followers")
     .eq("id", clientId)
     .single();
 
@@ -185,14 +185,19 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       }
     }
 
+    // Último fallback: valor manual cadastrado no ADM
+    const manualFollowers = (client as { instagram_followers?: number | null }).instagram_followers ?? null;
+    const finalFollowers = totalFollowers || igFollowers || manualFollowers || null;
+    const isOrganic = !totalFollowers && !!(igFollowers || manualFollowers);
+
     return NextResponse.json({
-      followers: totalFollowers || igFollowers || null,
+      followers: finalFollowers,
       cost_per_follower: totalFollowers ? costPerFollower : null,
       profile_visits: totalProfileVisits || null,
       cost_per_profile_visit: costPerProfileVisit,
       profile_camp_spend: profileCampSpend || null,
       instagram_username: igUsername,
-      is_organic: !totalFollowers && !!igFollowers,
+      is_organic: isOrganic,
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

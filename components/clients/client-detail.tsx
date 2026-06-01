@@ -493,6 +493,28 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
                 </div>
               ));
             })()}
+
+            {/* Seguidores manuais */}
+            <div style={{ marginTop: "18px", paddingTop: "16px", borderTop: `1px solid ${BORDER}` }}>
+              <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>Seguidores no Instagram</p>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  type="number"
+                  placeholder="Ex: 1250"
+                  defaultValue={client.instagram_followers ?? ""}
+                  onBlur={async (e) => {
+                    const val = e.target.value === "" ? null : parseInt(e.target.value);
+                    const res = await fetch(`/api/clients/${client.id}`, {
+                      method: "PATCH", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ instagram_followers: val }),
+                    });
+                    if (res.ok) setClient((prev) => ({ ...prev, instagram_followers: val }));
+                  }}
+                  style={{ width: "140px", background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "8px 10px", fontSize: "13px", color: "#F0EDE8", outline: "none", fontFamily: "var(--font-outfit),sans-serif" }}
+                />
+                <span style={{ fontSize: "12px", color: "#777068" }}>Salva ao sair do campo. Aparece no portal quando a Meta não retornar dados de seguidores.</span>
+              </div>
+            </div>
           </>)}
         </div>
       )}
