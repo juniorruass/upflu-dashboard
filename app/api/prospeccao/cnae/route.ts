@@ -5,6 +5,11 @@ export const maxDuration = 30;
 
 const BRASILIO_URL = "https://brasil.io/api/dataset/socios-brasil/empresas/data/";
 
+// Remove BOM e espaços que o PowerShell pode adicionar nas env vars
+function limparToken(t: string | undefined): string {
+  return (t || "").replace(/^﻿/, "").trim();
+}
+
 function normalizarMunicipio(nome: string): string {
   return nome
     .toUpperCase()
@@ -29,7 +34,7 @@ export async function POST(req: NextRequest) {
   try {
     const { cnae, municipio, uf, tipoProspect } = await req.json();
 
-    const token = process.env.BRASILIO_TOKEN;
+    const token = limparToken(process.env.BRASILIO_TOKEN);
     if (!token) {
       return NextResponse.json(
         { error: "BRASILIO_TOKEN não configurada. Adicione nas variáveis de ambiente da Vercel." },
