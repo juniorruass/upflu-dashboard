@@ -28,27 +28,32 @@ async function zapiSend(instanceId: string, token: string, phone: string, messag
   return data;
 }
 
-export async function GET() {
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token      = process.env.ZAPI_TOKEN;
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const instanceId = searchParams.get("instanceId") || process.env.ZAPI_INSTANCE_ID;
+  const token      = searchParams.get("token")      || process.env.ZAPI_TOKEN;
   if (!instanceId || !token) {
-    return NextResponse.json({ error: "Z-API não configurada." }, { status: 500 });
+    return NextResponse.json({ error: "Instance ID e Token são obrigatórios." }, { status: 400 });
   }
-  const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/status`, {
-    signal: AbortSignal.timeout(8000),
-  });
-  const data = await res.json();
-  return NextResponse.json(data);
+  try {
+    const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/status`, {
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 502 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const { prospectIds, mensagem, template } = await req.json();
+  const { prospectIds, mensagem, template, instanceId: bodyInstance, token: bodyToken } = await req.json();
 
-  const instanceId = process.env.ZAPI_INSTANCE_ID;
-  const token      = process.env.ZAPI_TOKEN;
+  const instanceId = bodyInstance || process.env.ZAPI_INSTANCE_ID;
+  const token      = bodyToken    || process.env.ZAPI_TOKEN;
 
   if (!instanceId || !token) {
-    return NextResponse.json({ error: "Z-API não configurada." }, { status: 500 });
+    return NextResponse.json({ error: "Instance ID e Token são obrigatórios." }, { status: 400 });
   }
   if (!prospectIds?.length) {
     return NextResponse.json({ error: "Nenhum prospect selecionado." }, { status: 400 });

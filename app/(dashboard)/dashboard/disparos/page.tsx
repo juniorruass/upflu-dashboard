@@ -80,6 +80,8 @@ export default function DisparosPage() {
   const [resultado, setResultado] = useState<{ sent: number; failed: number } | null>(null);
 
   // WhatsApp
+  const [waInstanceId, setWaInstanceId]     = useState("");
+  const [waToken, setWaToken]               = useState("");
   const [waTemplateKey, setWaTemplateKey]   = useState("prospeccao");
   const [waCorpo, setWaCorpo]               = useState(WA_TEMPLATES.prospeccao.corpo);
   const [waProspects, setWaProspects]       = useState<Prospect[]>([]);
@@ -126,19 +128,25 @@ export default function DisparosPage() {
     setLoadingWa(false);
   }, []);
 
-  const checkZapiStatus = useCallback(async () => {
+  const checkZapiStatus = useCallback(async (instanceId?: string, token?: string) => {
+    const id  = instanceId || waInstanceId;
+    const tok = token      || waToken;
+    if (!id || !tok) return;
+    setZapiStatus("unknown");
     try {
-      const res = await fetch("/api/disparos/whatsapp");
+      const params = new URLSearchParams({ instanceId: id, token: tok });
+      const res  = await fetch(`/api/disparos/whatsapp?${params}`);
       const data = await res.json();
       const connected = data.connected === true || data.status === "connected" || data.value === "CONNECTED";
       setZapiStatus(connected ? "connected" : "disconnected");
     } catch {
       setZapiStatus("disconnected");
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waInstanceId, waToken]);
 
   useEffect(() => {
-    if (tab === "whatsapp") { fetchWaProspects(); checkZapiStatus(); }
+    if (tab === "whatsapp") { fetchWaProspects(); }
     if (tab === "historico") fetchLogs();
   }, [tab, fetchLogs, fetchWaProspects, checkZapiStatus]);
 
@@ -165,7 +173,7 @@ export default function DisparosPage() {
   }
 
   async function enviarWhatsApp() {
-    if (!waSelecionados.size) return;
+    if (!waSelecionados.size || !waInstanceId || !waToken) return;
     setEnviandoWa(true);
     setResultadoWa(null);
     try {
@@ -176,6 +184,8 @@ export default function DisparosPage() {
           prospectIds: Array.from(waSelecionados),
           mensagem: waCorpo,
           template: WA_TEMPLATES[waTemplateKey].label,
+          instanceId: waInstanceId.trim(),
+          token: waToken.trim(),
         }),
       });
       const data = await res.json();
@@ -423,16 +433,38 @@ export default function DisparosPage() {
           <div className="disp-grid">
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
-              {/* Status Z-API */}
-              <div className="panel" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                {zapiStatus === "connected"
-                  ? <><Wifi size={15} color="#22c55e" /><span style={{ fontSize: "13px", color: "#22c55e" }}>WhatsApp conectado</span></>
-                  : zapiStatus === "disconnected"
-                  ? <><WifiOff size={15} color="#ef4444" /><span style={{ fontSize: "13px", color: "#ef4444" }}>Desconectado — reconecte no Z-API</span></>
-                  : <><Loader2 size={15} color="#555" className="animate-spin" /><span style={{ fontSize: "13px", color: "#555" }}>Verificando conexão...</span></>}
-                <button onClick={checkZapiStatus} style={{ marginLeft: "auto", background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
-                  <RefreshCw size={13} />
-                </button>
+              {/* Credenciais da instância */}
+              <div className="panel">
+                <p className="panel-label">Instância Z-API</p>
+                <input
+                  className="disp-input"
+                  placeholder="Instance ID"
+                  value={waInstanceId}
+                  onChange={(e) => { setWaInstanceId(e.target.value); setZapiStatus("unknown"); }}
+                  style={{ marginBottom: "8px", fontFamily: "monospace", fontSize: "12px" }}
+                />
+                <input
+                  className="disp-input"
+                  placeholder="Token"
+                  value={waToken}
+                  onChange={(e) => { setWaToken(e.target.value); setZapiStatus("unknown"); }}
+                  style={{ marginBottom: "12px", fontFamily: "monospace", fontSize: "12px" }}
+                />
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <button
+                    onClick={() => checkZapiStatus()}
+                    disabled={!waInstanceId || !waToken}
+                    style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 12px", fontSize: "12px", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <RefreshCw size={12} /> Verificar conexão
+                  </button>
+                  {zapiStatus === "connected" && <span style={{ fontSize: "12px", color: "#22c55e", display: "flex", alignItems: "center", gap: "4px" }}><Wifi size={12} /> Conectado</span>}
+                  {zapiStatus === "disconnected" && <span style={{ fontSize: "12px", color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}><WifiOff size={12} /> Desconectado</span>}
+                  {zapiStatus === "unknown" && waInstanceId && waToken && <span style={{ fontSize: "12px", color: "#555" }}>Clique para verificar</span>}
+                </div>
+                <p style={{ fontSize: "11px", color: "#444", margin: "8px 0 0" }}>
+                  Troque a instância a qualquer momento para rotacionar os disparos.
+                </p>
               </div>
 
               {/* Templates */}
@@ -457,9 +489,9 @@ export default function DisparosPage() {
 
               {/* Enviar */}
               <div className="panel">
-                <button className="btn-primary" onClick={enviarWhatsApp} disabled={enviandoWa || waSelecionados.size === 0} style={{ background: "#25D366", color: "#fff" }}>
+                <button className="btn-primary" onClick={enviarWhatsApp} disabled={enviandoWa || waSelecionados.size === 0 || !waInstanceId || !waToken} style={{ background: "#25D366", color: "#fff" }}>
                   {enviandoWa ? <Loader2 size={15} className="animate-spin" /> : <MessageCircle size={15} />}
-                  {enviandoWa ? "Enviando..." : waSelecionados.size === 0 ? "Selecione destinatários" : `Enviar para ${waSelecionados.size} prospect${waSelecionados.size !== 1 ? "s" : ""}`}
+                  {enviandoWa ? "Enviando..." : !waInstanceId || !waToken ? "Preencha a instância" : waSelecionados.size === 0 ? "Selecione destinatários" : `Enviar para ${waSelecionados.size} prospect${waSelecionados.size !== 1 ? "s" : ""}`}
                 </button>
                 {resultadoWa && (
                   <div style={{ marginTop: "12px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", display: "flex", gap: "16px" }}>
