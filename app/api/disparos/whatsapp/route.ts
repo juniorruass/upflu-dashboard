@@ -40,10 +40,17 @@ export async function GET(req: NextRequest) {
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json();
-    // Normaliza o status para o frontend
-    const val = String(data.value || data.status || data.state || "").toUpperCase();
-    const connected = val === "CONNECTED" || data.connected === true;
-    const needsQr   = val === "QRCODE" || val === "DISCONNECTED" || val === "" || !connected;
+    // Tenta todos os formatos possíveis do Z-API
+    const val = String(
+      data.value || data.status || data.state || data.session || ""
+    ).toUpperCase();
+    const connected =
+      data.connected === true ||
+      data.connected === "true" ||
+      val === "CONNECTED" ||
+      val === "OPEN" ||
+      val === "AUTHENTICATED";
+    const needsQr = !connected;
     return NextResponse.json({ connected, needsQr, rawValue: val, raw: data });
   } catch (e) {
     return NextResponse.json({ connected: false, needsQr: true, rawValue: "ERRO", error: String(e) }, { status: 502 });

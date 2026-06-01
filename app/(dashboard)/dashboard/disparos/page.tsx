@@ -91,6 +91,7 @@ export default function DisparosPage() {
   const [resultadoWa, setResultadoWa]       = useState<{ sent: number; failed: number } | null>(null);
   const [zapiStatus, setZapiStatus]         = useState<"unknown" | "connected" | "disconnected">("unknown");
   const [zapiRawValue, setZapiRawValue]     = useState("");
+  const [zapiRawDebug, setZapiRawDebug]     = useState("");
   const [qrCodeUrl, setQrCodeUrl]           = useState("");
 
   // History
@@ -141,12 +142,13 @@ export default function DisparosPage() {
       const res  = await fetch(`/api/disparos/whatsapp?${params}`);
       const data = await res.json();
       setZapiRawValue(data.rawValue || "");
+      setZapiRawDebug(JSON.stringify(data.raw || {}, null, 2));
       if (data.connected) {
         setZapiStatus("connected");
         setQrCodeUrl("");
+        setZapiRawDebug("");
       } else {
         setZapiStatus("disconnected");
-        // Proxy interno para evitar erro de autenticação no browser
         const params = new URLSearchParams({ instanceId: id, token: tok });
         setQrCodeUrl(`/api/disparos/whatsapp/qrcode?${params}`);
       }
@@ -514,6 +516,16 @@ export default function DisparosPage() {
                         No painel: clique na instância → Conectar → escaneie com WhatsApp
                       </p>
                     </div>
+
+                    {/* Debug: resposta bruta do Z-API */}
+                    {zapiRawDebug && (
+                      <div style={{ marginTop: "12px" }}>
+                        <p style={{ fontSize: "10px", color: "#444", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Resposta Z-API (debug)</p>
+                        <pre style={{ fontSize: "11px", color: "#666", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "10px", margin: 0, overflowX: "auto", whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
+                          {zapiRawDebug}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 )}
 
