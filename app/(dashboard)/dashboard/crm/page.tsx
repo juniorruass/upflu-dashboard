@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/header";
 import { RefreshCw, Trash2, Mail, Phone, Globe, MessageSquare, X, Search, MessageCircle, Calendar, FileText } from "lucide-react";
@@ -83,7 +83,7 @@ type Prospect = {
   anotacoes: string | null;
 };
 
-export default function CRMPage() {
+function CRMPageInner() {
   const searchParams = useSearchParams();
   const [aba, setAba] = useState<"todos" | "cnae">(
     searchParams.get("aba") === "cnae" ? "cnae" : "todos"
@@ -502,5 +502,13 @@ export default function CRMPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function CRMPage() {
+  return (
+    <Suspense fallback={null}>
+      <CRMPageInner />
+    </Suspense>
   );
 }
