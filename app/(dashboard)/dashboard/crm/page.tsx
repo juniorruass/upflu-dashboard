@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import Header from "@/components/header";
 import { RefreshCw, Trash2, Mail, Phone, Globe, MessageSquare, X, Search, MessageCircle, Calendar, FileText } from "lucide-react";
 
@@ -83,7 +84,10 @@ type Prospect = {
 };
 
 export default function CRMPage() {
-  const [aba, setAba]                   = useState<"todos" | "cnae">("todos");
+  const searchParams = useSearchParams();
+  const [aba, setAba] = useState<"todos" | "cnae">(
+    searchParams.get("aba") === "cnae" ? "cnae" : "todos"
+  );
   const [prospects, setProspects]       = useState<Prospect[]>([]);
   const [loading, setLoading]           = useState(true);
   const [filterStatus, setFilterStatus] = useState("todos");

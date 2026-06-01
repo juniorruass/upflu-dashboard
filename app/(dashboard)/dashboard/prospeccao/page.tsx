@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import {
   Search, Download, Mail, Loader2, CheckCircle2, XCircle, Plus, Building2,
@@ -61,6 +62,7 @@ type EmpresaCNAE = {
 };
 
 export default function ProspeccaoPage() {
+  const router = useRouter();
   const [modo, setModo] = useState<"maps" | "cnae">("maps");
 
   // Maps state
@@ -160,8 +162,13 @@ export default function ProspeccaoPage() {
       const data = await res.json();
       if (!res.ok) { setStatusCNAE(`Erro: ${data.error}`); return; }
       setEmpresas(data.empresas || []);
-      const existMsg = data.total_existentes > 0 ? ` (${data.total_existentes} já no CRM)` : "";
-      setStatusCNAE(`${data.total} empresas ativas encontradas${existMsg}.`);
+      // Redireciona pro CRM aba Por CNAE automaticamente
+      if (data.total > 0) {
+        router.push("/dashboard/crm?aba=cnae");
+      } else {
+        const existMsg = data.total_existentes > 0 ? ` (${data.total_existentes} já no CRM)` : "";
+        setStatusCNAE(`${data.total} empresas ativas encontradas${existMsg}.`);
+      }
     } catch (e) { setStatusCNAE(`Erro: ${String(e)}`); }
     finally { setLoadingCNAE(false); }
   }
