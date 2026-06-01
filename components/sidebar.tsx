@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks,
+  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks, Send,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -14,6 +14,7 @@ const navItems = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, disabled: false, exact: true  },
   { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: false },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
+  { label: "Disparos",     href: "/dashboard/disparos",      icon: Send,            disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Onboarding",   href: "/dashboard/onboarding",   icon: ListChecks,      disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
