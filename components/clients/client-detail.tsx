@@ -161,8 +161,11 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ portal_metrics: next }),
     });
+    const json = await res.json();
     if (res.ok) {
-      setClient((prev) => ({ ...prev, portal_metrics: next }));
+      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics ?? next }));
+    } else {
+      alert("Erro ao salvar: " + (json.error ?? res.status));
     }
     setSavingPortalMetrics(false);
   }
@@ -173,7 +176,12 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ portal_metrics: null }),
     });
-    if (res.ok) setClient((prev) => ({ ...prev, portal_metrics: null }));
+    const json = await res.json();
+    if (res.ok) {
+      setClient((prev) => ({ ...prev, portal_metrics: json.portal_metrics ?? null }));
+    } else {
+      alert("Erro ao salvar: " + (json.error ?? res.status));
+    }
     setSavingPortalMetrics(false);
   }
 
