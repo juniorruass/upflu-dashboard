@@ -3,7 +3,8 @@
     { "path": "/api/cron/daily-summary",  "schedule": "0 12 * * *"   },
     { "path": "/api/cron/weekly-summary", "schedule": "0 20 * * 5"   },
     { "path": "/api/cron/check-payments", "schedule": "0 12 * * *"   },
-    { "path": "/api/cron/check-campaigns","schedule": "0 12 * * *"   },
+    { "path": "/api/cron/check-campaigns",  "schedule": "0 12 * * *"   },
+    { "path": "/api/cron/check-ad-accounts","schedule": "0 9 * * *"    },
     { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   }
   ],
   "functions": {
