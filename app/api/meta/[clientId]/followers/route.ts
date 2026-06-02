@@ -102,17 +102,13 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const costPerFollower = totalFollowersFromAds > 0 && totalSpend > 0 ? totalSpend / totalFollowersFromAds : null;
     const costPerProfileVisit = totalProfileVisits > 0 && totalSpend > 0 ? totalSpend / totalProfileVisits : null;
 
-    // Usa followers de anúncios se existir, senão usa campo manual do cliente
-    const manualFollowers = (client as { instagram_followers?: number | null }).instagram_followers ?? null;
-    const finalFollowers = totalFollowersFromAds > 0 ? totalFollowersFromAds : manualFollowers;
-    const isOrganic = totalFollowersFromAds === 0 && manualFollowers != null;
-
+    // Somente seguidores adquiridos via campanhas — sem fallback manual
     return NextResponse.json({
-      followers: finalFollowers,
+      followers: totalFollowersFromAds > 0 ? totalFollowersFromAds : null,
       cost_per_follower: totalFollowersFromAds > 0 ? costPerFollower : null,
       profile_visits: totalProfileVisits || null,
       cost_per_profile_visit: costPerProfileVisit,
-      is_organic: isOrganic,
+      is_organic: false,
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

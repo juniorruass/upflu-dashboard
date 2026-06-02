@@ -330,11 +330,14 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />
           )}
 
-          {/* Seguidores */}
+          {/* Seguidores adquiridos via anúncios */}
           {show("followers") && fl != null && fl > 0 && (
             <CategoryBlock
-              label={followerData?.is_organic ? "Seguidores no Instagram" : "Novos seguidores"}
-              count={fl} cost={followerData?.is_organic ? null : flc} color={PURPLE} icon="👥"
+              label="Seguidores adquiridos"
+              count={fl}
+              cost={flc}
+              color={PURPLE}
+              icon="👥"
             />
           )}
 
@@ -343,7 +346,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             const items: { key: string; label: string; value: string; accent?: boolean; color?: string; icon?: string }[] = [];
             if (show("spend"))       items.push({ key:"spend",       label:"Investimento",  value: fmt(data.spend,"R$ ","",0),    accent:true, icon:"💰" });
             if (show("roas"))        items.push({ key:"roas",        label:"ROAS",           value: fmt(data.roas,"","x",2),       color: data.roas != null && data.roas >= 2 ? GREEN : TEXT, icon:"📈" });
-            if (show("followers"))   items.push({ key:"followers",   label:"Seguidores",     value: fmt(fl,"","",0),               icon:"👥" });
+            if (show("followers"))   items.push({ key:"followers",   label:"Seg. adquiridos", value: fmt(fl,"","",0),              icon:"👥" });
             if (show("clicks"))      items.push({ key:"clicks",      label:"Cliques",        value: fmt(data.clicks),              icon:"🖱️" });
             if (show("ctr"))         items.push({ key:"ctr",         label:"CTR",            value: fmt(data.ctr,"","%",2),        icon:"%" });
             if (show("impressions")) items.push({ key:"impressions", label:"Impressões",     value: fmt(data.impressions),         icon:"👁" });
