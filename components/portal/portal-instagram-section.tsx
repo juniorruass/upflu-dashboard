@@ -120,7 +120,11 @@ export function PortalInstagramSection({ clientId }: { clientId: string }) {
     </div>
   );
 
-  if (error || !data) return null;
+  if (error || !data) return (
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "24px", textAlign: "center" }}>
+      <p style={{ fontSize: "13px", color: MUTED, margin: 0 }}>Instagram em configuração.</p>
+    </div>
+  );
 
   const hasHistory = data.history.length >= 2;
 
