@@ -47,6 +47,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
     appointment_date: client?.appointment_date ?? "",
     appointment_time: client?.appointment_time ?? "",
     meta_account_id: client?.meta_account_id ?? "",
+    instagram_business_account_id: (client as Client & { instagram_business_account_id?: string })?.instagram_business_account_id ?? "",
     slug: client?.slug ?? "",
   });
 
@@ -268,6 +269,11 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                 <label style={labelStyle}>ID Conta Meta Ads</label>
                 <input value={form.meta_account_id} onChange={(e) => setForm({ ...form, meta_account_id: e.target.value })} placeholder="Ex: 123456789012345" onFocus={() => setFocusField("meta")} onBlur={() => setFocusField(null)} style={inputStyle("meta")} />
                 <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Gerenciador → Configurações</p>
+              </div>
+              <div>
+                <label style={labelStyle}>ID Instagram Business Account</label>
+                <input value={form.instagram_business_account_id} onChange={(e) => setForm({ ...form, instagram_business_account_id: e.target.value })} placeholder="Ex: 17841400000000000" onFocus={() => setFocusField("ig_account")} onBlur={() => setFocusField(null)} style={inputStyle("ig_account")} />
+                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Contas → Instagram → ID da conta</p>
               </div>
             </div>
 
