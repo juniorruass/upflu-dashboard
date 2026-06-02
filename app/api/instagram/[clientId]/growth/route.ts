@@ -10,27 +10,22 @@ function presetToDates(preset: string): { since: Date; until: Date } {
   const now = new Date();
   const until = new Date(now);
   const since = new Date(now);
-
   switch (preset) {
-    case "today":
-      since.setHours(0, 0, 0, 0);
-      break;
+    case "today":     since.setHours(0, 0, 0, 0); break;
     case "yesterday":
       since.setDate(since.getDate() - 1); since.setHours(0, 0, 0, 0);
       until.setDate(until.getDate() - 1); until.setHours(23, 59, 59, 0);
       break;
-    case "last_7d":
-      since.setDate(since.getDate() - 7);
-      break;
+    case "last_7d":  since.setDate(since.getDate() - 7);  break;
     case "last_30d":
-    default:
-      since.setDate(since.getDate() - 30);
-      break;
+    default:         since.setDate(since.getDate() - 30); break;
   }
   return { since, until };
 }
 
-async function fetchFollowersAt(igId: string, token: string, since: Date, until: Date): Promise<{ start: number | null; end: number | null }> {
+// follower_count no Instagram Insights retorna NOVOS seguidores por dia (delta)
+// Somamos todos os valores para obter o crescimento total no período
+async function fetchGrowthFromInsights(igId: string, token: string, since: Date, until: Date): Promise<number | null> {
   try {
     const sinceTs = Math.floor(since.getTime() / 1000);
     const untilTs = Math.floor(until.getTime() / 1000) + 86400;
@@ -43,10 +38,10 @@ async function fetchFollowersAt(igId: string, token: string, since: Date, until:
     });
     const res = await fetch(`${META_BASE}/${igId}/insights?${qp}`, { signal: AbortSignal.timeout(10000) });
     const json = await res.json();
-    if (json.error || !json.data?.[0]?.values?.length) return { start: null, end: null };
+    if (json.error || !json.data?.[0]?.values?.length) return null;
     const values: { value: number }[] = json.data[0].values;
-    return { start: values[0].value, end: values[values.length - 1].value };
-  } catch { return { start: null, end: null }; }
+    return values.reduce((sum, v) => sum + (v.value ?? 0), 0);
+  } catch { return null; }
 }
 
 export async function GET(req: NextRequest, { params }: Ctx) {
@@ -66,25 +61,28 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const igId = client?.instagram_business_account_id;
   if (!igId) return NextResponse.json({ growth: null });
 
-  // Tenta via Instagram Insights API
   const { since, until } = presetToDates(preset);
-  const { start, end } = await fetchFollowersAt(igId, token, since, until);
 
-  if (start != null && end != null) {
-    return NextResponse.json({ growth: end - start, source: "insights" });
+  // Tenta via Instagram Insights API
+  const insightsGrowth = await fetchGrowthFromInsights(igId, token, since, until);
+  if (insightsGrowth !== null) {
+    return NextResponse.json({ growth: insightsGrowth, source: "insights" });
   }
 
-  // Fallback: snapshots do banco
+  // Fallback: snapshots do banco (absoluto — diferença entre primeiro e último)
   const sinceStr = since.toISOString().split("T")[0];
   const { data: snaps } = await supabase
     .from("instagram_snapshots")
     .select("date, followers_count")
     .eq("client_id", clientId)
     .gte("date", sinceStr)
+    .gt("followers_count", 0)
     .order("date", { ascending: true });
 
   if (!snaps || snaps.length < 2) return NextResponse.json({ growth: null });
 
-  const growth = snaps[snaps.length - 1].followers_count - snaps[0].followers_count;
-  return NextResponse.json({ growth, source: "snapshots" });
+  return NextResponse.json({
+    growth: snaps[snaps.length - 1].followers_count - snaps[0].followers_count,
+    source: "snapshots",
+  });
 }
