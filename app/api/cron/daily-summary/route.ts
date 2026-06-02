@@ -63,10 +63,18 @@ export async function GET(req: NextRequest) {
   const best = valid.sort((a, b) => (b.leads ?? 0) - (a.leads ?? 0))[0];
 
   if (totalLeads > 0 || totalSpend > 0) {
+    const cpl = totalLeads > 0 ? (totalSpend / totalLeads).toFixed(2) : null;
     await notifyAdmin({
-      title: "📊 Resumo de ontem — UPFLU",
-      body: `${fmt(totalLeads)} leads · ${fmt(totalSpend, "R$", "", )} investido${best?.name ? ` · Melhor: ${best.name}` : ""}`,
+      title: "📊 Ontem na UPFLU",
+      body: `${fmt(totalLeads)} leads · R$ ${fmt(totalSpend)} investido${cpl ? ` · CPL R$ ${cpl}` : ""}${best?.name ? ` · Destaque: ${best.name}` : ""}`,
       url: "/dashboard",
+      tag: "daily-summary",
+    });
+  } else {
+    await notifyAdmin({
+      title: "📊 Ontem na UPFLU",
+      body: "Sem leads registrados ontem. Verifique as campanhas.",
+      url: "/dashboard/anuncios",
       tag: "daily-summary",
     });
   }
@@ -76,25 +84,29 @@ export async function GET(req: NextRequest) {
     const insights = results.find((r) => r.id === client.id);
     if (!insights || (insights.leads ?? 0) === 0) continue;
 
-    // Lead novo
+    const slug = client.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "");
+    const cpl = (insights.leads ?? 0) > 0 && (insights.spend ?? 0) > 0
+      ? `· CPL R$ ${((insights.spend ?? 0) / (insights.leads ?? 1)).toFixed(2)}`
+      : "";
+
     await notifyClient(client.id, {
-      title: "🎯 Novos leads ontem",
-      body: `${fmt(insights.leads ?? 0)} leads · ${fmt(insights.spend ?? 0, "R$ ")} investido`,
-      url: `/${client.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "")}`,
+      title: `🎯 ${fmt(insights.leads ?? 0)} lead${(insights.leads ?? 0) !== 1 ? "s" : ""} ontem`,
+      body: `R$ ${fmt(insights.spend ?? 0)} investido ${cpl} — veja o relatório completo.`,
+      url: `/${slug}`,
       tag: "daily-leads",
     });
 
-    // Melhor dia do mês: busca histórico do mês atual
+    // Melhor dia do mês
     const { data: metricsThisMonth } = await supabase
       .from("client_metrics")
       .select("leads")
       .eq("client_id", client.id);
     const maxLeads = Math.max(...(metricsThisMonth ?? []).map((m) => m.leads ?? 0), 0);
-    if ((insights.leads ?? 0) > maxLeads && (insights.leads ?? 0) > 0) {
+    if ((insights.leads ?? 0) > maxLeads && (insights.leads ?? 0) > 2) {
       await notifyClient(client.id, {
-        title: "🏆 Melhor dia do mês!",
-        body: `${fmt(insights.leads ?? 0)} leads em um único dia — novo recorde!`,
-        url: `/${client.name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "")}`,
+        title: "🏆 Recorde do mês!",
+        body: `${fmt(insights.leads ?? 0)} leads em um único dia — melhor resultado do mês até agora.`,
+        url: `/${slug}`,
         tag: "best-day",
       });
     }

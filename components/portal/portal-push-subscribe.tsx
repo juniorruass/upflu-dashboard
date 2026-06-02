@@ -11,7 +11,6 @@ function urlBase64ToUint8Array(base64: string) {
 export function PortalPushSubscribe({ clientId, clientSlug }: { clientId: string; clientSlug: string }) {
   const [state, setState] = useState<"idle" | "subscribed" | "denied" | "unsupported">("idle");
   const [loading, setLoading] = useState(false);
-  const ACCENT = "#00CFFF";
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -44,7 +43,6 @@ export function PortalPushSubscribe({ clientId, clientSlug }: { clientId: string
         body: JSON.stringify({ subscription: sub.toJSON(), type: "client", clientId }),
       });
 
-      // Notificação de boas-vindas
       await fetch("/api/push/welcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,27 +78,54 @@ export function PortalPushSubscribe({ clientId, clientSlug }: { clientId: string
 
   if (state === "unsupported") return null;
 
+  const isActive = state === "subscribed";
+  const isDenied = state === "denied";
+
   return (
     <button
-      onClick={state === "subscribed" ? unsubscribe : subscribe}
-      disabled={loading || state === "denied"}
+      onClick={isActive ? unsubscribe : subscribe}
+      disabled={loading || isDenied}
+      title={isDenied ? "Notificações bloqueadas no navegador" : isActive ? "Clique para desativar notificações" : "Ativar notificações de performance"}
       style={{
-        background: state === "subscribed" ? `${ACCENT}18` : "rgba(255,255,255,0.05)",
-        border: `1px solid ${state === "subscribed" ? `${ACCENT}44` : "rgba(255,255,255,0.08)"}`,
-        borderRadius: "8px",
-        padding: "6px 12px",
-        fontSize: "11px",
-        fontWeight: "600",
-        color: state === "subscribed" ? ACCENT : state === "denied" ? "#555" : "#999",
-        cursor: loading || state === "denied" ? "default" : "pointer",
         display: "flex",
         alignItems: "center",
-        gap: "6px",
-        opacity: loading ? 0.6 : 1,
+        gap: "7px",
+        background: isActive
+          ? "linear-gradient(135deg, rgba(0,207,255,0.15) 0%, rgba(0,207,255,0.05) 100%)"
+          : "rgba(255,255,255,0.04)",
+        border: `1px solid ${isActive ? "rgba(0,207,255,0.35)" : "rgba(255,255,255,0.08)"}`,
+        borderRadius: "10px",
+        padding: "8px 14px",
+        fontSize: "11px",
+        fontWeight: "600",
+        color: isActive ? "#00CFFF" : isDenied ? "#444" : "#888",
+        cursor: loading || isDenied ? "default" : "pointer",
+        opacity: loading ? 0.6 : isDenied ? 0.4 : 1,
+        transition: "all .2s",
+        letterSpacing: "0.02em",
+        whiteSpace: "nowrap",
       }}
     >
-      <span>{state === "subscribed" ? "🔔" : "🔔"}</span>
-      {state === "subscribed" ? "Notificações ativas" : state === "denied" ? "Bloqueado" : "Receber atualizações"}
+      <span style={{ fontSize: "13px" }}>
+        {loading ? "⏳" : isActive ? "🔔" : isDenied ? "🔕" : "🔔"}
+      </span>
+      {loading
+        ? "..."
+        : isActive
+        ? "Notificações ativas"
+        : isDenied
+        ? "Bloqueado"
+        : "Ativar notificações"}
+      {isActive && (
+        <span style={{
+          width: "6px", height: "6px", borderRadius: "50%",
+          background: "#4ADE80",
+          boxShadow: "0 0 6px #4ADE8088",
+          animation: "bellPulse 2s ease-in-out infinite",
+          flexShrink: 0,
+        }} />
+      )}
+      <style>{`@keyframes bellPulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
     </button>
   );
 }

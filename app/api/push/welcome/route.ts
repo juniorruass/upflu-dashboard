@@ -12,9 +12,12 @@ export async function POST(req: NextRequest) {
   const result = await supabase.from("clients").select("name").eq("id", clientId).single();
   const client = result.data as { name?: string } | null;
 
+  const firstName = client?.name ? client.name.split(" ")[0] : null;
   await notifyClient(clientId, {
-    title: "👋 Bem-vindo ao seu painel!",
-    body: `Olá${client?.name ? `, ${client.name.split(" ")[0]}` : ""}! Você vai receber atualizações de performance aqui.`,
+    title: "🚀 Painel ativado!",
+    body: firstName
+      ? `${firstName}, seu relatório de performance está no ar. Vamos crescer juntos.`
+      : "Seu relatório de performance está no ar. Você receberá atualizações por aqui.",
     url: `/${clientSlug}`,
     tag: "welcome",
   });

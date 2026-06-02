@@ -227,7 +227,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
     return () => clearInterval(interval);
   }, [load, preset]);
 
-  function changePreset(p: Preset) { setPreset(p); load(p); }
+  function changePreset(p: Preset) { setPreset(p); }
 
   const totalLeads = daily.reduce((s, d) => s + d.leads, 0);
   const fl  = (followerData?.followers ?? 0) > 0 ? followerData!.followers! : (data?.followers ?? null);
