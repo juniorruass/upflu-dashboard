@@ -137,8 +137,9 @@ export function PortalInstagramSection({ clientId }: { clientId: string }) {
   );
 
   if (error || !data) return (
-    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "24px", textAlign: "center" }}>
-      <p style={{ fontSize: "13px", color: MUTED, margin: 0 }}>Instagram em configuração.</p>
+    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "24px" }}>
+      <p style={{ fontSize: "12px", color: MUTED, margin: "0 0 6px" }}>Instagram em configuração.</p>
+      {error && <p style={{ fontSize: "11px", color: "#FF6B6B", margin: 0, wordBreak: "break-word" }}>{error}</p>}
     </div>
   );
 
@@ -175,7 +176,7 @@ export function PortalInstagramSection({ clientId }: { clientId: string }) {
 
         {data.growth_30d != null && (
           <div style={{ textAlign: "right" }}>
-            <p style={{ fontSize: "9px", color: MUTED, margin: "0 0 4px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Este mês</p>
+            <p style={{ fontSize: "9px", color: MUTED, margin: "0 0 4px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Total</p>
             <p style={{ fontSize: "24px", fontWeight: "700", color: growthColor, margin: 0, letterSpacing: "-0.025em" }}>
               {data.growth_30d >= 0 ? "+" : ""}{data.growth_30d.toLocaleString("pt-BR")}
             </p>
