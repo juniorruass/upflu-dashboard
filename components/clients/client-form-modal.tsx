@@ -6,6 +6,7 @@ import { Client, ClientStatus, ServiceType } from "@/types";
 
 const GOLD = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
+const PINK = "#E1306C";
 
 const SERVICES: { key: ServiceType; label: string }[] = [
   { key: "ai", label: "IA" }, { key: "automation", label: "Automacao" },
@@ -62,6 +63,22 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [focusField, setFocusField] = useState<string | null>(null);
+
+  const [igAccounts, setIgAccounts] = useState<{ id: string; username: string; name: string; followers_count: number }[]>([]);
+  const [igLoading, setIgLoading] = useState(false);
+  const [igOpen, setIgOpen] = useState(false);
+
+  async function loadIgAccounts() {
+    setIgLoading(true);
+    try {
+      const r = await fetch("/api/instagram/accounts");
+      const d = await r.json();
+      setIgAccounts(d.accounts ?? []);
+      setIgOpen(true);
+    } finally {
+      setIgLoading(false);
+    }
+  }
 
   function toggleService(s: ServiceType) {
     setSelectedServices((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
@@ -270,10 +287,51 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                 <input value={form.meta_account_id} onChange={(e) => setForm({ ...form, meta_account_id: e.target.value })} placeholder="Ex: 123456789012345" onFocus={() => setFocusField("meta")} onBlur={() => setFocusField(null)} style={inputStyle("meta")} />
                 <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Gerenciador → Configurações</p>
               </div>
-              <div>
-                <label style={labelStyle}>ID Instagram Business Account</label>
-                <input value={form.instagram_business_account_id} onChange={(e) => setForm({ ...form, instagram_business_account_id: e.target.value })} placeholder="Ex: 17841400000000000" onFocus={() => setFocusField("ig_account")} onBlur={() => setFocusField(null)} style={inputStyle("ig_account")} />
-                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Contas → Instagram → ID da conta</p>
+              <div style={{ position: "relative" }}>
+                <label style={labelStyle}>Instagram Business Account</label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    value={form.instagram_business_account_id}
+                    onChange={(e) => setForm({ ...form, instagram_business_account_id: e.target.value })}
+                    placeholder="ID da conta (17841...)"
+                    onFocus={() => setFocusField("ig_account")}
+                    onBlur={() => setFocusField(null)}
+                    style={{ ...inputStyle("ig_account"), flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={loadIgAccounts}
+                    disabled={igLoading}
+                    style={{ padding: "0 14px", background: `rgba(225,48,108,0.1)`, border: `1px solid rgba(225,48,108,0.3)`, borderRadius: "8px", color: PINK, fontSize: "11px", fontWeight: "600", cursor: igLoading ? "default" : "pointer", whiteSpace: "nowrap", opacity: igLoading ? 0.6 : 1 }}
+                  >
+                    {igLoading ? "..." : "Buscar"}
+                  </button>
+                </div>
+                {igOpen && igAccounts.length > 0 && (
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#161616", border: `1px solid ${BORDER}`, borderRadius: "10px", marginTop: "4px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                    {igAccounts.map((acc) => (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => { setForm({ ...form, instagram_business_account_id: acc.id }); setIgOpen(false); }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "transparent", border: "none", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", textAlign: "left", gap: "8px" }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(225,48,108,0.07)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <div>
+                          <p style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>@{acc.username || acc.name}</p>
+                          <p style={{ fontSize: "10px", color: "#777068", margin: "2px 0 0" }}>{acc.id}</p>
+                        </div>
+                        {acc.followers_count > 0 && (
+                          <span style={{ fontSize: "11px", color: PINK, fontWeight: "600", flexShrink: 0 }}>{acc.followers_count.toLocaleString("pt-BR")} seg.</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {igOpen && igAccounts.length === 0 && !igLoading && (
+                  <p style={{ fontSize: "11px", color: "#FF6B6B", margin: "5px 0 0" }}>Nenhuma conta encontrada. Insira o ID manualmente.</p>
+                )}
               </div>
             </div>
 
