@@ -49,11 +49,9 @@ function fmtDateLabel(iso: string, preset: Preset): string {
   return `${d}/${m}`;
 }
 
-// ── Animated Bar Chart ─────────────────────────────────────
+// ── Bar Chart ──────────────────────────────────────────────
 function LeadsBarChart({ data, preset }: { data: DailyRow[]; preset: Preset }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
   if (!data.length) return null;
 
   const max = Math.max(...data.map((d) => d.leads), 1);
@@ -67,24 +65,24 @@ function LeadsBarChart({ data, preset }: { data: DailyRow[]; preset: Preset }) {
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100px", overflow: "visible" }} onMouseLeave={() => setHovered(null)}>
         <defs>
           <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={ACCENT} stopOpacity="0.9" />
-            <stop offset="100%" stopColor={ACCENT} stopOpacity="0.2" />
+            <stop offset="0%" stopColor={ACCENT} stopOpacity="0.85" />
+            <stop offset="100%" stopColor={ACCENT} stopOpacity="0.15" />
           </linearGradient>
           <linearGradient id="barHov" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fff" stopOpacity="0.95" />
-            <stop offset="100%" stopColor={ACCENT} stopOpacity="0.6" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="100%" stopColor={ACCENT} stopOpacity="0.5" />
           </linearGradient>
         </defs>
         {data.map((d, i) => {
-          const barH = Math.max((d.leads / max) * (chartH - 28), d.leads > 0 ? 5 : 0);
+          const barH = Math.max((d.leads / max) * (chartH - 24), d.leads > 0 ? 4 : 0);
           const x = i * (barW + gap);
-          const y = chartH - (mounted ? barH : 0) - 4;
+          const y = chartH - barH - 4;
           const isHov = hovered === i;
           const showLabel = total <= 14 || i % Math.ceil(total / 10) === 0 || i === total - 1;
           return (
             <g key={i} onMouseEnter={() => setHovered(i)} style={{ cursor: "default" }}>
-              <rect x={x} y={y} width={barW} height={mounted ? barH : 0} fill={isHov ? "url(#barHov)" : "url(#barGrad)"} rx="3"
-                style={{ transition: "height .5s cubic-bezier(.34,1.56,.64,1), y .5s cubic-bezier(.34,1.56,.64,1), fill .15s" }} />
+              <rect x={x} y={y} width={barW} height={barH}
+                fill={isHov ? "url(#barHov)" : "url(#barGrad)"} rx="3" />
               {isHov && d.leads > 0 && (
                 <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fill="#fff" fontWeight="700">{d.leads}</text>
               )}
@@ -99,10 +97,10 @@ function LeadsBarChart({ data, preset }: { data: DailyRow[]; preset: Preset }) {
         })}
       </svg>
       {hovered !== null && data[hovered] && (
-        <div style={{ position: "absolute", top: "4px", left: `${(hovered / total) * 100}%`, transform: "translateX(-50%)", pointerEvents: "none", zIndex: 10 }}>
-          <div style={{ background: "rgba(14,14,14,0.95)", border: `1px solid rgba(0,207,255,0.25)`, borderRadius: "10px", padding: "8px 14px", whiteSpace: "nowrap", fontSize: "12px", color: TEXT, boxShadow: `0 4px 20px rgba(0,0,0,.6), 0 0 0 1px rgba(0,207,255,0.1)` }}>
+        <div style={{ position: "absolute", top: "4px", left: `${Math.min(Math.max((hovered / total) * 100, 10), 85)}%`, transform: "translateX(-50%)", pointerEvents: "none", zIndex: 10 }}>
+          <div style={{ background: "rgba(14,14,14,0.97)", border: `1px solid rgba(0,207,255,0.3)`, borderRadius: "10px", padding: "8px 14px", whiteSpace: "nowrap", fontSize: "12px", color: TEXT, boxShadow: `0 4px 20px rgba(0,0,0,.7)` }}>
             <span style={{ color: MUTED, fontSize: "10px" }}>{data[hovered].date.slice(5).replace("-","/")} · </span>
-            <span style={{ color: ACCENT, fontWeight: "700" }}>{data[hovered].leads} leads</span>
+            <span style={{ color: ACCENT, fontWeight: "700" }}>{data[hovered].leads} lead{data[hovered].leads !== 1 ? "s" : ""}</span>
             {data[hovered].spend > 0 && <span style={{ color: MUTED }}> · R$ {data[hovered].spend.toFixed(0)}</span>}
           </div>
         </div>
@@ -184,6 +182,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   const [preset, setPreset] = useState<Preset>("last_30d");
   const [data, setData] = useState<MetaData | null>(null);
   const [followerData, setFollowerData] = useState<FollowerData | null>(null);
+  const [igGrowth, setIgGrowth] = useState<number | null>(null);
   const [daily, setDaily] = useState<DailyRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -202,18 +201,21 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   const load = useCallback(async (p: Preset) => {
     setLoading(true);
     try {
-      const [aggRes, dayRes, followRes] = await Promise.all([
+      const [aggRes, dayRes, followRes, growthRes] = await Promise.all([
         fetch(`/api/meta/${clientId}?date_preset=${p}`),
         fetch(`/api/meta/${clientId}/daily?date_preset=${p}`),
         fetch(`/api/meta/${clientId}/followers?date_preset=${p}`),
+        fetch(`/api/instagram/${clientId}/growth?date_preset=${p}`),
       ]);
       const agg = await aggRes.json();
       const day = await dayRes.json();
       const follow = await followRes.json();
-      if (agg.error) { setError(agg.error); setData(null); setDaily([]); setFollowerData(null); }
+      const growth = await growthRes.json();
+      if (agg.error) { setError(agg.error); setData(null); setDaily([]); setFollowerData(null); setIgGrowth(null); }
       else {
         setData(agg.data ?? null); setDaily(day.data ?? []);
         setFollowerData(follow.error ? null : follow);
+        setIgGrowth(growth.growth ?? null);
         setError(null);
         setLastUpdate(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       }
@@ -230,7 +232,8 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   function changePreset(p: Preset) { setPreset(p); }
 
   const totalLeads = daily.reduce((s, d) => s + d.leads, 0);
-  const fl  = (followerData?.followers ?? 0) > 0 ? followerData!.followers! : (data?.followers ?? null);
+  const adsFollowers = (followerData?.followers ?? 0) > 0 ? followerData!.followers! : (data?.followers ?? null);
+  const fl  = adsFollowers ?? igGrowth;
   const flc = (followerData?.followers ?? 0) > 0 ? followerData!.cost_per_follower : data?.cost_per_follower ?? null;
   const pv  = (followerData?.profile_visits ?? 0) > 0 ? followerData!.profile_visits! : (data?.profile_visits ?? 0);
   const pvc = (followerData?.profile_visits ?? 0) > 0 ? followerData!.cost_per_profile_visit : data?.cost_per_profile_visit ?? null;
@@ -330,12 +333,12 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />
           )}
 
-          {/* Seguidores adquiridos via anúncios */}
+          {/* Seguidores ganhos no período */}
           {show("followers") && fl != null && fl > 0 && (
             <CategoryBlock
-              label="Seguidores adquiridos"
+              label={adsFollowers != null ? "Seguidores adquiridos" : "Seguidores ganhos"}
               count={fl}
-              cost={flc}
+              cost={adsFollowers != null ? flc : null}
               color={PURPLE}
               icon="👥"
             />
@@ -346,7 +349,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             const items: { key: string; label: string; value: string; accent?: boolean; color?: string; icon?: string }[] = [];
             if (show("spend"))       items.push({ key:"spend",       label:"Investimento",  value: fmt(data.spend,"R$ ","",0),    accent:true, icon:"💰" });
             if (show("roas"))        items.push({ key:"roas",        label:"ROAS",           value: fmt(data.roas,"","x",2),       color: data.roas != null && data.roas >= 2 ? GREEN : TEXT, icon:"📈" });
-            if (show("followers"))   items.push({ key:"followers",   label:"Seg. adquiridos", value: fmt(fl,"","",0),              icon:"👥" });
+            if (show("followers"))   items.push({ key:"followers",   label: adsFollowers != null ? "Seg. adquiridos" : "Seg. ganhos", value: fmt(fl,"","",0), icon:"👥" });
             if (show("clicks"))      items.push({ key:"clicks",      label:"Cliques",        value: fmt(data.clicks),              icon:"🖱️" });
             if (show("ctr"))         items.push({ key:"ctr",         label:"CTR",            value: fmt(data.ctr,"","%",2),        icon:"%" });
             if (show("impressions")) items.push({ key:"impressions", label:"Impressões",     value: fmt(data.impressions),         icon:"👁" });
