@@ -82,50 +82,40 @@ export function PortalPushSubscribe({ clientId, clientSlug }: { clientId: string
   const isDenied = state === "denied";
 
   return (
-    <button
-      onClick={isActive ? unsubscribe : subscribe}
-      disabled={loading || isDenied}
-      title={isDenied ? "Notificações bloqueadas no navegador" : isActive ? "Clique para desativar notificações" : "Ativar notificações de performance"}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "7px",
-        background: isActive
-          ? "linear-gradient(135deg, rgba(0,207,255,0.15) 0%, rgba(0,207,255,0.05) 100%)"
-          : "rgba(255,255,255,0.04)",
-        border: `1px solid ${isActive ? "rgba(0,207,255,0.35)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: "10px",
-        padding: "8px 14px",
-        fontSize: "11px",
-        fontWeight: "600",
-        color: isActive ? "#00CFFF" : isDenied ? "#444" : "#888",
-        cursor: loading || isDenied ? "default" : "pointer",
-        opacity: loading ? 0.6 : isDenied ? 0.4 : 1,
-        transition: "all .2s",
-        letterSpacing: "0.02em",
-        whiteSpace: "nowrap",
-      }}
-    >
-      <span style={{ fontSize: "13px" }}>
-        {loading ? "⏳" : isActive ? "🔔" : isDenied ? "🔕" : "🔔"}
-      </span>
-      {loading
-        ? "..."
-        : isActive
-        ? "Notificações ativas"
-        : isDenied
-        ? "Bloqueado"
-        : "Ativar notificações"}
-      {isActive && (
-        <span style={{
-          width: "6px", height: "6px", borderRadius: "50%",
-          background: "#4ADE80",
-          boxShadow: "0 0 6px #4ADE8088",
-          animation: "bellPulse 2s ease-in-out infinite",
-          flexShrink: 0,
-        }} />
-      )}
-      <style>{`@keyframes bellPulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-    </button>
+    <>
+      <style>{`
+        @keyframes bellPulse{0%,100%{opacity:1}50%{opacity:.4}}
+        .push-btn-label { display: inline; }
+        @media (max-width: 640px) { .push-btn-label { display: none; } }
+      `}</style>
+      <button
+        onClick={isActive ? unsubscribe : subscribe}
+        disabled={loading || isDenied}
+        title={isDenied ? "Notificações bloqueadas" : isActive ? "Desativar notificações" : "Ativar notificações"}
+        style={{
+          display: "flex", alignItems: "center", gap: "6px",
+          background: isActive
+            ? "linear-gradient(135deg,rgba(0,207,255,0.15),rgba(0,207,255,0.05))"
+            : "rgba(255,255,255,0.04)",
+          border: `1px solid ${isActive ? "rgba(0,207,255,0.35)" : "rgba(255,255,255,0.08)"}`,
+          borderRadius: "10px", padding: "8px 12px",
+          fontSize: "11px", fontWeight: "600",
+          color: isActive ? "#00CFFF" : isDenied ? "#444" : "#888",
+          cursor: loading || isDenied ? "default" : "pointer",
+          opacity: loading ? 0.6 : isDenied ? 0.4 : 1,
+          transition: "all .2s", whiteSpace: "nowrap", flexShrink: 0,
+        }}
+      >
+        <span style={{ fontSize: "13px" }}>
+          {loading ? "⏳" : isDenied ? "🔕" : "🔔"}
+        </span>
+        <span className="push-btn-label">
+          {loading ? "..." : isActive ? "Notificações ativas" : isDenied ? "Bloqueado" : "Ativar notificações"}
+        </span>
+        {isActive && (
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ADE80", boxShadow: "0 0 6px #4ADE8088", animation: "bellPulse 2s ease-in-out infinite", flexShrink: 0 }} />
+        )}
+      </button>
+    </>
   );
 }

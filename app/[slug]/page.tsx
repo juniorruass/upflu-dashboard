@@ -162,6 +162,8 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
           .p-wrap { padding: 24px 16px 60px; }
           .p-grid3 { grid-template-columns: 1fr 1fr; }
           .p-grid2 { grid-template-columns: 1fr; }
+          .p-header-inner { padding: 0 16px !important; }
+          .p-header-label { display: none !important; }
         }
       `}</style>
 
@@ -174,11 +176,11 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
 
       {/* ── Header ──────────────────────────────────────────── */}
       <div style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${BORDER}`, background: "rgba(8,8,8,0.88)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px", maxWidth: "960px", margin: "0 auto", padding: "0 40px" }}>
+        <div className="p-header-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px", maxWidth: "960px", margin: "0 auto", padding: "0 40px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "24px", width: "auto" }} />
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ fontSize: "11px", color: MUTED, letterSpacing: "0.08em" }}>Relatório de Performance</span>
+          <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "22px", width: "auto", flexShrink: 0 }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+            <span className="p-header-label" style={{ fontSize: "11px", color: MUTED, letterSpacing: "0.08em", whiteSpace: "nowrap" }}>Relatório de Performance</span>
             <PortalPushSubscribe clientId={client.id} clientSlug={slug} />
             {client.portal_password && <PortalLogoutBtn slug={slug} />}
           </div>
