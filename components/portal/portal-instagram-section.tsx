@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-const ACCENT  = "#00CFFF";
 const PINK    = "#E1306C";
 const CARD    = "#0E0E0E";
 const BORDER  = "rgba(255,255,255,0.06)";
