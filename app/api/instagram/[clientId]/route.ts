@@ -6,14 +6,17 @@ export const dynamic = "force-dynamic";
 
 const META_BASE = "https://graph.facebook.com/v21.0";
 
-async function fetchFollowers(igId: string, token: string): Promise<{ followers_count: number; username: string } | null> {
+async function fetchFollowers(igId: string, token: string): Promise<{ followers_count: number; username: string } | { error: string }> {
   try {
     const qp = new URLSearchParams({ fields: "followers_count,username", access_token: token });
     const res = await fetch(`${META_BASE}/${igId}?${qp}`, { signal: AbortSignal.timeout(8000) });
     const json = await res.json();
-    if (json.error || json.followers_count == null) return null;
+    if (json.error) return { error: `Meta API: ${json.error.message} (código ${json.error.code})` };
+    if (json.followers_count == null) return { error: "followers_count não retornado pela API" };
     return { followers_count: json.followers_count, username: json.username ?? null };
-  } catch { return null; }
+  } catch (e) {
+    return { error: String(e) };
+  }
 }
 
 // Busca histórico diário do mês atual via Instagram Insights
@@ -68,8 +71,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     fetchMonthlyHistory(igId, token),
   ]);
 
-  if (!current) {
-    return NextResponse.json({ error: "Não foi possível buscar dados do Instagram", igId }, { status: 502 });
+  if ("error" in current) {
+    return NextResponse.json({ error: current.error, igId }, { status: 502 });
   }
 
   // Salva snapshot do dia atual no banco
