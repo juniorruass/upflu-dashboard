@@ -11,7 +11,6 @@ const MUTED   = "#666060";
 const GREEN   = "#4ADE80";
 const PURPLE  = "#A78BFA";
 const ORANGE  = "#FB923C";
-const ROSE    = "#F472B6";
 
 interface MetaData {
   spend: number; impressions: number; clicks: number; ctr: number;
