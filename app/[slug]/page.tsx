@@ -7,6 +7,7 @@ import { PortalLogin } from "@/components/portal/portal-login";
 import { PortalLogoutBtn } from "@/components/portal/portal-logout-btn";
 import { PortalMetaSection } from "@/components/portal/portal-meta-section";
 import { PortalPushSubscribe } from "@/components/portal/portal-push-subscribe";
+import { PortalInstagramSection } from "@/components/portal/portal-instagram-section";
 
 export const dynamic = "force-dynamic";
 
@@ -198,6 +199,14 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
           <div className="p-section p-fade-2">
             <p className="p-label">Meta Ads — conta {client.meta_account_id}</p>
             <PortalMetaSection clientId={client.id} />
+          </div>
+        )}
+
+        {/* ── Instagram ────────────────────────────────────── */}
+        {client.meta_account_id && (
+          <div className="p-section p-fade-2">
+            <p className="p-label">Instagram</p>
+            <PortalInstagramSection clientId={client.id} />
           </div>
         )}
 

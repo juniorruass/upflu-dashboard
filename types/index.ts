@@ -23,6 +23,7 @@ export interface Client {
   portal_password: string | null;
   portal_metrics: string[] | null;
   instagram_followers: number | null;
+  instagram_business_account_id: string | null;
   created_at: string;
   updated_at: string;
   services?: ClientService[];

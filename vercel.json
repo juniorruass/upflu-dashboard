@@ -5,7 +5,8 @@
     { "path": "/api/cron/check-payments", "schedule": "0 12 * * *"   },
     { "path": "/api/cron/check-campaigns",  "schedule": "0 12 * * *"   },
     { "path": "/api/cron/check-ad-accounts","schedule": "0 9 * * *"    },
-    { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   }
+    { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   },
+    { "path": "/api/cron/instagram-snapshot", "schedule": "0 10 * * *" }
   ],
   "functions": {
     "app/api/proposals/[id]/send/route.ts":  { "maxDuration": 60 },
@@ -13,6 +14,7 @@
     "app/api/cron/daily-summary/route.ts":   { "maxDuration": 60 },
     "app/api/cron/weekly-summary/route.ts":  { "maxDuration": 60 },
     "app/api/cron/check-campaigns/route.ts": { "maxDuration": 60 },
+    "app/api/cron/instagram-snapshot/route.ts": { "maxDuration": 60 },
     "app/api/carousels/generate/route.ts":   { "maxDuration": 60 }
   }
 }
