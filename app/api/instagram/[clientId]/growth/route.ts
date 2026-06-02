@@ -18,7 +18,7 @@ function presetToDates(preset: string): { since: Date; until: Date } {
       break;
     case "last_7d":  since.setDate(since.getDate() - 7);  break;
     case "last_30d":
-    default:         since.setDate(since.getDate() - 30); break;
+    default:         since.setDate(since.getDate() - 29); break;
   }
   return { since, until };
 }
@@ -28,7 +28,7 @@ function presetToDates(preset: string): { since: Date; until: Date } {
 async function fetchGrowthFromInsights(igId: string, token: string, since: Date, until: Date): Promise<{ growth: number | null; debug: unknown }> {
   try {
     const sinceTs = Math.floor(since.getTime() / 1000);
-    const untilTs = Math.floor(until.getTime() / 1000) + 86400;
+    const untilTs = Math.floor(until.getTime() / 1000);
     const qp = new URLSearchParams({
       metric: "follower_count",
       period: "day",
