@@ -49,6 +49,48 @@ function tipoBadgeStyle(tipo: string) {
   return { bg: "rgba(255,255,255,0.05)", color: "#9A9288", bd: "rgba(255,255,255,0.1)" };
 }
 
+const WA_MESSAGES = [
+  `Olá! Tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
+
+Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
+
+Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
+
+Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
+
+Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
+
+Posso te mostrar? É bem rápido.`,
+
+  `Oi Tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
+
+Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
+
+Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
+
+Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
+
+Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
+
+Posso te mostrar? É bem rápido.`,
+
+  `Oi, tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
+
+Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
+
+Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
+
+Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
+
+Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
+
+Posso te mostrar? É bem rápido.`,
+];
+
+function randomWaMsg() {
+  return WA_MESSAGES[Math.floor(Math.random() * WA_MESSAGES.length)];
+}
+
 function waLink(phone: string, msg: string) {
   const num = phone.replace(/\D/g, "");
   const intl = num.startsWith("55") ? num : `55${num}`;
@@ -441,7 +483,7 @@ function CRMPageInner() {
             {selected.telefone && (
               <div style={{ marginBottom: "20px" }}>
                 <a
-                  href={waLink(selected.telefone, selected.mensagem)}
+                  href={waLink(selected.telefone, randomWaMsg())}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.2)", borderRadius: "8px", padding: "10px 14px", color: "#25D366", fontSize: "13px", fontWeight: "500", textDecoration: "none" }}
