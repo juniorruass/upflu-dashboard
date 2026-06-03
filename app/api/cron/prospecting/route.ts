@@ -63,9 +63,6 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Verifica horário BR (-3h UTC)
-  const horaBR = (new Date().getUTCHours() - 3 + 24) % 24;
-
   // Busca todas as configs ativas — horário validado pelo horarioPermitido()
   const { data: configs } = await supabase
     .from("prospecting_configs")

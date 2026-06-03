@@ -59,7 +59,6 @@ export async function GET(req: NextRequest) {
   if (!serpKey) return NextResponse.json({ error: "SERPAPI_KEY não configurada" }, { status: 500 });
 
   const supabase = createAdminClient();
-  const horaBR   = (new Date().getUTCHours() - 3 + 24) % 24;
 
   // Busca todas as configs Google ativas — horário validado pelo horarioPermitido()
   const { data: configs } = await supabase
