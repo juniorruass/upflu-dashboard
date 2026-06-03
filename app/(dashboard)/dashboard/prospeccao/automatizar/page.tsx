@@ -27,20 +27,36 @@ const UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG
 
 const FOLLOWUP_DEFAULT = `Oi! Passei aqui para ver se conseguiu ver a mensagem anterior sobre o crescimento digital da {nome}.\n\nSe tiver interesse em conversar, é só responder.\n\nUpflu | upflu.digital`;
 
+const DIAS_SEMANA = [
+  { value: 0, label: "Dom" }, { value: 1, label: "Seg" }, { value: 2, label: "Ter" },
+  { value: 3, label: "Qua" }, { value: 4, label: "Qui" }, { value: 5, label: "Sex" }, { value: 6, label: "Sáb" },
+];
+
+const PRESETS_SEGURANCA = [
+  { key: "conservador", label: "🛡️ Conservador", desc: "Número novo — máxima proteção", min: 90, max: 180, session: 10, break: 60, days: [2,3,4] },
+  { key: "moderado",    label: "⚖️ Moderado",    desc: "1–2 semanas de uso — recomendado", min: 45, max: 120, session: 20, break: 30, days: [1,2,3,4,5] },
+  { key: "agressivo",   label: "⚡ Agressivo",   desc: "Número aquecido — use com cautela", min: 25, max: 70,  session: 30, break: 20, days: [1,2,3,4,5,6] },
+];
+
 type Config = {
   id: string; name: string; source: "cnae" | "google";
   cnae: string; cnae_label: string; search_term: string;
   municipio: string; uf: string; cities: string[];
   message_template: string; daily_limit: number;
-  active: boolean; send_hour: number;
+  active: boolean; send_hour: number; end_hour: number;
+  active_days: number[];
+  min_delay_seconds: number; max_delay_seconds: number;
+  session_max: number; session_break_minutes: number;
   followup_days: number; followup_template: string | null;
 };
 
 const EMPTY: Omit<Config, "id"> = {
   name: "", source: "google", cnae: "8630504", cnae_label: "Odontologia",
   search_term: "", municipio: "", uf: "ES", cities: [],
-  message_template: "",
-  daily_limit: 30, active: true, send_hour: 9,
+  message_template: "", daily_limit: 30, active: true,
+  send_hour: 9, end_hour: 18, active_days: [1,2,3,4,5],
+  min_delay_seconds: 45, max_delay_seconds: 120,
+  session_max: 20, session_break_minutes: 30,
   followup_days: 3, followup_template: FOLLOWUP_DEFAULT,
 };
 
@@ -129,7 +145,20 @@ export default function AutomatizarPage() {
 
   function editar(config: Config) {
     setEditId(config.id);
-    setForm({ name: config.name, source: config.source ?? "cnae", cnae: config.cnae, cnae_label: config.cnae_label, search_term: config.search_term ?? "", municipio: config.municipio, uf: config.uf, cities: config.cities ?? [], message_template: config.message_template, daily_limit: config.daily_limit, active: config.active, send_hour: config.send_hour, followup_days: config.followup_days, followup_template: config.followup_template });
+    setForm({
+      name: config.name, source: config.source ?? "cnae",
+      cnae: config.cnae, cnae_label: config.cnae_label,
+      search_term: config.search_term ?? "", municipio: config.municipio,
+      uf: config.uf, cities: config.cities ?? [],
+      message_template: config.message_template, daily_limit: config.daily_limit,
+      active: config.active, send_hour: config.send_hour, end_hour: config.end_hour ?? 18,
+      active_days: config.active_days ?? [1,2,3,4,5],
+      min_delay_seconds: config.min_delay_seconds ?? 45,
+      max_delay_seconds: config.max_delay_seconds ?? 120,
+      session_max: config.session_max ?? 20,
+      session_break_minutes: config.session_break_minutes ?? 30,
+      followup_days: config.followup_days, followup_template: config.followup_template,
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -247,6 +276,70 @@ export default function AutomatizarPage() {
             <div>
               <label style={labelStyle}>Mensagem de follow-up</label>
               <textarea style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }} value={form.followup_template ?? ""} onChange={(e) => setForm({ ...form, followup_template: e.target.value || null })} />
+            </div>
+          </div>
+
+          {/* Painel de segurança anti-ban */}
+          <div style={{ background: "rgba(255,183,77,0.04)", border: "1px solid rgba(255,183,77,0.15)", borderRadius: "10px", padding: "20px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "#F0B429", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>🛡️ Proteção Anti-Ban</p>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {PRESETS_SEGURANCA.map((p) => (
+                  <button key={p.key} onClick={() => setForm((f) => ({ ...f, min_delay_seconds: p.min, max_delay_seconds: p.max, session_max: p.session, session_break_minutes: p.break, active_days: p.days }))}
+                    title={p.desc}
+                    style={{ fontSize: "11px", fontWeight: "600", padding: "5px 10px", borderRadius: "6px", border: "1px solid rgba(240,180,41,0.2)", background: "rgba(240,180,41,0.07)", color: "#F0B429", cursor: "pointer" }}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Delay mín. (seg)</label>
+                <input style={inputStyle} type="number" min="10" max="300" value={form.min_delay_seconds} onChange={(e) => setForm({ ...form, min_delay_seconds: Number(e.target.value) })} />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Delay máx. (seg)</label>
+                <input style={inputStyle} type="number" min="10" max="600" value={form.max_delay_seconds} onChange={(e) => setForm({ ...form, max_delay_seconds: Number(e.target.value) })} />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Msgs por sessão</label>
+                <input style={inputStyle} type="number" min="1" max="100" value={form.session_max} onChange={(e) => setForm({ ...form, session_max: Number(e.target.value) })} />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Descanso (min)</label>
+                <input style={inputStyle} type="number" min="5" max="120" value={form.session_break_minutes} onChange={(e) => setForm({ ...form, session_break_minutes: Number(e.target.value) })} />
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "auto auto 1fr", gap: "16px", alignItems: "start" }}>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Hora início</label>
+                <select style={{ ...inputStyle, width: "90px", cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}h</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Hora fim</label>
+                <select style={{ ...inputStyle, width: "90px", cursor: "pointer" }} value={form.end_hour} onChange={(e) => setForm({ ...form, end_hour: Number(e.target.value) })}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}h</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Dias ativos</label>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  {DIAS_SEMANA.map((d) => {
+                    const ativo = form.active_days.includes(d.value);
+                    return (
+                      <button key={d.value} onClick={() => setForm((f) => ({ ...f, active_days: ativo ? f.active_days.filter((x) => x !== d.value) : [...f.active_days, d.value].sort() }))}
+                        style={{ padding: "6px 10px", borderRadius: "6px", border: `1px solid ${ativo ? "rgba(240,180,41,0.4)" : BORDER}`, background: ativo ? "rgba(240,180,41,0.12)" : "transparent", color: ativo ? "#F0B429" : "#555", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

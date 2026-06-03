@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { avaliarProspect, gerarMensagemAvaliacao } from "@/lib/prospect-evaluation";
+import { horarioPermitido, delayAleatorio, SAFETY_DEFAULTS } from "@/lib/whatsapp-safety";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -19,6 +20,19 @@ function telefoneValido(tel: string): boolean {
 }
 
 function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+
+function safetyFromConfig(config: Record<string, unknown>) {
+  return {
+    ...SAFETY_DEFAULTS,
+    min_delay_seconds:    Number(config.min_delay_seconds    ?? SAFETY_DEFAULTS.min_delay_seconds),
+    max_delay_seconds:    Number(config.max_delay_seconds    ?? SAFETY_DEFAULTS.max_delay_seconds),
+    session_max:          Number(config.session_max          ?? SAFETY_DEFAULTS.session_max),
+    session_break_minutes:Number(config.session_break_minutes?? SAFETY_DEFAULTS.session_break_minutes),
+    start_hour:           Number(config.send_hour            ?? SAFETY_DEFAULTS.start_hour),
+    end_hour:             Number(config.end_hour             ?? SAFETY_DEFAULTS.end_hour),
+    active_days:          Array.isArray(config.active_days)  ? config.active_days as number[] : SAFETY_DEFAULTS.active_days,
+  };
+}
 
 async function searchGoogle(query: string, apiKey: string): Promise<Record<string, unknown>[]> {
   try {
@@ -149,15 +163,29 @@ export async function GET(req: NextRequest) {
 
     totalSalvos += inseridos?.length ?? 0;
 
+    const safety = safetyFromConfig(config as Record<string, unknown>);
+    const horario = horarioPermitido(safety);
+    if (!horario.ok) {
+      console.log(`[prospecting-google] Bloqueado: ${horario.motivo}`);
+      continue;
+    }
+
     // Ordena por score de oportunidade (piores perfis digitais primeiro)
     const ordenados = (inseridos ?? [])
       .filter((p) => p.telefone && telefoneValido(p.telefone))
       .sort((a, b) => (b.evaluation_score ?? 0) - (a.evaluation_score ?? 0))
-      .slice(0, config.daily_limit ?? 30);
+      .slice(0, safety.session_max);
 
     for (let i = 0; i < ordenados.length; i++) {
       const p = ordenados[i];
-      if (i > 0) await sleep(Math.random() * 60_000 + 30_000);
+
+      // Descanso de sessão: a cada session_max mensagens, pausa longa
+      if (i > 0 && i % safety.session_max === 0) {
+        console.log(`[prospecting-google] Descanso de sessão: ${safety.session_break_minutes}min`);
+        await sleep(safety.session_break_minutes * 60_000);
+      } else if (i > 0) {
+        await sleep(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds));
+      }
 
       const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), p.mensagem);
       if (ok) {

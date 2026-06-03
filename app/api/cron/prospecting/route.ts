@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { horarioPermitido, delayAleatorio, SAFETY_DEFAULTS } from "@/lib/whatsapp-safety";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -130,18 +131,34 @@ export async function GET(req: NextRequest) {
     // Atualiza set de cnpjs existentes
     novas.forEach((e) => cnpjsExistentes.add(e.cnpj));
 
-    // Envia WhatsApp para os que têm telefone válido, respeitando o limite diário
+    const safety = {
+      ...SAFETY_DEFAULTS,
+      min_delay_seconds:     Number(config.min_delay_seconds     ?? SAFETY_DEFAULTS.min_delay_seconds),
+      max_delay_seconds:     Number(config.max_delay_seconds     ?? SAFETY_DEFAULTS.max_delay_seconds),
+      session_max:           Number(config.session_max           ?? SAFETY_DEFAULTS.session_max),
+      session_break_minutes: Number(config.session_break_minutes ?? SAFETY_DEFAULTS.session_break_minutes),
+      start_hour:            Number(config.send_hour             ?? SAFETY_DEFAULTS.start_hour),
+      end_hour:              Number(config.end_hour              ?? SAFETY_DEFAULTS.end_hour),
+      active_days:           Array.isArray(config.active_days)   ? config.active_days as number[] : SAFETY_DEFAULTS.active_days,
+    };
+
+    const horario = horarioPermitido(safety);
+    if (!horario.ok) { console.log(`[prospecting] Bloqueado: ${horario.motivo}`); continue; }
+
     const comTelefone = (inseridos ?? [])
       .filter((p) => p.telefone && telefoneValido(p.telefone))
-      .slice(0, config.daily_limit);
+      .slice(0, safety.session_max);
 
     for (let i = 0; i < comTelefone.length; i++) {
       const p = comTelefone[i];
       const phone = normalizarTelefone(p.telefone);
-      if (i > 0) {
-        const delay = Math.random() * 60_000 + 30_000; // 30–90s
-        await sleep(delay);
+
+      if (i > 0 && i % safety.session_max === 0) {
+        await sleep(safety.session_break_minutes * 60_000);
+      } else if (i > 0) {
+        await sleep(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds));
       }
+
       const ok = await enviarWhatsApp(phone, p.mensagem);
       if (ok) {
         await supabase.from("prospects").update({
