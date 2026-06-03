@@ -73,13 +73,14 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const horaBR   = (new Date().getUTCHours() - 3 + 24) % 24;
 
-  // Busca configs ativas do tipo Google no horário atual
+  // Busca configs ativas do tipo Google cuja janela cobre o horário atual
   const { data: configs } = await supabase
     .from("prospecting_configs")
     .select("*")
     .eq("active", true)
     .eq("source", "google")
-    .eq("send_hour", horaBR);
+    .lte("send_hour", horaBR)
+    .gt("end_hour", horaBR);
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config Google ativa neste horário" });
 

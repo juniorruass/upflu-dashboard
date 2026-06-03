@@ -78,12 +78,13 @@ export async function GET(req: NextRequest) {
   // Verifica horário BR (-3h UTC)
   const horaBR = (new Date().getUTCHours() - 3 + 24) % 24;
 
-  // Busca configs ativas cujo send_hour bate com a hora atual
+  // Busca configs ativas cuja janela de horário cobre o momento atual
   const { data: configs } = await supabase
     .from("prospecting_configs")
     .select("*")
     .eq("active", true)
-    .eq("send_hour", horaBR);
+    .lte("send_hour", horaBR)
+    .gt("end_hour", horaBR);
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config ativa neste horário" });
 

@@ -315,15 +315,15 @@ export default function AutomatizarPage() {
 
             <div style={{ display: "grid", gridTemplateColumns: "auto auto 1fr", gap: "16px", alignItems: "start" }}>
               <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Hora início</label>
-                <select style={{ ...inputStyle, width: "90px", cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
-                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}h</option>)}
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Início dos disparos</label>
+                <select style={{ ...inputStyle, width: "110px", cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}:00h</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Hora fim</label>
-                <select style={{ ...inputStyle, width: "90px", cursor: "pointer" }} value={form.end_hour} onChange={(e) => setForm({ ...form, end_hour: Number(e.target.value) })}>
-                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}h</option>)}
+                <label style={{ ...labelStyle, color: "#F0B429" }}>Encerramento</label>
+                <select style={{ ...inputStyle, width: "110px", cursor: "pointer" }} value={form.end_hour} onChange={(e) => setForm({ ...form, end_hour: Number(e.target.value) })}>
+                  {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}:00h</option>)}
                 </select>
               </div>
               <div>
@@ -387,8 +387,8 @@ export default function AutomatizarPage() {
                     </div>
                     <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
                       {isG
-                        ? `"${c.search_term}" · ${(c.cities ?? []).length} cidades · ${String(c.send_hour).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`
-                        : `${c.cnae_label} · ${c.municipio}, ${c.uf} · ${String(c.send_hour).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`}
+                        ? `"${c.search_term}" · ${(c.cities ?? []).length} cidades · ${String(c.send_hour).padStart(2,"0")}h–${String(c.end_hour ?? 18).padStart(2,"0")}h · ${c.daily_limit} msgs/dia`
+                        : `${c.cnae_label} · ${c.municipio}, ${c.uf} · ${String(c.send_hour).padStart(2,"0")}h–${String(c.end_hour ?? 18).padStart(2,"0")}h · ${c.daily_limit} msgs/dia`}
                       {c.followup_days ? ` · follow-up ${c.followup_days}d` : ""}
                     </p>
                   </div>
