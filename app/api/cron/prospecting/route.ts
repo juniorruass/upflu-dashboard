@@ -78,13 +78,12 @@ export async function GET(req: NextRequest) {
   // Verifica horário BR (-3h UTC)
   const horaBR = (new Date().getUTCHours() - 3 + 24) % 24;
 
-  // Busca configs ativas cuja janela de horário cobre o momento atual
+  // Busca todas as configs ativas — horário validado pelo horarioPermitido()
   const { data: configs } = await supabase
     .from("prospecting_configs")
     .select("*")
     .eq("active", true)
-    .lte("send_hour", horaBR)
-    .gt("end_hour", horaBR);
+    .neq("source", "google");
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config ativa neste horário" });
 
@@ -154,11 +153,7 @@ export async function GET(req: NextRequest) {
       const p = comTelefone[i];
       const phone = normalizarTelefone(p.telefone);
 
-      if (i > 0 && i % safety.session_max === 0) {
-        await sleep(safety.session_break_minutes * 60_000);
-      } else if (i > 0) {
-        await sleep(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds));
-      }
+      if (i > 0) await sleep(Math.min(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds), 2000));
 
       const ok = await enviarWhatsApp(phone, p.mensagem);
       if (ok) {

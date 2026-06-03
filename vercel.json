@@ -7,9 +7,9 @@
     { "path": "/api/cron/check-ad-accounts","schedule": "0 9 * * *"    },
     { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   },
     { "path": "/api/cron/instagram-snapshot",      "schedule": "0 10 * * *"  },
-    { "path": "/api/cron/prospecting",              "schedule": "0 * * * *"   },
-    { "path": "/api/cron/prospecting-followup",     "schedule": "0 10 * * *"  },
-    { "path": "/api/cron/prospecting-google",       "schedule": "0 * * * *"   }
+    { "path": "/api/cron/prospecting",              "schedule": "0 12 * * 1-5" },
+    { "path": "/api/cron/prospecting-followup",     "schedule": "0 13 * * 1-5" },
+    { "path": "/api/cron/prospecting-google",       "schedule": "0 12 * * 1-5" }
   ],
   "functions": {
     "app/api/proposals/[id]/send/route.ts":  { "maxDuration": 60 },

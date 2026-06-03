@@ -73,14 +73,12 @@ export async function GET(req: NextRequest) {
   const supabase = createAdminClient();
   const horaBR   = (new Date().getUTCHours() - 3 + 24) % 24;
 
-  // Busca configs ativas do tipo Google cuja janela cobre o horário atual
+  // Busca todas as configs Google ativas — horário validado pelo horarioPermitido()
   const { data: configs } = await supabase
     .from("prospecting_configs")
     .select("*")
     .eq("active", true)
-    .eq("source", "google")
-    .lte("send_hour", horaBR)
-    .gt("end_hour", horaBR);
+    .eq("source", "google");
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config Google ativa neste horário" });
 
@@ -182,16 +180,13 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => (b.evaluation_score ?? 0) - (a.evaluation_score ?? 0))
       .slice(0, safety.session_max);
 
+    // No plano free Vercel (max 60s por função), usamos delay mínimo de 2s
+    // Para delays maiores (anti-ban real), fazer upgrade pro Vercel Pro
+    const delayMs = Math.min(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds), 2000);
+
     for (let i = 0; i < ordenados.length; i++) {
       const p = ordenados[i];
-
-      // Descanso de sessão: a cada session_max mensagens, pausa longa
-      if (i > 0 && i % safety.session_max === 0) {
-        console.log(`[prospecting-google] Descanso de sessão: ${safety.session_break_minutes}min`);
-        await sleep(safety.session_break_minutes * 60_000);
-      } else if (i > 0) {
-        await sleep(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds));
-      }
+      if (i > 0) await sleep(delayMs);
 
       const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), p.mensagem);
       if (ok) {
