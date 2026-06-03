@@ -90,8 +90,11 @@ export async function evolutionFindChats(instance?: string, limit = 30): Promise
     });
     if (!res.ok) return [];
     const data = await res.json();
-    const list = Array.isArray(data) ? data : (data?.chats ?? []);
-    return list.slice(0, limit);
+    const list: Record<string, unknown>[] = Array.isArray(data) ? data : (data?.chats ?? []);
+    return list.slice(0, limit).map((c) => ({
+      ...c,
+      id: (c.remoteJid as string) || (c.id as string) || "",
+    })) as EvolutionChat[];
   } catch { return []; }
 }
 

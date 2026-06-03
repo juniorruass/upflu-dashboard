@@ -455,7 +455,7 @@ export default function AutomatizarPage() {
               )}
               <MessageSquare size={14} color={ACCENT} />
               <p style={{ ...sec, margin: 0, color: ACCENT }}>
-                {activeChat ? (activeChat.pushName ?? activeChat.name ?? activeChat.id.replace("@s.whatsapp.net", "")) : "Chat ao Vivo"}
+                {activeChat ? (activeChat.pushName ?? activeChat.name ?? (activeChat.id ?? "").replace("@s.whatsapp.net", "").replace("@lid", "")) : "Chat ao Vivo"}
               </p>
               {!activeChat && (
                 <button onClick={loadChats} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#555" }}>
@@ -473,19 +473,23 @@ export default function AutomatizarPage() {
                   <div style={{ padding: "32px", textAlign: "center" }}>
                     <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma conversa encontrada.</p>
                   </div>
-                ) : chats.map((c) => (
-                  <div key={c.id} onClick={() => setActiveChat(c)} style={{ padding: "12px 20px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", transition: "background .15s" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{c.pushName ?? c.name ?? c.id.replace("@s.whatsapp.net", "")}</span>
-                      {c.unreadCount ? <span style={{ fontSize: "10px", fontWeight: "700", background: GREEN, color: "#000", borderRadius: "10px", padding: "1px 6px" }}>{c.unreadCount}</span> : null}
+                ) : chats.map((c, i) => {
+                  const chatId   = c.id || String(i);
+                  const chatName = c.pushName ?? c.name ?? chatId.replace("@s.whatsapp.net", "").replace("@lid", "");
+                  return (
+                    <div key={chatId} onClick={() => setActiveChat(c)} style={{ padding: "12px 20px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", transition: "background .15s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                        <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{chatName}</span>
+                        {c.unreadCount ? <span style={{ fontSize: "10px", fontWeight: "700", background: GREEN, color: "#000", borderRadius: "10px", padding: "1px 6px" }}>{c.unreadCount}</span> : null}
+                      </div>
+                      <p style={{ fontSize: "11px", color: "#555", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.lastMessage?.conversation ?? ""}
+                      </p>
                     </div>
-                    <p style={{ fontSize: "11px", color: "#555", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {c.lastMessage?.conversation ?? ""}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
