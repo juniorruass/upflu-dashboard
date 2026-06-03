@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { avaliarProspect, gerarMensagemAvaliacao } from "@/lib/prospect-evaluation";
 import { horarioPermitido, delayAleatorio, SAFETY_DEFAULTS } from "@/lib/whatsapp-safety";
+import { evolutionSend } from "@/lib/evolution-api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const SERPAPI_URL = "https://serpapi.com/search.json";
-const ZAPI_BASE   = "https://api.z-api.io/instances";
 
 function normalizarTelefone(tel: string): string {
   const d = tel.replace(/\D/g, "");
@@ -47,19 +47,7 @@ async function searchGoogle(query: string, apiKey: string): Promise<Record<strin
 }
 
 async function enviarWhatsApp(phone: string, message: string): Promise<boolean> {
-  const instanceId  = process.env.ZAPI_INSTANCE_ID;
-  const token       = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN ?? "";
-  if (!instanceId || !token) return false;
-  try {
-    const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/send-text`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(clientToken ? { "Client-Token": clientToken } : {}) },
-      body: JSON.stringify({ phone, message }),
-      signal: AbortSignal.timeout(10000),
-    });
-    return res.ok;
-  } catch { return false; }
+  return evolutionSend(phone, message);
 }
 
 export async function GET(req: NextRequest) {

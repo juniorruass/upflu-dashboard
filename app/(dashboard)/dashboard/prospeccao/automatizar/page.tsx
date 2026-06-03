@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Play, Pause, X } from "lucide-react";
+import { Loader2, Plus, Trash2, Play, Pause, X, RefreshCw, Wifi, WifiOff, QrCode, LogOut } from "lucide-react";
 import Header from "@/components/header";
 
 const ACCENT = "#00CFFF";
@@ -38,6 +38,16 @@ const PRESETS_SEGURANCA = [
   { key: "agressivo",   label: "⚡ Agressivo",   desc: "Número aquecido — use com cautela", min: 25, max: 70,  session: 30, break: 20, days: [1,2,3,4,5,6] },
 ];
 
+type EvolutionInst = {
+  instance: {
+    instanceName: string;
+    instanceId?: string;
+    owner?: string;
+    profileName?: string;
+    status?: string;
+  };
+};
+
 type Config = {
   id: string; name: string; source: "cnae" | "google";
   cnae: string; cnae_label: string; search_term: string;
@@ -71,15 +81,56 @@ const labelStyle: React.CSSProperties = {
 };
 
 export default function AutomatizarPage() {
-  const [configs, setConfigs] = useState<Config[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving]   = useState(false);
-  const [form, setForm]       = useState<Omit<Config, "id">>(EMPTY);
-  const [editId, setEditId]   = useState<string | null>(null);
-  const [msg, setMsg]         = useState("");
-  const [newCity, setNewCity] = useState("");
+  const [configs, setConfigs]         = useState<Config[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [form, setForm]               = useState<Omit<Config, "id">>(EMPTY);
+  const [editId, setEditId]           = useState<string | null>(null);
+  const [msg, setMsg]                 = useState("");
+  const [newCity, setNewCity]         = useState("");
 
-  useEffect(() => { loadConfigs(); }, []);
+  // Evolution API state
+  const [instances, setInstances]     = useState<EvolutionInst[]>([]);
+  const [instLoading, setInstLoading] = useState(true);
+  const [qrData, setQrData]           = useState<Record<string, string>>({});
+  const [qrLoading, setQrLoading]     = useState<Record<string, boolean>>({});
+  const [disconnecting, setDisconnecting] = useState<Record<string, boolean>>({});
+
+  useEffect(() => { loadConfigs(); loadInstances(); }, []);
+
+  async function loadInstances() {
+    setInstLoading(true);
+    try {
+      const r = await fetch("/api/evolution");
+      const d = await r.json();
+      setInstances(d.instances ?? []);
+    } catch { setInstances([]); }
+    setInstLoading(false);
+  }
+
+  async function connectInstance(name: string) {
+    setQrLoading((prev) => ({ ...prev, [name]: true }));
+    setQrData((prev) => ({ ...prev, [name]: "" }));
+    try {
+      const r = await fetch(`/api/evolution?action=connect&instance=${encodeURIComponent(name)}`);
+      const d = await r.json();
+      if (d.base64) setQrData((prev) => ({ ...prev, [name]: d.base64 }));
+    } catch {}
+    setQrLoading((prev) => ({ ...prev, [name]: false }));
+  }
+
+  async function disconnectInstance(name: string) {
+    if (!confirm(`Desconectar a instância "${name}"?`)) return;
+    setDisconnecting((prev) => ({ ...prev, [name]: true }));
+    await fetch("/api/evolution", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "disconnect", instance: name }),
+    });
+    setDisconnecting((prev) => ({ ...prev, [name]: false }));
+    setQrData((prev) => { const n = { ...prev }; delete n[name]; return n; });
+    await loadInstances();
+  }
 
   async function loadConfigs() {
     setLoading(true);
@@ -168,6 +219,86 @@ export default function AutomatizarPage() {
     <>
       <Header title="Prospecção Automática" />
       <div style={{ padding: "40px", maxWidth: "900px" }}>
+
+        {/* Evolution API — Instâncias */}
+        <div style={{ marginBottom: "40px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.15em", textTransform: "uppercase", margin: 0 }}>
+              WhatsApp — Evolution API
+            </p>
+            <button onClick={loadInstances} disabled={instLoading} title="Atualizar" style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px" }}>
+              <RefreshCw size={12} style={{ animation: instLoading ? "spin 1s linear infinite" : "none" }} />
+              Atualizar
+            </button>
+          </div>
+
+          {instLoading ? (
+            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", textAlign: "center" }}>
+              <Loader2 size={18} style={{ animation: "spin 1s linear infinite", color: "#555" }} />
+            </div>
+          ) : instances.length === 0 ? (
+            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", textAlign: "center" }}>
+              <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma instância encontrada. Verifique se a Evolution API está rodando.</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {instances.map((inst) => {
+                const name      = inst.instance.instanceName;
+                const state     = (inst.instance.status ?? "").toUpperCase();
+                const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
+                const owner     = inst.instance.owner?.replace("@s.whatsapp.net", "") ?? "";
+                const profile   = inst.instance.profileName ?? "";
+                const qr        = qrData[name];
+
+                return (
+                  <div key={name} style={{ background: "#111", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "12px", padding: "20px 24px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+                        {connected
+                          ? <Wifi size={18} color={GREEN} />
+                          : <WifiOff size={18} color="#555" />
+                        }
+                        <div>
+                          <p style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 2px" }}>{name}</p>
+                          {connected && owner && (
+                            <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                              {profile ? `${profile} · ` : ""}{owner}
+                            </p>
+                          )}
+                        </div>
+                        <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 9px", borderRadius: "4px", background: connected ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: connected ? GREEN : "#555", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}` }}>
+                          {connected ? "CONECTADO" : "DESCONECTADO"}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                        {!connected && (
+                          <button onClick={() => connectInstance(name)} disabled={qrLoading[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
+                            {qrLoading[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <QrCode size={12} />}
+                            QR Code
+                          </button>
+                        )}
+                        {connected && (
+                          <button onClick={() => disconnectInstance(name)} disabled={disconnecting[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: "#FF6B6B", cursor: "pointer" }}>
+                            {disconnecting[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={12} />}
+                            Desconectar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {qr && (
+                      <div style={{ marginTop: "16px", padding: "16px", background: "#fff", borderRadius: "8px", display: "inline-block" }}>
+                        <img src={qr} alt="QR Code" style={{ width: "200px", height: "200px", display: "block" }} />
+                        <p style={{ fontSize: "11px", color: "#333", textAlign: "center", margin: "8px 0 0" }}>Escaneie com o WhatsApp</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Form */}
         <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "32px", marginBottom: "40px" }}>

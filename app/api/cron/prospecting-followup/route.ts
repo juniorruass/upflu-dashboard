@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { evolutionSend } from "@/lib/evolution-api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-const ZAPI_BASE = "https://api.z-api.io/instances";
 
 function normalizarTelefone(tel: string): string {
   const d = tel.replace(/\D/g, "");
@@ -21,19 +20,7 @@ function renderTemplate(template: string, vars: Record<string, string>): string 
 }
 
 async function enviarWhatsApp(phone: string, message: string): Promise<boolean> {
-  const instanceId  = process.env.ZAPI_INSTANCE_ID;
-  const token       = process.env.ZAPI_TOKEN;
-  const clientToken = process.env.ZAPI_CLIENT_TOKEN ?? "";
-  if (!instanceId || !token) return false;
-  try {
-    const res = await fetch(`${ZAPI_BASE}/${instanceId}/token/${token}/send-text`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(clientToken ? { "Client-Token": clientToken } : {}) },
-      body: JSON.stringify({ phone, message }),
-      signal: AbortSignal.timeout(10000),
-    });
-    return res.ok;
-  } catch { return false; }
+  return evolutionSend(phone, message);
 }
 
 function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
