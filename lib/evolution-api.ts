@@ -77,6 +77,58 @@ export async function evolutionDisconnect(instance?: string): Promise<boolean> {
   } catch { return false; }
 }
 
+export async function evolutionFindChats(instance?: string, limit = 30): Promise<EvolutionChat[]> {
+  const base = BASE();
+  const inst = instance ?? INSTANCE();
+  if (!base || !API_KEY() || !inst) return [];
+  try {
+    const res = await fetch(`${base}/chat/findChats/${encodeURIComponent(inst)}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ where: {} }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data?.chats ?? []);
+    return list.slice(0, limit);
+  } catch { return []; }
+}
+
+export async function evolutionFindMessages(instance?: string, remoteJid?: string, limit = 20): Promise<EvolutionMessage[]> {
+  const base = BASE();
+  const inst = instance ?? INSTANCE();
+  if (!base || !API_KEY() || !inst) return [];
+  try {
+    const where: Record<string, unknown> = remoteJid
+      ? { key: { remoteJid } }
+      : {};
+    const res = await fetch(`${base}/message/findMessages/${encodeURIComponent(inst)}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ where, page: { limit, offset: 0 } }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const records = data?.messages?.records ?? data?.records ?? (Array.isArray(data) ? data : []);
+    return records.slice(0, limit);
+  } catch { return []; }
+}
+
+export async function evolutionMeasureLatency(): Promise<number> {
+  const base = BASE();
+  if (!base || !API_KEY()) return -1;
+  const start = Date.now();
+  try {
+    await fetch(`${base}/instance/fetchInstances`, {
+      headers: headers(),
+      signal: AbortSignal.timeout(5000),
+    });
+    return Date.now() - start;
+  } catch { return -1; }
+}
+
 export type EvolutionInstance = {
   id?: string;
   name: string;
@@ -87,10 +139,7 @@ export type EvolutionInstance = {
 };
 
 export type EvolutionState = {
-  instance?: {
-    instanceName: string;
-    state: string;
-  };
+  instance?: { instanceName: string; state: string };
   state?: string;
 };
 
@@ -98,4 +147,21 @@ export type EvolutionQR = {
   code?: string;
   base64?: string;
   count?: number;
+};
+
+export type EvolutionChat = {
+  id: string;
+  name?: string;
+  pushName?: string;
+  unreadCount?: number;
+  lastMessage?: { conversation?: string; timestamp?: number };
+  updatedAt?: string;
+};
+
+export type EvolutionMessage = {
+  key: { remoteJid: string; fromMe: boolean; id: string };
+  message?: { conversation?: string; extendedTextMessage?: { text: string } };
+  messageTimestamp?: number;
+  pushName?: string;
+  status?: string;
 };

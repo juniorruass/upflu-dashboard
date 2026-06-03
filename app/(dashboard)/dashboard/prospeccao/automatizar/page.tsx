@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Play, Pause, X, RefreshCw, Wifi, WifiOff, QrCode, LogOut } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Loader2, Plus, Trash2, Play, Pause, X,
+  RefreshCw, Wifi, WifiOff, QrCode, LogOut,
+  Send, MessageSquare, Zap, Clock, ChevronLeft,
+} from "lucide-react";
 import Header from "@/components/header";
 
-const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
-const GREEN  = "#4ADE80";
-const PINK   = "#E1306C";
+const ACCENT  = "#00CFFF";
+const BORDER  = "rgba(255,255,255,0.07)";
+const GREEN   = "#4ADE80";
+const PINK    = "#E1306C";
+const YELLOW  = "#F0B429";
 
 const CNAE_LISTA = [
   { codigo: "8630504", label: "Odontologia" },
@@ -24,28 +29,21 @@ const CNAE_LISTA = [
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-
 const FOLLOWUP_DEFAULT = `Oi! Passei aqui para ver se conseguiu ver a mensagem anterior sobre o crescimento digital da {nome}.\n\nSe tiver interesse em conversar, é só responder.\n\nUpflu | upflu.digital`;
-
 const DIAS_SEMANA = [
   { value: 0, label: "Dom" }, { value: 1, label: "Seg" }, { value: 2, label: "Ter" },
   { value: 3, label: "Qua" }, { value: 4, label: "Qui" }, { value: 5, label: "Sex" }, { value: 6, label: "Sáb" },
 ];
-
 const PRESETS_SEGURANCA = [
   { key: "conservador", label: "🛡️ Conservador", desc: "Número novo — máxima proteção", min: 90, max: 180, session: 10, break: 60, days: [2,3,4] },
   { key: "moderado",    label: "⚖️ Moderado",    desc: "1–2 semanas de uso — recomendado", min: 45, max: 120, session: 20, break: 30, days: [1,2,3,4,5] },
   { key: "agressivo",   label: "⚡ Agressivo",   desc: "Número aquecido — use com cautela", min: 25, max: 70,  session: 30, break: 20, days: [1,2,3,4,5,6] },
 ];
 
-type EvolutionInst = {
-  id?: string;
-  name: string;
-  connectionStatus: string;
-  ownerJid?: string;
-  profileName?: string;
-  profilePicUrl?: string;
-};
+type EvolutionInst = { id?: string; name: string; connectionStatus: string; ownerJid?: string; profileName?: string; profilePicUrl?: string; };
+type EvolutionChat = { id: string; name?: string; pushName?: string; unreadCount?: number; lastMessage?: { conversation?: string; timestamp?: number }; updatedAt?: string; };
+type EvolutionMsg  = { key: { remoteJid: string; fromMe: boolean; id: string }; message?: { conversation?: string; extendedTextMessage?: { text: string } }; messageTimestamp?: number; pushName?: string; };
+type WaLog         = { id: string; nome: string; telefone: string; template: string; status: string; sent_at: string; };
 
 type Config = {
   id: string; name: string; source: "cnae" | "google";
@@ -69,66 +67,131 @@ const EMPTY: Omit<Config, "id"> = {
   followup_days: 3, followup_template: FOLLOWUP_DEFAULT,
 };
 
-const inputStyle: React.CSSProperties = {
-  background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px",
-  padding: "10px 12px", fontSize: "13px", color: "#F0EDE8", outline: "none",
-  width: "100%", boxSizing: "border-box", fontFamily: "inherit",
-};
-const labelStyle: React.CSSProperties = {
-  fontSize: "11px", fontWeight: "600", color: "#777068",
-  letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px",
-};
+const inp: React.CSSProperties = { background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "10px 12px", fontSize: "13px", color: "#F0EDE8", outline: "none", width: "100%", boxSizing: "border-box", fontFamily: "inherit" };
+const lbl: React.CSSProperties = { fontSize: "11px", fontWeight: "600" as const, color: "#777068", letterSpacing: "0.1em", textTransform: "uppercase" as const, display: "block", marginBottom: "6px" };
+const sec: React.CSSProperties = { fontSize: "11px", fontWeight: "600" as const, color: "#555", letterSpacing: "0.15em", textTransform: "uppercase" as const, marginBottom: "16px" };
+
+function latencyColor(ms: number) {
+  if (ms < 0) return "#555";
+  if (ms < 200) return GREEN;
+  if (ms < 500) return YELLOW;
+  return PINK;
+}
+
+function msgText(m: EvolutionMsg) {
+  return m.message?.conversation ?? m.message?.extendedTextMessage?.text ?? "";
+}
+
+function formatTime(ts?: number) {
+  if (!ts) return "";
+  return new Date(ts * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function AutomatizarPage() {
-  const [configs, setConfigs]         = useState<Config[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState(false);
-  const [form, setForm]               = useState<Omit<Config, "id">>(EMPTY);
-  const [editId, setEditId]           = useState<string | null>(null);
-  const [msg, setMsg]                 = useState("");
-  const [newCity, setNewCity]         = useState("");
+  // ── prospecting configs ──
+  const [configs, setConfigs] = useState<Config[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+  const [form, setForm]       = useState<Omit<Config, "id">>(EMPTY);
+  const [editId, setEditId]   = useState<string | null>(null);
+  const [msg, setMsg]         = useState("");
+  const [newCity, setNewCity] = useState("");
 
-  // Evolution API state
-  const [instances, setInstances]     = useState<EvolutionInst[]>([]);
-  const [instLoading, setInstLoading] = useState(true);
-  const [qrData, setQrData]           = useState<Record<string, string>>({});
-  const [qrLoading, setQrLoading]     = useState<Record<string, boolean>>({});
+  // ── instance panel ──
+  const [instances, setInstances]         = useState<EvolutionInst[]>([]);
+  const [instLoading, setInstLoading]     = useState(true);
+  const [latency, setLatency]             = useState(-1);
+  const [qrData, setQrData]               = useState<Record<string, string>>({});
+  const [qrLoading, setQrLoading]         = useState<Record<string, boolean>>({});
   const [disconnecting, setDisconnecting] = useState<Record<string, boolean>>({});
 
-  useEffect(() => { loadConfigs(); loadInstances(); }, []);
+  // ── test message ──
+  const [showTest, setShowTest]   = useState(false);
+  const [testPhone, setTestPhone] = useState("");
+  const [testMsg, setTestMsg]     = useState("");
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult]   = useState<string | null>(null);
 
+  // ── quick history ──
+  const [histLogs, setHistLogs]       = useState<WaLog[]>([]);
+  const [histLoading, setHistLoading] = useState(true);
+
+  // ── instant dispatch ──
+  const [dispNumbers, setDispNumbers] = useState("");
+  const [dispMsg, setDispMsg]         = useState("");
+  const [dispSending, setDispSending] = useState(false);
+  const [dispResult, setDispResult]   = useState<string | null>(null);
+
+  // ── live chat ──
+  const [chats, setChats]               = useState<EvolutionChat[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(true);
+  const [activeChat, setActiveChat]     = useState<EvolutionChat | null>(null);
+  const [chatMsgs, setChatMsgs]         = useState<EvolutionMsg[]>([]);
+  const [chatMsgsLoading, setChatMsgsLoading] = useState(false);
+  const [chatInput, setChatInput]       = useState("");
+  const [chatSending, setChatSending]   = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadConfigs();
+    loadInstances();
+    loadHistory();
+    loadChats();
+  }, []);
+
+  // Poll chat messages every 5s when a chat is open
+  useEffect(() => {
+    if (!activeChat) return;
+    loadChatMessages(activeChat.id);
+    const t = setInterval(() => loadChatMessages(activeChat.id), 5000);
+    return () => clearInterval(t);
+  }, [activeChat]);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMsgs]);
+
+  // ── loaders ──
   async function loadInstances() {
     setInstLoading(true);
     try {
-      const r = await fetch("/api/evolution");
-      const d = await r.json();
+      const t0 = Date.now();
+      const r  = await fetch("/api/evolution");
+      setLatency(Date.now() - t0);
+      const d  = await r.json();
       setInstances(d.instances ?? []);
     } catch { setInstances([]); }
     setInstLoading(false);
   }
 
-  async function connectInstance(name: string) {
-    setQrLoading((prev) => ({ ...prev, [name]: true }));
-    setQrData((prev) => ({ ...prev, [name]: "" }));
+  async function loadHistory() {
+    setHistLoading(true);
     try {
-      const r = await fetch(`/api/evolution?action=connect&instance=${encodeURIComponent(name)}`);
+      const r = await fetch("/api/disparos/whatsapp/historico");
       const d = await r.json();
-      if (d.base64) setQrData((prev) => ({ ...prev, [name]: d.base64 }));
-    } catch {}
-    setQrLoading((prev) => ({ ...prev, [name]: false }));
+      setHistLogs((d.logs ?? []).slice(0, 10));
+    } catch { setHistLogs([]); }
+    setHistLoading(false);
   }
 
-  async function disconnectInstance(name: string) {
-    if (!confirm(`Desconectar a instância "${name}"?`)) return;
-    setDisconnecting((prev) => ({ ...prev, [name]: true }));
-    await fetch("/api/evolution", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "disconnect", instance: name }),
-    });
-    setDisconnecting((prev) => ({ ...prev, [name]: false }));
-    setQrData((prev) => { const n = { ...prev }; delete n[name]; return n; });
-    await loadInstances();
+  async function loadChats() {
+    setChatsLoading(true);
+    try {
+      const r = await fetch("/api/evolution?action=chats&limit=30");
+      const d = await r.json();
+      setChats(d.chats ?? []);
+    } catch { setChats([]); }
+    setChatsLoading(false);
+  }
+
+  async function loadChatMessages(jid: string) {
+    setChatMsgsLoading(true);
+    try {
+      const r = await fetch(`/api/evolution?action=messages&jid=${encodeURIComponent(jid)}&limit=30`);
+      const d = await r.json();
+      setChatMsgs(d.messages ?? []);
+    } catch {}
+    setChatMsgsLoading(false);
   }
 
   async function loadConfigs() {
@@ -139,76 +202,96 @@ export default function AutomatizarPage() {
     setLoading(false);
   }
 
+  // ── instance actions ──
+  async function connectInstance(name: string) {
+    setQrLoading((p) => ({ ...p, [name]: true }));
+    try {
+      const r = await fetch(`/api/evolution?action=connect&instance=${encodeURIComponent(name)}`);
+      const d = await r.json();
+      if (d.base64) setQrData((p) => ({ ...p, [name]: d.base64 }));
+    } catch {}
+    setQrLoading((p) => ({ ...p, [name]: false }));
+  }
+
+  async function disconnectInstance(name: string) {
+    if (!confirm(`Desconectar "${name}"?`)) return;
+    setDisconnecting((p) => ({ ...p, [name]: true }));
+    await fetch("/api/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "disconnect", instance: name }) });
+    setDisconnecting((p) => ({ ...p, [name]: false }));
+    setQrData((p) => { const n = { ...p }; delete n[name]; return n; });
+    await loadInstances();
+  }
+
+  // ── test message ──
+  async function sendTest() {
+    if (!testPhone.trim() || !testMsg.trim()) return;
+    setTestSending(true); setTestResult(null);
+    const r = await fetch("/api/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", phone: testPhone, message: testMsg }) });
+    const d = await r.json();
+    setTestResult(d.ok ? "Mensagem enviada!" : "Falha no envio.");
+    setTestSending(false);
+  }
+
+  // ── instant dispatch ──
+  async function sendNow() {
+    const numbers = dispNumbers.split("\n").map((s) => s.trim()).filter(Boolean);
+    if (!numbers.length || !dispMsg.trim()) return;
+    setDispSending(true); setDispResult(null);
+    const r = await fetch("/api/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "sendNow", numbers, message: dispMsg }) });
+    const d = await r.json();
+    setDispResult(`Enviado: ${d.sent} · Falhou: ${d.failed}`);
+    setDispSending(false);
+    loadHistory();
+  }
+
+  // ── chat send ──
+  async function sendChatMsg() {
+    if (!chatInput.trim() || !activeChat) return;
+    setChatSending(true);
+    await fetch("/api/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", phone: activeChat.id.replace("@s.whatsapp.net", ""), message: chatInput }) });
+    setChatInput("");
+    setChatSending(false);
+    await loadChatMessages(activeChat.id);
+  }
+
+  // ── prospecting config ──
   function addCity() {
     const c = newCity.trim();
     if (!c || form.cities.includes(c)) return;
     setForm({ ...form, cities: [...form.cities, c] });
     setNewCity("");
   }
-
-  function removeCity(c: string) {
-    setForm({ ...form, cities: form.cities.filter((x) => x !== c) });
-  }
+  function removeCity(c: string) { setForm({ ...form, cities: form.cities.filter((x) => x !== c) }); }
 
   async function salvar() {
     if (!form.name.trim()) { setMsg("Nome é obrigatório."); return; }
     if (form.source === "google" && form.cities.length === 0) { setMsg("Adicione ao menos uma cidade."); return; }
     if (form.source === "google" && !form.search_term.trim()) { setMsg("Termo de busca é obrigatório."); return; }
     if (form.source === "cnae" && !form.municipio.trim()) { setMsg("Cidade é obrigatória."); return; }
-
     setSaving(true); setMsg("");
     const cnaeInfo = CNAE_LISTA.find((c) => c.codigo === form.cnae);
-    const body = {
-      ...form,
-      cnae_label: cnaeInfo?.label ?? form.cnae_label,
-      ...(editId ? { id: editId } : {}),
-    };
-    const r = await fetch("/api/prospecting-configs", {
-      method: editId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const body = { ...form, cnae_label: cnaeInfo?.label ?? form.cnae_label, ...(editId ? { id: editId } : {}) };
+    const r = await fetch("/api/prospecting-configs", { method: editId ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const d = await r.json();
     if (!r.ok) { setMsg(d.error ?? "Erro ao salvar."); setSaving(false); return; }
-    setMsg("Salvo!");
-    setForm(EMPTY); setEditId(null);
-    await loadConfigs();
-    setSaving(false);
+    setMsg("Salvo!"); setForm(EMPTY); setEditId(null);
+    await loadConfigs(); setSaving(false);
   }
 
   async function toggleActive(config: Config) {
-    await fetch("/api/prospecting-configs", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: config.id, active: !config.active }),
-    });
+    await fetch("/api/prospecting-configs", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: config.id, active: !config.active }) });
     await loadConfigs();
   }
 
   async function excluir(id: string) {
     if (!confirm("Excluir esta automação?")) return;
-    await fetch("/api/prospecting-configs", {
-      method: "DELETE", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
+    await fetch("/api/prospecting-configs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     await loadConfigs();
   }
 
   function editar(config: Config) {
     setEditId(config.id);
-    setForm({
-      name: config.name, source: config.source ?? "cnae",
-      cnae: config.cnae, cnae_label: config.cnae_label,
-      search_term: config.search_term ?? "", municipio: config.municipio,
-      uf: config.uf, cities: config.cities ?? [],
-      message_template: config.message_template, daily_limit: config.daily_limit,
-      active: config.active, send_hour: config.send_hour, end_hour: config.end_hour ?? 18,
-      active_days: config.active_days ?? [1,2,3,4,5],
-      min_delay_seconds: config.min_delay_seconds ?? 45,
-      max_delay_seconds: config.max_delay_seconds ?? 120,
-      session_max: config.session_max ?? 20,
-      session_break_minutes: config.session_break_minutes ?? 30,
-      followup_days: config.followup_days, followup_template: config.followup_template,
-    });
+    setForm({ name: config.name, source: config.source ?? "cnae", cnae: config.cnae, cnae_label: config.cnae_label, search_term: config.search_term ?? "", municipio: config.municipio, uf: config.uf, cities: config.cities ?? [], message_template: config.message_template, daily_limit: config.daily_limit, active: config.active, send_hour: config.send_hour, end_hour: config.end_hour ?? 18, active_days: config.active_days ?? [1,2,3,4,5], min_delay_seconds: config.min_delay_seconds ?? 45, max_delay_seconds: config.max_delay_seconds ?? 120, session_max: config.session_max ?? 20, session_break_minutes: config.session_break_minutes ?? 30, followup_days: config.followup_days, followup_template: config.followup_template });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -217,17 +300,14 @@ export default function AutomatizarPage() {
   return (
     <>
       <Header title="Prospecção Automática" />
-      <div style={{ padding: "40px", maxWidth: "900px" }}>
+      <div style={{ padding: "40px", maxWidth: "1100px" }}>
 
-        {/* Evolution API — Instâncias */}
-        <div style={{ marginBottom: "40px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-            <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.15em", textTransform: "uppercase", margin: 0 }}>
-              WhatsApp — Evolution API
-            </p>
-            <button onClick={loadInstances} disabled={instLoading} title="Atualizar" style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px" }}>
-              <RefreshCw size={12} style={{ animation: instLoading ? "spin 1s linear infinite" : "none" }} />
-              Atualizar
+        {/* ── INSTANCE CARD ── */}
+        <div style={{ marginBottom: "32px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+            <p style={sec}>WhatsApp — Evolution API</p>
+            <button onClick={loadInstances} disabled={instLoading} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px" }}>
+              <RefreshCw size={11} style={{ animation: instLoading ? "spin 1s linear infinite" : "none" }} /> Atualizar
             </button>
           </div>
 
@@ -237,78 +317,252 @@ export default function AutomatizarPage() {
             </div>
           ) : instances.length === 0 ? (
             <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", textAlign: "center" }}>
-              <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma instância encontrada. Verifique se a Evolution API está rodando.</p>
+              <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma instância encontrada.</p>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {instances.map((inst) => {
-                const name      = inst.name;
-                const state     = (inst.connectionStatus ?? "").toUpperCase();
-                const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
-                const owner     = inst.ownerJid?.replace("@s.whatsapp.net", "") ?? "";
-                const profile   = inst.profileName ?? "";
-                const qr        = qrData[name];
+          ) : instances.map((inst) => {
+            const name      = inst.name;
+            const state     = (inst.connectionStatus ?? "").toUpperCase();
+            const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
+            const owner     = inst.ownerJid?.replace("@s.whatsapp.net", "") ?? "";
+            const profile   = inst.profileName ?? "";
+            const qr        = qrData[name];
 
-                return (
-                  <div key={name} style={{ background: "#111", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "12px", padding: "20px 24px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                        {connected
-                          ? <Wifi size={18} color={GREEN} />
-                          : <WifiOff size={18} color="#555" />
-                        }
-                        <div>
-                          <p style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 2px" }}>{name}</p>
-                          {connected && owner && (
-                            <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
-                              {profile ? `${profile} · ` : ""}{owner}
-                            </p>
-                          )}
-                        </div>
-                        <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 9px", borderRadius: "4px", background: connected ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: connected ? GREEN : "#555", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}` }}>
-                          {connected ? "CONECTADO" : "DESCONECTADO"}
-                        </span>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                        {!connected && (
-                          <button onClick={() => connectInstance(name)} disabled={qrLoading[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
-                            {qrLoading[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <QrCode size={12} />}
-                            QR Code
-                          </button>
-                        )}
-                        {connected && (
-                          <button onClick={() => disconnectInstance(name)} disabled={disconnecting[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: "#FF6B6B", cursor: "pointer" }}>
-                            {disconnecting[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={12} />}
-                            Desconectar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {qr && (
-                      <div style={{ marginTop: "16px", padding: "16px", background: "#fff", borderRadius: "8px", display: "inline-block" }}>
-                        <img src={qr} alt="QR Code" style={{ width: "200px", height: "200px", display: "block" }} />
-                        <p style={{ fontSize: "11px", color: "#333", textAlign: "center", margin: "8px 0 0" }}>Escaneie com o WhatsApp</p>
+            return (
+              <div key={name} style={{ background: "#111", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "14px", padding: "20px 24px", marginBottom: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    {inst.profilePicUrl ? (
+                      <img src={inst.profilePicUrl} alt="foto" style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${connected ? "rgba(74,222,128,0.4)" : BORDER}`, objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#1a1a1a", border: `2px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {connected ? <Wifi size={20} color={GREEN} /> : <WifiOff size={20} color="#555" />}
                       </div>
                     )}
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                        <span style={{ fontSize: "15px", fontWeight: "700", color: "#F0EDE8" }}>{name}</span>
+                        <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", background: connected ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: connected ? GREEN : "#555", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}` }}>
+                          {connected ? "CONECTADO" : "DESCONECTADO"}
+                        </span>
+                        {latency > 0 && (
+                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: "rgba(255,255,255,0.03)", color: latencyColor(latency), border: `1px solid rgba(255,255,255,0.06)` }}>
+                            {latency}ms
+                          </span>
+                        )}
+                      </div>
+                      {connected && (
+                        <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                          {profile}{profile && owner ? " · " : ""}{owner}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                    {connected && (
+                      <button onClick={() => setShowTest((v) => !v)} style={{ display: "flex", alignItems: "center", gap: "6px", background: showTest ? "rgba(0,207,255,0.12)" : "rgba(0,207,255,0.06)", border: `1px solid ${showTest ? "rgba(0,207,255,0.4)" : "rgba(0,207,255,0.2)"}`, borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
+                        <Send size={12} /> Testar
+                      </button>
+                    )}
+                    {!connected && (
+                      <button onClick={() => connectInstance(name)} disabled={qrLoading[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
+                        {qrLoading[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <QrCode size={12} />} QR Code
+                      </button>
+                    )}
+                    {connected && (
+                      <button onClick={() => disconnectInstance(name)} disabled={disconnecting[name]} style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: "#FF6B6B", cursor: "pointer" }}>
+                        {disconnecting[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={12} />} Desconectar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* QR Code */}
+                {qr && (
+                  <div style={{ marginTop: "16px", padding: "16px", background: "#fff", borderRadius: "8px", display: "inline-block" }}>
+                    <img src={qr} alt="QR Code" style={{ width: "200px", height: "200px", display: "block" }} />
+                    <p style={{ fontSize: "11px", color: "#333", textAlign: "center", margin: "8px 0 0" }}>Escaneie com o WhatsApp</p>
+                  </div>
+                )}
+
+                {/* Test message panel */}
+                {showTest && connected && (
+                  <div style={{ marginTop: "16px", padding: "16px", background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px" }}>
+                    <p style={{ ...lbl, color: ACCENT, margin: "0 0 12px" }}>Mensagem de teste</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
+                      <div>
+                        <label style={lbl}>Número</label>
+                        <input style={inp} placeholder="55119..." value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={lbl}>Mensagem</label>
+                        <input style={inp} placeholder="Teste da Evolution API..." value={testMsg} onChange={(e) => setTestMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendTest()} />
+                      </div>
+                      <button onClick={sendTest} disabled={testSending || !testPhone || !testMsg} style={{ display: "flex", alignItems: "center", gap: "6px", background: ACCENT, color: "#000", border: "none", borderRadius: "8px", padding: "10px 16px", fontSize: "12px", fontWeight: "700", cursor: "pointer", opacity: testSending ? 0.7 : 1, whiteSpace: "nowrap" }}>
+                        {testSending ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={12} />} Enviar
+                      </button>
+                    </div>
+                    {testResult && <p style={{ fontSize: "12px", color: testResult.includes("!") ? GREEN : "#FF6B6B", margin: "10px 0 0" }}>{testResult}</p>}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Form */}
+        {/* ── DISPARO IMEDIATO + CHAT AO VIVO ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "32px" }}>
+
+          {/* Disparo Imediato */}
+          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+              <Zap size={14} color={YELLOW} />
+              <p style={{ ...sec, margin: 0, color: YELLOW }}>Disparo Imediato</p>
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={lbl}>Números (um por linha)</label>
+              <textarea
+                style={{ ...inp, minHeight: "100px", resize: "vertical" }}
+                placeholder={"11999999999\n21988888888\n31977777777"}
+                value={dispNumbers}
+                onChange={(e) => setDispNumbers(e.target.value)}
+              />
+              <p style={{ fontSize: "11px", color: "#555", margin: "4px 0 0" }}>
+                {dispNumbers.split("\n").filter((s) => s.trim()).length} número(s)
+              </p>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={lbl}>Mensagem</label>
+              <textarea style={{ ...inp, minHeight: "80px", resize: "vertical" }} placeholder="Escreva a mensagem..." value={dispMsg} onChange={(e) => setDispMsg(e.target.value)} />
+            </div>
+
+            <button onClick={sendNow} disabled={dispSending || !dispNumbers.trim() || !dispMsg.trim()} style={{ display: "flex", alignItems: "center", gap: "8px", background: YELLOW, color: "#000", border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer", opacity: dispSending ? 0.7 : 1, width: "100%", justifyContent: "center" }}>
+              {dispSending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={14} />}
+              {dispSending ? "Enviando..." : "Disparar agora"}
+            </button>
+            {dispResult && <p style={{ fontSize: "12px", color: GREEN, margin: "10px 0 0", textAlign: "center" }}>{dispResult}</p>}
+          </div>
+
+          {/* Chat ao Vivo */}
+          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", minHeight: "380px" }}>
+            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: "8px" }}>
+              {activeChat && (
+                <button onClick={() => { setActiveChat(null); setChatMsgs([]); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#555", padding: 0, display: "flex" }}>
+                  <ChevronLeft size={16} />
+                </button>
+              )}
+              <MessageSquare size={14} color={ACCENT} />
+              <p style={{ ...sec, margin: 0, color: ACCENT }}>
+                {activeChat ? (activeChat.pushName ?? activeChat.name ?? activeChat.id.replace("@s.whatsapp.net", "")) : "Chat ao Vivo"}
+              </p>
+              {!activeChat && (
+                <button onClick={loadChats} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#555" }}>
+                  <RefreshCw size={12} style={{ animation: chatsLoading ? "spin 1s linear infinite" : "none" }} />
+                </button>
+              )}
+            </div>
+
+            {/* Chat list */}
+            {!activeChat && (
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {chatsLoading ? (
+                  <div style={{ padding: "32px", textAlign: "center" }}><Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} /></div>
+                ) : chats.length === 0 ? (
+                  <div style={{ padding: "32px", textAlign: "center" }}>
+                    <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma conversa encontrada.</p>
+                  </div>
+                ) : chats.map((c) => (
+                  <div key={c.id} onClick={() => setActiveChat(c)} style={{ padding: "12px 20px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", transition: "background .15s" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{c.pushName ?? c.name ?? c.id.replace("@s.whatsapp.net", "")}</span>
+                      {c.unreadCount ? <span style={{ fontSize: "10px", fontWeight: "700", background: GREEN, color: "#000", borderRadius: "10px", padding: "1px 6px" }}>{c.unreadCount}</span> : null}
+                    </div>
+                    <p style={{ fontSize: "11px", color: "#555", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {c.lastMessage?.conversation ?? ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Message thread */}
+            {activeChat && (
+              <>
+                <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {chatMsgsLoading && chatMsgs.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "20px" }}><Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} /></div>
+                  ) : chatMsgs.length === 0 ? (
+                    <p style={{ fontSize: "12px", color: "#555", textAlign: "center" }}>Sem mensagens.</p>
+                  ) : chatMsgs.map((m) => (
+                    <div key={m.key.id} style={{ display: "flex", justifyContent: m.key.fromMe ? "flex-end" : "flex-start" }}>
+                      <div style={{ maxWidth: "75%", background: m.key.fromMe ? "rgba(0,207,255,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${m.key.fromMe ? "rgba(0,207,255,0.25)" : BORDER}`, borderRadius: "10px", padding: "8px 12px" }}>
+                        <p style={{ fontSize: "13px", color: "#F0EDE8", margin: "0 0 4px", whiteSpace: "pre-wrap" }}>{msgText(m)}</p>
+                        <p style={{ fontSize: "10px", color: "#555", margin: 0, textAlign: "right" }}>{formatTime(m.messageTimestamp)}</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={chatBottomRef} />
+                </div>
+                <div style={{ padding: "10px 12px", borderTop: `1px solid ${BORDER}`, display: "flex", gap: "8px" }}>
+                  <input style={{ ...inp, flex: 1 }} placeholder="Escreva uma mensagem..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendChatMsg())} />
+                  <button onClick={sendChatMsg} disabled={chatSending || !chatInput.trim()} style={{ background: ACCENT, border: "none", borderRadius: "8px", padding: "10px 14px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center" }}>
+                    {chatSending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={14} />}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── HISTÓRICO RÁPIDO ── */}
+        <div style={{ marginBottom: "40px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Clock size={13} color="#555" />
+              <p style={{ ...sec, margin: 0 }}>Últimas mensagens enviadas</p>
+            </div>
+            <button onClick={loadHistory} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}>
+              <RefreshCw size={12} style={{ animation: histLoading ? "spin 1s linear infinite" : "none" }} />
+            </button>
+          </div>
+
+          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
+            {histLoading ? (
+              <div style={{ padding: "24px", textAlign: "center" }}><Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} /></div>
+            ) : histLogs.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "#555", padding: "24px", margin: 0, textAlign: "center" }}>Nenhum envio registrado ainda.</p>
+            ) : histLogs.map((log, i) => (
+              <div key={log.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: i < histLogs.length - 1 ? `1px solid ${BORDER}` : "none", gap: "12px" }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{log.nome ?? "—"}</span>
+                  <span style={{ fontSize: "12px", color: "#555", marginLeft: "10px" }}>{log.telefone}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: log.status === "enviado" ? "rgba(74,222,128,0.1)" : "rgba(255,107,107,0.1)", color: log.status === "enviado" ? GREEN : "#FF6B6B", border: `1px solid ${log.status === "enviado" ? "rgba(74,222,128,0.2)" : "rgba(255,107,107,0.2)"}` }}>
+                    {log.status?.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#555" }}>
+                    {log.sent_at ? new Date(log.sent_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── AUTOMAÇÕES AGENDADAS ── */}
         <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "32px", marginBottom: "40px" }}>
           <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 24px" }}>
             {editId ? "Editando automação" : "Nova automação"}
           </p>
 
-          {/* Source selector */}
           <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
             {(["google", "cnae"] as const).map((s) => (
-              <button key={s} onClick={() => setForm({ ...form, source: s })} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: `1px solid ${form.source === s ? (s === "google" ? ACCENT : PINK) : BORDER}`, background: form.source === s ? (s === "google" ? "rgba(0,207,255,0.08)" : "rgba(225,48,108,0.08)") : "transparent", color: form.source === s ? (s === "google" ? ACCENT : PINK) : "#666", fontWeight: "600", fontSize: "13px", cursor: "pointer", transition: "all .2s" }}>
+              <button key={s} onClick={() => setForm({ ...form, source: s })} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: `1px solid ${form.source === s ? (s === "google" ? ACCENT : PINK) : BORDER}`, background: form.source === s ? (s === "google" ? "rgba(0,207,255,0.08)" : "rgba(225,48,108,0.08)") : "transparent", color: form.source === s ? (s === "google" ? ACCENT : PINK) : "#666", fontWeight: "600", fontSize: "13px", cursor: "pointer" }}>
                 {s === "google" ? "🗺️ Google Maps (nacional)" : "🏢 CNAE · Receita Federal"}
               </button>
             ))}
@@ -316,40 +570,36 @@ export default function AutomatizarPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
             <div>
-              <label style={labelStyle}>Nome da automação</label>
-              <input style={inputStyle} placeholder="Ex: Advogados SP" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <label style={lbl}>Nome da automação</label>
+              <input style={inp} placeholder="Ex: Advogados SP" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
-              <label style={labelStyle}>Horário do disparo</label>
-              <select style={{ ...inputStyle, cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
+              <label style={lbl}>Horário do disparo</label>
+              <select style={{ ...inp, cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
                 {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00h (Brasília)</option>)}
               </select>
             </div>
           </div>
 
-          {/* Google Maps fields */}
           {isGoogle && (
             <div style={{ background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px", padding: "20px", marginBottom: "16px" }}>
               <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px" }}>Configuração Google Maps</p>
               <div style={{ marginBottom: "16px" }}>
-                <label style={labelStyle}>Termo de busca no Google</label>
-                <input style={inputStyle} placeholder='Ex: "advogado", "clínica estética", "academia"' value={form.search_term} onChange={(e) => setForm({ ...form, search_term: e.target.value })} />
+                <label style={lbl}>Termo de busca no Google</label>
+                <input style={inp} placeholder='Ex: "advogado", "clínica estética", "academia"' value={form.search_term} onChange={(e) => setForm({ ...form, search_term: e.target.value })} />
                 <p style={{ fontSize: "11px", color: "#555", margin: "5px 0 0" }}>Será buscado como &quot;{'"{termo} em {cidade}"'}&quot; para cada cidade</p>
               </div>
               <div>
-                <label style={labelStyle}>Cidades (nível Brasil)</label>
+                <label style={lbl}>Cidades (nível Brasil)</label>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                  <input style={{ ...inputStyle, flex: 1 }} placeholder='Ex: "São Paulo, SP"' value={newCity} onChange={(e) => setNewCity(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCity())} />
-                  <button onClick={addCity} style={{ padding: "10px 16px", background: "rgba(0,207,255,0.1)", border: "1px solid rgba(0,207,255,0.3)", borderRadius: "8px", color: ACCENT, fontSize: "12px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>
-                    + Adicionar
-                  </button>
+                  <input style={{ ...inp, flex: 1 }} placeholder='"São Paulo, SP"' value={newCity} onChange={(e) => setNewCity(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCity())} />
+                  <button onClick={addCity} style={{ padding: "10px 16px", background: "rgba(0,207,255,0.1)", border: "1px solid rgba(0,207,255,0.3)", borderRadius: "8px", color: ACCENT, fontSize: "12px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>+ Adicionar</button>
                 </div>
                 {form.cities.length > 0 && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                     {form.cities.map((c) => (
                       <span key={c} style={{ display: "flex", alignItems: "center", gap: "5px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", color: ACCENT }}>
-                        {c}
-                        <button onClick={() => removeCity(c)} style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, padding: 0, display: "flex" }}><X size={11} /></button>
+                        {c} <button onClick={() => removeCity(c)} style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, padding: 0, display: "flex" }}><X size={11} /></button>
                       </span>
                     ))}
                   </div>
@@ -358,22 +608,21 @@ export default function AutomatizarPage() {
             </div>
           )}
 
-          {/* CNAE fields */}
           {!isGoogle && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: "16px", marginBottom: "16px" }}>
               <div>
-                <label style={labelStyle}>Segmento / CNAE</label>
-                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })}>
+                <label style={lbl}>Segmento / CNAE</label>
+                <select style={{ ...inp, cursor: "pointer" }} value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })}>
                   {CNAE_LISTA.map((c) => <option key={c.codigo} value={c.codigo}>{c.label}</option>)}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>Cidade</label>
-                <input style={inputStyle} placeholder="Ex: Vitória" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} />
+                <label style={lbl}>Cidade</label>
+                <input style={inp} placeholder="Ex: Vitória" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} />
               </div>
               <div>
-                <label style={labelStyle}>UF</label>
-                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value })}>
+                <label style={lbl}>UF</label>
+                <select style={{ ...inp, cursor: "pointer" }} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value })}>
                   {UF_LIST.map((u) => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>
@@ -381,89 +630,70 @@ export default function AutomatizarPage() {
           )}
 
           <div style={{ marginBottom: "16px" }}>
-            <label style={labelStyle}>Limite diário de WhatsApps</label>
-            <input style={{ ...inputStyle, width: "120px" }} type="number" min="1" max="100" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} />
+            <label style={lbl}>Limite diário de WhatsApps</label>
+            <input style={{ ...inp, width: "120px" }} type="number" min="1" max="100" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} />
           </div>
 
           <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
-            <label style={{ ...labelStyle, marginBottom: "4px" }}>Mensagem personalizada (opcional)</label>
+            <label style={{ ...lbl, marginBottom: "4px" }}>Mensagem personalizada (opcional)</label>
             <p style={{ fontSize: "11px", color: "#555", margin: "0 0 8px" }}>
-              {isGoogle
-                ? `Deixe vazio para usar avaliação automática do Google. Variáveis: {nome}, {cidade}, {rating}, {reviews}`
-                : `Variáveis: {nome}, {cidade}`}
+              {isGoogle ? "Deixe vazio para usar avaliação automática do Google. Variáveis: {nome}, {cidade}, {rating}, {reviews}" : "Variáveis: {nome}, {cidade}"}
             </p>
-            <textarea style={{ ...inputStyle, minHeight: "100px", resize: "vertical" }} placeholder={isGoogle ? "Vazio = geração automática com base na avaliação do Google" : "Mensagem do 1º contato..."} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
+            <textarea style={{ ...inp, minHeight: "100px", resize: "vertical" }} placeholder={isGoogle ? "Vazio = geração automática" : "Mensagem do 1º contato..."} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: "16px", marginBottom: "24px" }}>
             <div>
-              <label style={labelStyle}>Follow-up após</label>
+              <label style={lbl}>Follow-up após</label>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input style={{ ...inputStyle, width: "70px" }} type="number" min="1" max="30" value={form.followup_days} onChange={(e) => setForm({ ...form, followup_days: Number(e.target.value) })} />
+                <input style={{ ...inp, width: "70px" }} type="number" min="1" max="30" value={form.followup_days} onChange={(e) => setForm({ ...form, followup_days: Number(e.target.value) })} />
                 <span style={{ fontSize: "13px", color: "#777" }}>dias</span>
               </div>
             </div>
             <div>
-              <label style={labelStyle}>Mensagem de follow-up</label>
-              <textarea style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }} value={form.followup_template ?? ""} onChange={(e) => setForm({ ...form, followup_template: e.target.value || null })} />
+              <label style={lbl}>Mensagem de follow-up</label>
+              <textarea style={{ ...inp, minHeight: "70px", resize: "vertical" }} value={form.followup_template ?? ""} onChange={(e) => setForm({ ...form, followup_template: e.target.value || null })} />
             </div>
           </div>
 
-          {/* Painel de segurança anti-ban */}
+          {/* Anti-ban */}
           <div style={{ background: "rgba(255,183,77,0.04)", border: "1px solid rgba(255,183,77,0.15)", borderRadius: "10px", padding: "20px", marginBottom: "20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "8px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#F0B429", letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>🛡️ Proteção Anti-Ban</p>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: YELLOW, letterSpacing: "0.1em", textTransform: "uppercase", margin: 0 }}>🛡️ Proteção Anti-Ban</p>
               <div style={{ display: "flex", gap: "6px" }}>
                 {PRESETS_SEGURANCA.map((p) => (
-                  <button key={p.key} onClick={() => setForm((f) => ({ ...f, min_delay_seconds: p.min, max_delay_seconds: p.max, session_max: p.session, session_break_minutes: p.break, active_days: p.days }))}
-                    title={p.desc}
-                    style={{ fontSize: "11px", fontWeight: "600", padding: "5px 10px", borderRadius: "6px", border: "1px solid rgba(240,180,41,0.2)", background: "rgba(240,180,41,0.07)", color: "#F0B429", cursor: "pointer" }}>
-                    {p.label}
-                  </button>
+                  <button key={p.key} onClick={() => setForm((f) => ({ ...f, min_delay_seconds: p.min, max_delay_seconds: p.max, session_max: p.session, session_break_minutes: p.break, active_days: p.days }))} title={p.desc} style={{ fontSize: "11px", fontWeight: "600", padding: "5px 10px", borderRadius: "6px", border: "1px solid rgba(240,180,41,0.2)", background: "rgba(240,180,41,0.07)", color: YELLOW, cursor: "pointer" }}>{p.label}</button>
                 ))}
               </div>
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Delay mín. (seg)</label>
-                <input style={inputStyle} type="number" min="10" max="300" value={form.min_delay_seconds} onChange={(e) => setForm({ ...form, min_delay_seconds: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Delay máx. (seg)</label>
-                <input style={inputStyle} type="number" min="10" max="600" value={form.max_delay_seconds} onChange={(e) => setForm({ ...form, max_delay_seconds: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Msgs por sessão</label>
-                <input style={inputStyle} type="number" min="1" max="100" value={form.session_max} onChange={(e) => setForm({ ...form, session_max: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Descanso (min)</label>
-                <input style={inputStyle} type="number" min="5" max="120" value={form.session_break_minutes} onChange={(e) => setForm({ ...form, session_break_minutes: Number(e.target.value) })} />
-              </div>
+              {[["Delay mín. (seg)", "min_delay_seconds", 10, 300], ["Delay máx. (seg)", "max_delay_seconds", 10, 600], ["Msgs por sessão", "session_max", 1, 100], ["Descanso (min)", "session_break_minutes", 5, 120]].map(([label, field, min, max]) => (
+                <div key={field as string}>
+                  <label style={{ ...lbl, color: YELLOW }}>{label as string}</label>
+                  <input style={inp} type="number" min={min as number} max={max as number} value={(form as Record<string, unknown>)[field as string] as number} onChange={(e) => setForm({ ...form, [field as string]: Number(e.target.value) })} />
+                </div>
+              ))}
             </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "auto auto 1fr", gap: "16px", alignItems: "start" }}>
               <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Início dos disparos</label>
-                <select style={{ ...inputStyle, width: "110px", cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
+                <label style={{ ...lbl, color: YELLOW }}>Início</label>
+                <select style={{ ...inp, width: "110px", cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
                   {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}:00h</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Encerramento</label>
-                <select style={{ ...inputStyle, width: "110px", cursor: "pointer" }} value={form.end_hour} onChange={(e) => setForm({ ...form, end_hour: Number(e.target.value) })}>
+                <label style={{ ...lbl, color: YELLOW }}>Encerramento</label>
+                <select style={{ ...inp, width: "110px", cursor: "pointer" }} value={form.end_hour} onChange={(e) => setForm({ ...form, end_hour: Number(e.target.value) })}>
                   {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2,"0")}:00h</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ ...labelStyle, color: "#F0B429" }}>Dias ativos</label>
+                <label style={{ ...lbl, color: YELLOW }}>Dias ativos</label>
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                   {DIAS_SEMANA.map((d) => {
                     const ativo = form.active_days.includes(d.value);
                     return (
-                      <button key={d.value} onClick={() => setForm((f) => ({ ...f, active_days: ativo ? f.active_days.filter((x) => x !== d.value) : [...f.active_days, d.value].sort() }))}
-                        style={{ padding: "6px 10px", borderRadius: "6px", border: `1px solid ${ativo ? "rgba(240,180,41,0.4)" : BORDER}`, background: ativo ? "rgba(240,180,41,0.12)" : "transparent", color: ativo ? "#F0B429" : "#555", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
+                      <button key={d.value} onClick={() => setForm((f) => ({ ...f, active_days: ativo ? f.active_days.filter((x) => x !== d.value) : [...f.active_days, d.value].sort() }))} style={{ padding: "6px 10px", borderRadius: "6px", border: `1px solid ${ativo ? "rgba(240,180,41,0.4)" : BORDER}`, background: ativo ? "rgba(240,180,41,0.12)" : "transparent", color: ativo ? YELLOW : "#555", fontSize: "12px", fontWeight: "600", cursor: "pointer" }}>
                         {d.label}
                       </button>
                     );
@@ -488,11 +718,8 @@ export default function AutomatizarPage() {
           </div>
         </div>
 
-        {/* Lista */}
-        <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "16px" }}>
-          Automações ativas
-        </p>
-
+        {/* ── AUTOMAÇÕES ATIVAS ── */}
+        <p style={sec}>Automações ativas</p>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "#555" }}><Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} /></div>
         ) : configs.length === 0 ? (
