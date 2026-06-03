@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2, Play, Pause } from "lucide-react";
+import { Loader2, Plus, Trash2, Play, Pause, X } from "lucide-react";
 import Header from "@/components/header";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 const GREEN  = "#4ADE80";
+const PINK   = "#E1306C";
 
 const CNAE_LISTA = [
   { codigo: "8630504", label: "Odontologia" },
@@ -21,22 +22,24 @@ const CNAE_LISTA = [
   { codigo: "5611201", label: "Restaurante" },
 ];
 
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-const HOURS   = Array.from({ length: 24 }, (_, i) => i);
 
-const MSG_DEFAULT = `Olá! Vi que a {nome} atua em {cidade} e queria apresentar algo que pode impactar diretamente o crescimento digital do negócio.\n\nA Upflu oferece um diagnóstico digital gratuito de 2 minutos, sem compromisso. Posso enviar o link?\n\nUpflu | upflu.digital`;
-const FOLLOWUP_DEFAULT = `Oi! Passei aqui para ver se conseguiu ver a mensagem anterior sobre o crescimento digital da {nome}.\n\nSe tiver interesse em conversar, é só responder. Pode ser uma boa oportunidade!\n\nUpflu | upflu.digital`;
+const FOLLOWUP_DEFAULT = `Oi! Passei aqui para ver se conseguiu ver a mensagem anterior sobre o crescimento digital da {nome}.\n\nSe tiver interesse em conversar, é só responder.\n\nUpflu | upflu.digital`;
 
 type Config = {
-  id: string; name: string; cnae: string; cnae_label: string;
-  municipio: string; uf: string; message_template: string;
-  daily_limit: number; active: boolean; send_hour: number;
+  id: string; name: string; source: "cnae" | "google";
+  cnae: string; cnae_label: string; search_term: string;
+  municipio: string; uf: string; cities: string[];
+  message_template: string; daily_limit: number;
+  active: boolean; send_hour: number;
   followup_days: number; followup_template: string | null;
 };
 
 const EMPTY: Omit<Config, "id"> = {
-  name: "", cnae: "8630504", cnae_label: "Odontologia",
-  municipio: "", uf: "ES", message_template: MSG_DEFAULT,
+  name: "", source: "google", cnae: "8630504", cnae_label: "Odontologia",
+  search_term: "", municipio: "", uf: "ES", cities: [],
+  message_template: "",
   daily_limit: 30, active: true, send_hour: 9,
   followup_days: 3, followup_template: FOLLOWUP_DEFAULT,
 };
@@ -58,6 +61,7 @@ export default function AutomatizarPage() {
   const [form, setForm]       = useState<Omit<Config, "id">>(EMPTY);
   const [editId, setEditId]   = useState<string | null>(null);
   const [msg, setMsg]         = useState("");
+  const [newCity, setNewCity] = useState("");
 
   useEffect(() => { loadConfigs(); }, []);
 
@@ -69,11 +73,30 @@ export default function AutomatizarPage() {
     setLoading(false);
   }
 
+  function addCity() {
+    const c = newCity.trim();
+    if (!c || form.cities.includes(c)) return;
+    setForm({ ...form, cities: [...form.cities, c] });
+    setNewCity("");
+  }
+
+  function removeCity(c: string) {
+    setForm({ ...form, cities: form.cities.filter((x) => x !== c) });
+  }
+
   async function salvar() {
-    if (!form.name.trim() || !form.municipio.trim()) { setMsg("Nome e cidade são obrigatórios."); return; }
+    if (!form.name.trim()) { setMsg("Nome é obrigatório."); return; }
+    if (form.source === "google" && form.cities.length === 0) { setMsg("Adicione ao menos uma cidade."); return; }
+    if (form.source === "google" && !form.search_term.trim()) { setMsg("Termo de busca é obrigatório."); return; }
+    if (form.source === "cnae" && !form.municipio.trim()) { setMsg("Cidade é obrigatória."); return; }
+
     setSaving(true); setMsg("");
     const cnaeInfo = CNAE_LISTA.find((c) => c.codigo === form.cnae);
-    const body = { ...form, cnae_label: cnaeInfo?.label ?? form.cnae, ...(editId ? { id: editId } : {}) };
+    const body = {
+      ...form,
+      cnae_label: cnaeInfo?.label ?? form.cnae_label,
+      ...(editId ? { id: editId } : {}),
+    };
     const r = await fetch("/api/prospecting-configs", {
       method: editId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
@@ -81,7 +104,7 @@ export default function AutomatizarPage() {
     });
     const d = await r.json();
     if (!r.ok) { setMsg(d.error ?? "Erro ao salvar."); setSaving(false); return; }
-    setMsg("Salvo com sucesso!");
+    setMsg("Salvo!");
     setForm(EMPTY); setEditId(null);
     await loadConfigs();
     setSaving(false);
@@ -89,18 +112,16 @@ export default function AutomatizarPage() {
 
   async function toggleActive(config: Config) {
     await fetch("/api/prospecting-configs", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: config.id, active: !config.active }),
     });
     await loadConfigs();
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir esta configuração?")) return;
+    if (!confirm("Excluir esta automação?")) return;
     await fetch("/api/prospecting-configs", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
     await loadConfigs();
@@ -108,61 +129,114 @@ export default function AutomatizarPage() {
 
   function editar(config: Config) {
     setEditId(config.id);
-    setForm({ name: config.name, cnae: config.cnae, cnae_label: config.cnae_label, municipio: config.municipio, uf: config.uf, message_template: config.message_template, daily_limit: config.daily_limit, active: config.active, send_hour: config.send_hour, followup_days: config.followup_days, followup_template: config.followup_template });
+    setForm({ name: config.name, source: config.source ?? "cnae", cnae: config.cnae, cnae_label: config.cnae_label, search_term: config.search_term ?? "", municipio: config.municipio, uf: config.uf, cities: config.cities ?? [], message_template: config.message_template, daily_limit: config.daily_limit, active: config.active, send_hour: config.send_hour, followup_days: config.followup_days, followup_template: config.followup_template });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  const isGoogle = form.source === "google";
 
   return (
     <>
       <Header title="Prospecção Automática" />
-      <div style={{ padding: "40px", maxWidth: "860px" }}>
+      <div style={{ padding: "40px", maxWidth: "900px" }}>
 
         {/* Form */}
         <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "32px", marginBottom: "40px" }}>
-          <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 20px" }}>
-            {editId ? "Editando configuração" : "Nova automação"}
+          <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 24px" }}>
+            {editId ? "Editando automação" : "Nova automação"}
           </p>
+
+          {/* Source selector */}
+          <div style={{ display: "flex", gap: "10px", marginBottom: "24px" }}>
+            {(["google", "cnae"] as const).map((s) => (
+              <button key={s} onClick={() => setForm({ ...form, source: s })} style={{ flex: 1, padding: "14px", borderRadius: "10px", border: `1px solid ${form.source === s ? (s === "google" ? ACCENT : PINK) : BORDER}`, background: form.source === s ? (s === "google" ? "rgba(0,207,255,0.08)" : "rgba(225,48,108,0.08)") : "transparent", color: form.source === s ? (s === "google" ? ACCENT : PINK) : "#666", fontWeight: "600", fontSize: "13px", cursor: "pointer", transition: "all .2s" }}>
+                {s === "google" ? "🗺️ Google Maps (nacional)" : "🏢 CNAE · Receita Federal"}
+              </button>
+            ))}
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
             <div>
               <label style={labelStyle}>Nome da automação</label>
-              <input style={inputStyle} placeholder="Ex: Odontologia - Vitória" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div>
-              <label style={labelStyle}>Segmento / CNAE</label>
-              <select style={{ ...inputStyle, cursor: "pointer" }} value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })}>
-                {CNAE_LISTA.map((c) => <option key={c.codigo} value={c.codigo}>{c.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Cidade</label>
-              <input style={inputStyle} placeholder="Ex: Vitória" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} />
-            </div>
-            <div>
-              <label style={labelStyle}>Estado (UF)</label>
-              <select style={{ ...inputStyle, cursor: "pointer" }} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value })}>
-                {UF_LIST.map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
+              <input style={inputStyle} placeholder="Ex: Advogados SP" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
               <label style={labelStyle}>Horário do disparo</label>
               <select style={{ ...inputStyle, cursor: "pointer" }} value={form.send_hour} onChange={(e) => setForm({ ...form, send_hour: Number(e.target.value) })}>
-                {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>)}
+                {HOURS.map((h) => <option key={h} value={h}>{String(h).padStart(2, "0")}:00h (Brasília)</option>)}
               </select>
             </div>
-            <div>
-              <label style={labelStyle}>Limite diário de WhatsApps</label>
-              <input style={inputStyle} type="number" min="1" max="100" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} />
-            </div>
           </div>
+
+          {/* Google Maps fields */}
+          {isGoogle && (
+            <div style={{ background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px", padding: "20px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", margin: "0 0 16px" }}>Configuração Google Maps</p>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={labelStyle}>Termo de busca no Google</label>
+                <input style={inputStyle} placeholder='Ex: "advogado", "clínica estética", "academia"' value={form.search_term} onChange={(e) => setForm({ ...form, search_term: e.target.value })} />
+                <p style={{ fontSize: "11px", color: "#555", margin: "5px 0 0" }}>Será buscado como &quot;{'"{termo} em {cidade}"'}&quot; para cada cidade</p>
+              </div>
+              <div>
+                <label style={labelStyle}>Cidades (nível Brasil)</label>
+                <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+                  <input style={{ ...inputStyle, flex: 1 }} placeholder='Ex: "São Paulo, SP"' value={newCity} onChange={(e) => setNewCity(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCity())} />
+                  <button onClick={addCity} style={{ padding: "10px 16px", background: "rgba(0,207,255,0.1)", border: "1px solid rgba(0,207,255,0.3)", borderRadius: "8px", color: ACCENT, fontSize: "12px", fontWeight: "600", cursor: "pointer", whiteSpace: "nowrap" }}>
+                    + Adicionar
+                  </button>
+                </div>
+                {form.cities.length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    {form.cities.map((c) => (
+                      <span key={c} style={{ display: "flex", alignItems: "center", gap: "5px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "6px", padding: "4px 10px", fontSize: "12px", color: ACCENT }}>
+                        {c}
+                        <button onClick={() => removeCity(c)} style={{ background: "none", border: "none", cursor: "pointer", color: ACCENT, padding: 0, display: "flex" }}><X size={11} /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* CNAE fields */}
+          {!isGoogle && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 80px", gap: "16px", marginBottom: "16px" }}>
+              <div>
+                <label style={labelStyle}>Segmento / CNAE</label>
+                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.cnae} onChange={(e) => setForm({ ...form, cnae: e.target.value })}>
+                  {CNAE_LISTA.map((c) => <option key={c.codigo} value={c.codigo}>{c.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Cidade</label>
+                <input style={inputStyle} placeholder="Ex: Vitória" value={form.municipio} onChange={(e) => setForm({ ...form, municipio: e.target.value })} />
+              </div>
+              <div>
+                <label style={labelStyle}>UF</label>
+                <select style={{ ...inputStyle, cursor: "pointer" }} value={form.uf} onChange={(e) => setForm({ ...form, uf: e.target.value })}>
+                  {UF_LIST.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
 
           <div style={{ marginBottom: "16px" }}>
-            <label style={labelStyle}>Mensagem do 1º contato</label>
-            <p style={{ fontSize: "11px", color: "#555", margin: "0 0 6px" }}>Use {"{nome}"} e {"{cidade}"} como variáveis</p>
-            <textarea style={{ ...inputStyle, minHeight: "120px", resize: "vertical" }} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
+            <label style={labelStyle}>Limite diário de WhatsApps</label>
+            <input style={{ ...inputStyle, width: "120px" }} type="number" min="1" max="100" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} />
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "16px", marginBottom: "24px" }}>
+          <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "16px", marginBottom: "16px" }}>
+            <label style={{ ...labelStyle, marginBottom: "4px" }}>Mensagem personalizada (opcional)</label>
+            <p style={{ fontSize: "11px", color: "#555", margin: "0 0 8px" }}>
+              {isGoogle
+                ? `Deixe vazio para usar avaliação automática do Google. Variáveis: {nome}, {cidade}, {rating}, {reviews}`
+                : `Variáveis: {nome}, {cidade}`}
+            </p>
+            <textarea style={{ ...inputStyle, minHeight: "100px", resize: "vertical" }} placeholder={isGoogle ? "Vazio = geração automática com base na avaliação do Google" : "Mensagem do 1º contato..."} value={form.message_template} onChange={(e) => setForm({ ...form, message_template: e.target.value })} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "130px 1fr", gap: "16px", marginBottom: "24px" }}>
             <div>
               <label style={labelStyle}>Follow-up após</label>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -172,11 +246,11 @@ export default function AutomatizarPage() {
             </div>
             <div>
               <label style={labelStyle}>Mensagem de follow-up</label>
-              <textarea style={{ ...inputStyle, minHeight: "80px", resize: "vertical" }} value={form.followup_template ?? ""} onChange={(e) => setForm({ ...form, followup_template: e.target.value || null })} />
+              <textarea style={{ ...inputStyle, minHeight: "70px", resize: "vertical" }} value={form.followup_template ?? ""} onChange={(e) => setForm({ ...form, followup_template: e.target.value || null })} />
             </div>
           </div>
 
-          {msg && <p style={{ fontSize: "13px", color: msg.includes("sucesso") ? GREEN : "#FF6B6B", marginBottom: "16px" }}>{msg}</p>}
+          {msg && <p style={{ fontSize: "13px", color: msg === "Salvo!" ? GREEN : "#FF6B6B", marginBottom: "16px" }}>{msg}</p>}
 
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={salvar} disabled={saving} style={{ display: "flex", alignItems: "center", gap: "8px", background: ACCENT, color: "#000", border: "none", borderRadius: "8px", padding: "10px 24px", fontSize: "13px", fontWeight: "700", cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
@@ -193,7 +267,7 @@ export default function AutomatizarPage() {
 
         {/* Lista */}
         <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "16px" }}>
-          Automações configuradas
+          Automações ativas
         </p>
 
         {loading ? (
@@ -204,32 +278,39 @@ export default function AutomatizarPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {configs.map((c) => (
-              <div key={c.id} style={{ background: "#111", border: `1px solid ${c.active ? "rgba(74,222,128,0.15)" : BORDER}`, borderRadius: "12px", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8" }}>{c.name}</span>
-                    <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.05)", color: c.active ? GREEN : "#555", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}` }}>
-                      {c.active ? "ATIVA" : "PAUSADA"}
-                    </span>
+            {configs.map((c) => {
+              const isG = c.source === "google";
+              return (
+                <div key={c.id} style={{ background: "#111", border: `1px solid ${c.active ? (isG ? "rgba(0,207,255,0.15)" : "rgba(74,222,128,0.15)") : BORDER}`, borderRadius: "12px", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8" }}>{c.name}</span>
+                      <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: isG ? "rgba(0,207,255,0.1)" : "rgba(255,255,255,0.05)", color: isG ? ACCENT : "#777", border: `1px solid ${isG ? "rgba(0,207,255,0.2)" : BORDER}` }}>
+                        {isG ? "Google Maps" : "CNAE"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: c.active ? GREEN : "#555", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}` }}>
+                        {c.active ? "ATIVA" : "PAUSADA"}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
+                      {isG
+                        ? `"${c.search_term}" · ${(c.cities ?? []).length} cidades · ${String(c.send_hour).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`
+                        : `${c.cnae_label} · ${c.municipio}, ${c.uf} · ${String(c.send_hour).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`}
+                      {c.followup_days ? ` · follow-up ${c.followup_days}d` : ""}
+                    </p>
                   </div>
-                  <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
-                    {c.cnae_label} · {c.municipio}, {c.uf} · {String(c.send_hour).padStart(2, "0")}:00 · {c.daily_limit} msgs/dia · follow-up em {c.followup_days}d
-                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                    <button onClick={() => toggleActive(c)} title={c.active ? "Pausar" : "Ativar"} style={{ background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: c.active ? GREEN : "#555" }}>
+                      {c.active ? <Pause size={14} /> : <Play size={14} />}
+                    </button>
+                    <button onClick={() => editar(c)} style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#888", fontSize: "12px" }}>Editar</button>
+                    <button onClick={() => excluir(c.id)} style={{ background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#FF6B6B" }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
-                <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                  <button onClick={() => toggleActive(c)} title={c.active ? "Pausar" : "Ativar"} style={{ background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: c.active ? GREEN : "#555" }}>
-                    {c.active ? <Pause size={14} /> : <Play size={14} />}
-                  </button>
-                  <button onClick={() => editar(c)} style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#888", fontSize: "12px" }}>
-                    Editar
-                  </button>
-                  <button onClick={() => excluir(c.id)} style={{ background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#FF6B6B" }}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
