@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks, Send,
+  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks, Send, Zap,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -12,7 +12,8 @@ const BORDER = "rgba(255,255,255,0.07)";
 
 const navItems = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, disabled: false, exact: true  },
-  { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: false },
+  { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: true  },
+  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar", icon: Zap,    disabled: false, exact: false, sub: true },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Disparos",     href: "/dashboard/disparos",      icon: Send,            disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
@@ -64,10 +65,18 @@ export default function Sidebar() {
           }
           return (
             <Link key={item.href} href={item.href} onClick={close}
-              style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", borderRadius: "6px", textDecoration: "none", background: isActive ? "rgba(0,207,255,0.07)" : "transparent", borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent", paddingLeft: "10px", transition: "background 0.15s" }}
+              style={{
+                display: "flex", alignItems: "center", gap: "10px",
+                padding: "10px 12px", borderRadius: "6px", textDecoration: "none",
+                background: isActive ? "rgba(0,207,255,0.07)" : "transparent",
+                borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent",
+                paddingLeft: (item as { sub?: boolean }).sub ? "28px" : "10px",
+                transition: "background 0.15s",
+                marginTop: (item as { sub?: boolean }).sub ? "-1px" : "0",
+              }}
               className={!isActive ? "nav-link-hover" : ""}>
-              <item.icon size={16} color={isActive ? ACCENT : "#9A9288"} strokeWidth={isActive ? 2 : 1.5} />
-              <span style={{ fontSize: "13px", fontWeight: isActive ? "600" : "400", color: isActive ? ACCENT : "#9A9288" }}>{item.label}</span>
+              <item.icon size={(item as { sub?: boolean }).sub ? 13 : 16} color={isActive ? ACCENT : (item as { sub?: boolean }).sub ? "#666" : "#9A9288"} strokeWidth={isActive ? 2 : 1.5} />
+              <span style={{ fontSize: (item as { sub?: boolean }).sub ? "12px" : "13px", fontWeight: isActive ? "600" : "400", color: isActive ? ACCENT : (item as { sub?: boolean }).sub ? "#666" : "#9A9288" }}>{item.label}</span>
             </Link>
           );
         })}

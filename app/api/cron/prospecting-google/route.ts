@@ -83,9 +83,10 @@ export async function GET(req: NextRequest) {
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config Google ativa neste horário" });
 
-  // Place IDs já no CRM
-  const { data: existentes } = await supabase.from("prospects").select("place_id");
-  const idsExistentes = new Set((existentes ?? []).map((r: { place_id: string }) => r.place_id));
+  // Carrega todos os identificadores já no CRM para deduplicação robusta
+  const { data: existentes } = await supabase.from("prospects").select("place_id, nome, cidade");
+  const idsExistentes  = new Set((existentes ?? []).map((r: { place_id: string }) => r.place_id));
+  const nomeCidadeExistentes = new Set((existentes ?? []).map((r: { nome: string; cidade: string }) => `${r.nome?.toLowerCase().trim()}|${r.cidade?.toLowerCase().trim()}`));
 
   let totalSalvos   = 0;
   let totalEnviados = 0;
@@ -112,10 +113,13 @@ export async function GET(req: NextRequest) {
       if (i + BATCH < cities.length) await sleep(1000);
     }
 
-    // Filtra duplicatas
-    const novos = allResults.filter(({ place }) => {
-      const id = (place.place_id as string) ?? (place.title as string);
-      return id && !idsExistentes.has(id);
+    // Filtra duplicatas por place_id E por nome+cidade
+    const novos = allResults.filter(({ place, cidade }) => {
+      const id       = (place.place_id as string) ?? (place.title as string);
+      const nome     = (place.title as string ?? "").toLowerCase().trim();
+      const cidadeKey = cidade.toLowerCase().trim();
+      const nomeCidade = `${nome}|${cidadeKey}`;
+      return id && !idsExistentes.has(id) && !nomeCidadeExistentes.has(nomeCidade);
     });
 
     if (!novos.length) continue;
@@ -135,6 +139,7 @@ export async function GET(req: NextRequest) {
         : gerarMensagemAvaliacao(nome, cidade, term, rating, reviews, website, evaluation);
 
       idsExistentes.add(placeId);
+      nomeCidadeExistentes.add(`${nome.toLowerCase().trim()}|${cidade.toLowerCase().trim()}`);
 
       return {
         place_id: placeId,

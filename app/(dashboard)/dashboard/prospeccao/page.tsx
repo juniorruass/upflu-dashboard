@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/header";
+import Link from "next/link";
 import {
-  Search, Download, Mail, Loader2, CheckCircle2, XCircle, Plus, Building2,
+  Search, Download, Mail, Loader2, CheckCircle2, XCircle, Plus, Building2, Zap,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -248,16 +249,22 @@ export default function ProspeccaoPage() {
       <div className="prosp-pad" style={{ flex: 1 }}>
 
         {/* Título */}
-        <div style={{ marginBottom: "24px" }}>
-          <p style={{ fontSize: "11px", fontWeight: "500", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 8px" }}>
-            Captação inteligente
-          </p>
-          <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
-            Prospecção
-          </h2>
-          <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>
-            Busca via Google Maps ou diretamente na Receita Federal por CNAE — só empresas ativas.
-          </p>
+        <div style={{ marginBottom: "24px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+          <div>
+            <p style={{ fontSize: "11px", fontWeight: "500", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 8px" }}>
+              Captação inteligente
+            </p>
+            <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+              Prospecção
+            </h2>
+            <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>
+              Busca via Google Maps ou diretamente na Receita Federal por CNAE — só empresas ativas.
+            </p>
+          </div>
+          <Link href="/dashboard/prospeccao/automatizar" style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.25)", borderRadius: "10px", padding: "10px 18px", textDecoration: "none", color: ACCENT, fontSize: "13px", fontWeight: "600", flexShrink: 0 }}>
+            <Zap size={14} />
+            Automatizar
+          </Link>
         </div>
 
         {/* Tabs */}
