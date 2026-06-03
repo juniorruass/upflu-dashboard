@@ -39,13 +39,12 @@ const PRESETS_SEGURANCA = [
 ];
 
 type EvolutionInst = {
-  instance: {
-    instanceName: string;
-    instanceId?: string;
-    owner?: string;
-    profileName?: string;
-    status?: string;
-  };
+  id?: string;
+  name: string;
+  connectionStatus: string;
+  ownerJid?: string;
+  profileName?: string;
+  profilePicUrl?: string;
 };
 
 type Config = {
@@ -243,11 +242,11 @@ export default function AutomatizarPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {instances.map((inst) => {
-                const name      = inst.instance.instanceName;
-                const state     = (inst.instance.status ?? "").toUpperCase();
+                const name      = inst.name;
+                const state     = (inst.connectionStatus ?? "").toUpperCase();
                 const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
-                const owner     = inst.instance.owner?.replace("@s.whatsapp.net", "") ?? "";
-                const profile   = inst.instance.profileName ?? "";
+                const owner     = inst.ownerJid?.replace("@s.whatsapp.net", "") ?? "";
+                const profile   = inst.profileName ?? "";
                 const qr        = qrData[name];
 
                 return (

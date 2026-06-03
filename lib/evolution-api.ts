@@ -78,21 +78,20 @@ export async function evolutionDisconnect(instance?: string): Promise<boolean> {
 }
 
 export type EvolutionInstance = {
-  instance: {
-    instanceName: string;
-    instanceId?: string;
-    owner?: string;
-    profileName?: string;
-    profilePictureUrl?: string;
-    status?: string;
-  };
+  id?: string;
+  name: string;
+  connectionStatus: string;
+  ownerJid?: string;
+  profileName?: string;
+  profilePicUrl?: string;
 };
 
 export type EvolutionState = {
-  instance: {
+  instance?: {
     instanceName: string;
     state: string;
   };
+  state?: string;
 };
 
 export type EvolutionQR = {
