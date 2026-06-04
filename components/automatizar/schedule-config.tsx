@@ -38,7 +38,8 @@ export default function ScheduleConfig({ onChange, initial }: {
     onChange(next);
   }
 
-  useEffect(() => { onChange(d); }, []); // emit on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onChange(d); }, []);
 
   const HOURS = Array.from({ length: 24 }, (_, i) => i);
   const field = "w-full bg-[#0d0d0d] border border-white/[0.07] rounded-lg px-3 py-2.5 text-[13px] text-[#F0EDE8] outline-none focus:border-[#00CFFF]/40 transition-colors";

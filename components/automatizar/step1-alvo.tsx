@@ -28,11 +28,6 @@ export interface Step1Data {
   dailyLimit: number;
 }
 
-const DEFAULT: Step1Data = {
-  source: "google", searchTerm: "", cities: [],
-  cnae: "8630504", cnaeLabel: "Odontologia",
-  municipio: "", uf: "SP", dailyLimit: 30,
-};
 
 type SimStats = { empresas: number; telefones: number; emails: number; municipios: number } | null;
 
