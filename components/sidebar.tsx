@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, FileText, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, ListChecks, Send, Zap,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -15,12 +15,9 @@ const navItems = [
   { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: true  },
   { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar", icon: Zap,    disabled: false, exact: false, sub: true },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
-  { label: "Disparos",     href: "/dashboard/disparos",      icon: Send,            disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
-  { label: "Onboarding",   href: "/dashboard/onboarding",   icon: ListChecks,      disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
-  { label: "Propostas",    href: "/dashboard/propostas",     icon: FileText,        disabled: false, exact: false },
   { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
 ];
 
