@@ -21,6 +21,25 @@ function telefoneValido(tel: string): boolean {
 
 function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
 
+function parseTemplates(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(Boolean);
+  } catch {}
+  return raw ? [raw] : [];
+}
+
+function aplicarVariaveis(template: string, vars: Record<string, string>): string {
+  return template
+    .replace(/\{nome_empresa\}/g, vars.nome ?? vars.nome_empresa ?? "")
+    .replace(/\{nome\}/g,         vars.nome ?? vars.nome_empresa ?? "")
+    .replace(/\{cidade\}/g,       vars.cidade ?? "")
+    .replace(/\{ramo\}/g,         vars.ramo ?? vars.tipo ?? "")
+    .replace(/\{telefone\}/g,     vars.telefone ?? "")
+    .replace(/\{rating\}/g,       vars.rating ?? "—")
+    .replace(/\{reviews\}/g,      vars.reviews ?? "0");
+}
+
 function safetyFromConfig(config: Record<string, unknown>) {
   return {
     ...SAFETY_DEFAULTS,
@@ -119,9 +138,16 @@ export async function GET(req: NextRequest) {
       const phone   = (place.phone as string) ?? "";
       const placeId = (place.place_id as string) ?? nome;
 
-      const evaluation = avaliarProspect({ rating, reviews, website, tipo: term });
-      const mensagem   = config.message_template?.includes("{nome}")
-        ? config.message_template.replace(/\{nome\}/g, nome).replace(/\{cidade\}/g, cidade).replace(/\{rating\}/g, rating?.toFixed(1) ?? "—").replace(/\{reviews\}/g, String(reviews))
+      const evaluation  = avaliarProspect({ rating, reviews, website, tipo: term });
+      const templates   = parseTemplates(config.message_template ?? "");
+      const tplEscolhido = templates.length
+        ? templates[Math.floor(Math.random() * templates.length)]
+        : null;
+      const mensagem = tplEscolhido
+        ? aplicarVariaveis(tplEscolhido, {
+            nome_empresa: nome, nome, cidade, ramo: term, tipo: term,
+            telefone: phone, rating: rating?.toFixed(1) ?? "—", reviews: String(reviews),
+          })
         : gerarMensagemAvaliacao(nome, cidade, term, rating, reviews, website, evaluation);
 
       idsExistentes.add(placeId);
