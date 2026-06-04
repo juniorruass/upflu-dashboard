@@ -423,43 +423,6 @@ export default function AutomatizarPage() {
           })}
         </div>
 
-        {/* ── HISTÓRICO RÁPIDO ── */}
-        <div style={{ marginBottom: "40px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Clock size={13} color="#555" />
-              <p style={{ ...sec, margin: 0 }}>Últimas mensagens enviadas</p>
-            </div>
-            <button onClick={loadHistory} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}>
-              <RefreshCw size={12} style={{ animation: histLoading ? "spin 1s linear infinite" : "none" }} />
-            </button>
-          </div>
-          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
-            {histLoading ? (
-              <div style={{ padding: "24px", textAlign: "center" }}>
-                <Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} />
-              </div>
-            ) : histLogs.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#555", padding: "24px", margin: 0, textAlign: "center" }}>Nenhum envio registrado ainda.</p>
-            ) : histLogs.map((log, i) => (
-              <div key={log.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: i < histLogs.length - 1 ? `1px solid ${BORDER}` : "none", gap: "12px" }}>
-                <div style={{ minWidth: 0 }}>
-                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{log.nome ?? "—"}</span>
-                  <span style={{ fontSize: "12px", color: "#555", marginLeft: "10px" }}>{log.telefone}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                  <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: log.status === "enviado" ? "rgba(74,222,128,0.1)" : "rgba(255,107,107,0.1)", color: log.status === "enviado" ? GREEN : "#FF6B6B", border: `1px solid ${log.status === "enviado" ? "rgba(74,222,128,0.2)" : "rgba(255,107,107,0.2)"}` }}>
-                    {log.status?.toUpperCase()}
-                  </span>
-                  <span style={{ fontSize: "11px", color: "#555" }}>
-                    {log.sent_at ? new Date(log.sent_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* ── STEPPER — NOVA AUTOMAÇÃO ── */}
         <div ref={formRef} className="bg-[#111] border border-white/[0.07] rounded-[14px] p-8 mb-10">
 
@@ -639,6 +602,43 @@ export default function AutomatizarPage() {
             })}
           </div>
         )}
+
+        {/* ── HISTÓRICO RÁPIDO ── */}
+        <div style={{ marginTop: "40px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Clock size={13} color="#555" />
+              <p style={{ ...sec, margin: 0 }}>Últimas mensagens enviadas</p>
+            </div>
+            <button onClick={loadHistory} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}>
+              <RefreshCw size={12} style={{ animation: histLoading ? "spin 1s linear infinite" : "none" }} />
+            </button>
+          </div>
+          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
+            {histLoading ? (
+              <div style={{ padding: "24px", textAlign: "center" }}>
+                <Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} />
+              </div>
+            ) : histLogs.length === 0 ? (
+              <p style={{ fontSize: "13px", color: "#555", padding: "24px", margin: 0, textAlign: "center" }}>Nenhum envio registrado ainda.</p>
+            ) : histLogs.map((log, i) => (
+              <div key={log.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: i < histLogs.length - 1 ? `1px solid ${BORDER}` : "none", gap: "12px" }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{log.nome ?? "—"}</span>
+                  <span style={{ fontSize: "12px", color: "#555", marginLeft: "10px" }}>{log.telefone}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+                  <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: log.status === "enviado" ? "rgba(74,222,128,0.1)" : "rgba(255,107,107,0.1)", color: log.status === "enviado" ? GREEN : "#FF6B6B", border: `1px solid ${log.status === "enviado" ? "rgba(74,222,128,0.2)" : "rgba(255,107,107,0.2)"}` }}>
+                    {log.status?.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: "11px", color: "#555" }}>
+                    {log.sent_at ? new Date(log.sent_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
