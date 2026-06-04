@@ -98,6 +98,8 @@ export default async function DashboardPage() {
         .dash-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
         .chart-card { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 24px; }
         .chart-title { font-size: 11px; font-weight: 600; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 20px; }
+        .anuncios-link > div { transition: border-color 0.2s; }
+        .anuncios-link:hover > div { border-color: rgba(0,207,255,0.35) !important; }
         @media (max-width: 768px) {
           .dash-pad { padding: 20px 16px 48px; }
           .dash-grid-3 { grid-template-columns: 1fr; gap: 10px; }
@@ -173,10 +175,8 @@ export default async function DashboardPage() {
         </div>
 
         {/* ── ATALHO ANÚNCIOS ── */}
-        <Link href="/dashboard/anuncios" style={{ textDecoration: "none", display: "block" }}>
-          <div style={{ background: "#111", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "12px", padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", position: "relative", overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s" }}
-            onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.borderColor = "rgba(0,207,255,0.35)")}
-            onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.borderColor = "rgba(0,207,255,0.15)")}>
+        <Link href="/dashboard/anuncios" style={{ textDecoration: "none", display: "block" }} className="anuncios-link">
+          <div style={{ background: "#111", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "12px", padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ width: "44px", height: "44px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
