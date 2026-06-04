@@ -66,17 +66,18 @@ export async function GET(req: NextRequest) {
     if (source === "google") {
       const searchTerm = searchParams.get("searchTerm") ?? "";
       const city       = searchParams.get("city") ?? "";
+      const cityCount  = Math.max(1, parseInt(searchParams.get("cityCount") ?? "1", 10));
 
       if (!searchTerm || !city) {
         return NextResponse.json({ error: "Segmento e cidade são obrigatórios." }, { status: 400 });
       }
 
-      // Estimativa baseada no tamanho médio de resultados do Maps por cidade
-      const base       = 18 + Math.floor(Math.random() * 14); // 18–31 por cidade
-      const empresas   = base;
-      const telefones  = Math.round(empresas * 0.85);
-      const emails     = Math.round(empresas * 0.22);
-      const municipios = 1;
+      // Estimativa: 18–31 resultados por cidade no Maps
+      const basePorCidade = 18 + Math.floor(Math.random() * 14);
+      const empresas      = basePorCidade * cityCount;
+      const telefones     = Math.round(empresas * 0.85);
+      const emails        = Math.round(empresas * 0.22);
+      const municipios    = cityCount;
 
       return NextResponse.json({ empresas, telefones, emails, municipios });
     }

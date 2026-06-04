@@ -54,7 +54,7 @@ export default function Step1Alvo({ value, onChange }: {
       const params = new URLSearchParams({
         source: value.source,
         ...(value.source === "google"
-          ? { searchTerm: value.searchTerm, city: value.cities[0] ?? "" }
+          ? { searchTerm: value.searchTerm, city: value.cities[0] ?? "", cityCount: String(value.cities.length || 1) }
           : { cnae: value.cnae, municipio: value.municipio, uf: value.uf }),
       });
       const r = await fetch(`/api/automatizar/simular?${params}`);
