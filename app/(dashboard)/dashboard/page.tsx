@@ -1,62 +1,94 @@
 import { createServerClient } from "@/lib/supabase";
 import Header from "@/components/header";
-import { BarChart2, Megaphone, Images, Bell, CalendarDays, BrainCircuit } from "lucide-react";
+import Link from "next/link";
+import { Megaphone, TrendingUp, ArrowRight } from "lucide-react";
+import ProspeccaoChart from "@/components/charts/prospeccao-chart";
+import ClientesChart   from "@/components/charts/clientes-chart";
+import FinanceiroChart from "@/components/charts/financeiro-chart";
 
-const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
-const BORDER_STRONG = "rgba(255,255,255,0.12)";
+const ACCENT  = "#00CFFF";
+const BORDER  = "rgba(255,255,255,0.07)";
+const GREEN   = "#4ADE80";
 
-async function getStats() {
+async function getDashboardData() {
   const supabase = await createServerClient();
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const now      = new Date();
 
-  const [approvedRes, thisMonthRes, clientsRes] = await Promise.all([
-    supabase.from("carousels").select("*", { count: "exact", head: true }).eq("status", "approved"),
-    supabase.from("carousels").select("*", { count: "exact", head: true }).eq("status", "approved").gte("approved_at", firstDayOfMonth),
-    supabase.from("clients").select("status, monthly_value"),
+  // ── stats cards ──────────────────────────────
+  const { data: clientsRaw } = await supabase
+    .from("clients")
+    .select("status, monthly_value, name, start_date");
+
+  const clients       = clientsRaw ?? [];
+  const activeClients = clients.filter((c) => c.status === "active");
+  const mrr           = activeClients.reduce((s, c) => s + (c.monthly_value || 0), 0);
+  const leads         = clients.filter((c) => c.status === "onboarding").length;
+
+  // ── prospecção chart (últimos 30 dias) ────────
+  const since30 = new Date(now); since30.setDate(since30.getDate() - 29);
+  const [{ data: prospectsRaw }, { data: waLogsRaw }] = await Promise.all([
+    supabase.from("prospects")
+      .select("created_at")
+      .gte("created_at", since30.toISOString()),
+    supabase.from("whatsapp_logs")
+      .select("sent_at")
+      .eq("status", "enviado")
+      .gte("sent_at", since30.toISOString()),
   ]);
 
-  const clients = clientsRes.data ?? [];
-  const activeClients = clients.filter((c) => c.status === "active");
-  const mrr = activeClients.reduce((sum, c) => sum + (c.monthly_value || 0), 0);
-  const leads = clients.filter((c) => c.status === "apresentacao" || c.status === "captado").length;
+  const dayMap: Record<string, { prospects: number; enviados: number }> = {};
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(since30); d.setDate(d.getDate() + i);
+    const k = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    dayMap[k] = { prospects: 0, enviados: 0 };
+  }
+  (prospectsRaw ?? []).forEach((r) => {
+    const k = new Date(r.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    if (dayMap[k]) dayMap[k].prospects++;
+  });
+  (waLogsRaw ?? []).forEach((r) => {
+    const k = new Date(r.sent_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+    if (dayMap[k]) dayMap[k].enviados++;
+  });
+  const prospectsChart = Object.entries(dayMap).map(([date, v]) => ({ date, ...v }));
 
-  return {
-    approved: approvedRes.count ?? 0,
-    thisMonth: thisMonthRes.count ?? 0,
-    totalClients: clients.length,
-    activeClients: activeClients.length,
-    mrr,
-    leads,
-  };
+  // ── clientes chart ────────────────────────────
+  const statusMap: Record<string, number> = {};
+  clients.forEach((c) => { statusMap[c.status] = (statusMap[c.status] ?? 0) + 1; });
+  const statusData = Object.entries(statusMap).map(([status, total]) => ({ status, total }));
+
+  const mrrData = activeClients
+    .filter((c) => c.monthly_value > 0)
+    .sort((a, b) => b.monthly_value - a.monthly_value)
+    .map((c) => ({ name: c.name.split(" ")[0], mrr: c.monthly_value }));
+
+  // ── financeiro chart (últimos 6 meses) ────────
+  const months: { month: string; receita: number; mrr: number }[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    months.push({ month: label, receita: 0, mrr: 0 });
+  }
+
+  const { data: metricsRaw } = await supabase
+    .from("client_metrics")
+    .select("month, revenue")
+    .gte("month", new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString().split("T")[0]);
+
+  (metricsRaw ?? []).forEach((r) => {
+    const label = new Date(r.month).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    const m = months.find((x) => x.month === label);
+    if (m) m.receita += r.revenue ?? 0;
+  });
+
+  // MRR atual repetido nos últimos meses (sem histórico, usa valor atual)
+  months.forEach((m) => { if (m.mrr === 0) m.mrr = mrr; });
+
+  return { mrr, activeClients: activeClients.length, totalClients: clients.length, leads, prospectsChart, statusData, mrrData, financeiroChart: months };
 }
 
-const comingSoon = [
-  {
-    icon: Bell,
-    label: "Alertas Inteligentes",
-    desc: "Notificações automáticas de renovação, atraso e oportunidades.",
-  },
-  {
-    icon: CalendarDays,
-    label: "Agendamento",
-    desc: "Agenda de reuniões e follow-ups integrada ao CRM.",
-  },
-  {
-    icon: BarChart2,
-    label: "Relatórios",
-    desc: "Métricas de performance e análise de resultados em tempo real.",
-  },
-  {
-    icon: Megaphone,
-    label: "Anúncios",
-    desc: "Gestão de campanhas de tráfego pago integrada ao painel.",
-  },
-];
-
 export default async function DashboardPage() {
-  const stats = await getStats();
+  const d = await getDashboardData();
 
   return (
     <>
@@ -64,29 +96,23 @@ export default async function DashboardPage() {
 
       <style>{`
         .dash-pad { padding: 40px 40px 60px; }
-        .dash-welcome { margin-bottom: 48px; }
         .dash-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
-        .dash-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 48px; }
-        .dash-grid-coming { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
-        .dash-stat-value { font-size: 38px; }
+        .chart-card { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 24px; }
+        .chart-title { font-size: 11px; font-weight: 600; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 20px; }
         @media (max-width: 768px) {
           .dash-pad { padding: 20px 16px 48px; }
-          .dash-welcome { margin-bottom: 32px; }
-          .dash-welcome h2 { font-size: 24px !important; }
           .dash-grid-3 { grid-template-columns: 1fr; gap: 10px; }
-          .dash-grid-2 { grid-template-columns: 1fr; gap: 10px; margin-bottom: 32px; }
-          .dash-grid-coming { grid-template-columns: 1fr; }
-          .dash-stat-value { font-size: 28px !important; }
         }
       `}</style>
+
       <div className="dash-pad" style={{ flex: 1 }}>
 
         {/* Welcome */}
-        <div className="dash-welcome">
-          <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 12px" }}>
+        <div style={{ marginBottom: "40px" }}>
+          <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 10px" }}>
             Painel de gestão
           </p>
-          <h2 style={{ fontSize: "32px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 8px", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+          <h2 style={{ fontSize: "32px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             Bem-vindo, Junior.
           </h2>
           <p style={{ fontSize: "14px", color: "#777068", margin: 0, fontWeight: "300", maxWidth: "480px", lineHeight: 1.6 }}>
@@ -95,175 +121,78 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats row */}
-        <div className="dash-grid-3">
+        <div className="dash-grid-3" style={{ marginBottom: "32px" }}>
           {[
-            {
-              label: "Clientes ativos",
-              value: String(stats.activeClients),
-              sub: `${stats.totalClients} cadastrados no total`,
-            },
-            {
-              label: "MRR",
-              value: `R$ ${stats.mrr.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`,
-              sub: "receita mensal recorrente",
-              highlight: true,
-            },
-            {
-              label: "Leads em aberto",
-              value: String(stats.leads),
-              sub: "apresentações e captados",
-            },
+            { label: "Clientes ativos",   value: String(d.activeClients), sub: `${d.totalClients} cadastrados no total`, accent: false },
+            { label: "MRR",               value: `R$ ${d.mrr.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`, sub: "receita mensal recorrente", accent: true },
+            { label: "Em onboarding",     value: String(d.leads), sub: "clientes em implantação", accent: false },
           ].map((card) => (
-            <div
-              key={card.label}
-              style={{
-                background: "#111111",
-                border: `1px solid ${BORDER}`,
-                borderRadius: "10px",
-                padding: "28px",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {card.highlight && (
-                <div style={{
-                  position: "absolute", top: 0, left: 0, right: 0,
-                  height: "2px",
-                  background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`,
-                }} />
-              )}
-              <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                {card.label}
-              </p>
-              <p className="dash-stat-value" style={{
-                fontWeight: "700",
-                color: card.highlight ? ACCENT : "#F0EDE8",
-                margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em",
-              }}>
-                {card.value}
-              </p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>
-                {card.sub}
-              </p>
+            <div key={card.label} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", position: "relative", overflow: "hidden" }}>
+              {card.accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
+              <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{card.label}</p>
+              <p style={{ fontSize: "36px", fontWeight: "700", color: card.accent ? ACCENT : "#F0EDE8", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
+              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{card.sub}</p>
             </div>
           ))}
         </div>
 
-        {/* Posts stats */}
-        <div className="dash-grid-2">
-          {[
-            { label: "Posts gerados", value: String(stats.approved), sub: "carrosséis aprovados no total", icon: Images },
-            { label: "Este mês", value: String(stats.thisMonth), sub: new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }), icon: Images },
-          ].map((card) => (
-            <div key={card.label} style={{ background: "#111111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px", display: "flex", alignItems: "center", gap: "20px" }}>
-              <div style={{ width: "40px", height: "40px", background: "rgba(0,207,255,0.06)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <card.icon size={17} color={ACCENT} strokeWidth={1.5} />
+        {/* ── CHARTS ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px", marginBottom: "32px" }}>
+
+          {/* Prospecção */}
+          <div className="chart-card">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <p className="chart-title" style={{ margin: 0 }}>Prospecção — últimos 30 dias</p>
+              <Link href="/dashboard/prospeccao/automatizar" style={{ fontSize: "11px", color: ACCENT, textDecoration: "none", display: "flex", alignItems: "center", gap: "4px", opacity: 0.8 }}>
+                Ver automações <ArrowRight size={11} />
+              </Link>
+            </div>
+            <ProspeccaoChart data={d.prospectsChart} />
+          </div>
+
+          {/* Clientes */}
+          <div className="chart-card">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <p className="chart-title" style={{ margin: 0 }}>Clientes</p>
+              <Link href="/dashboard/clientes" style={{ fontSize: "11px", color: ACCENT, textDecoration: "none", display: "flex", alignItems: "center", gap: "4px", opacity: 0.8 }}>
+                Gerenciar <ArrowRight size={11} />
+              </Link>
+            </div>
+            <ClientesChart statusData={d.statusData} mrrData={d.mrrData} />
+          </div>
+
+          {/* Financeiro */}
+          <div className="chart-card">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+              <p className="chart-title" style={{ margin: 0 }}>Financeiro — últimos 6 meses</p>
+              <Link href="/dashboard/financeiro" style={{ fontSize: "11px", color: ACCENT, textDecoration: "none", display: "flex", alignItems: "center", gap: "4px", opacity: 0.8 }}>
+                Ver financeiro <ArrowRight size={11} />
+              </Link>
+            </div>
+            <FinanceiroChart data={d.financeiroChart} />
+          </div>
+        </div>
+
+        {/* ── ATALHO ANÚNCIOS ── */}
+        <Link href="/dashboard/anuncios" style={{ textDecoration: "none", display: "block" }}>
+          <div style={{ background: "#111", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "12px", padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", position: "relative", overflow: "hidden", cursor: "pointer", transition: "border-color 0.2s" }}
+            onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.borderColor = "rgba(0,207,255,0.35)")}
+            onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.borderColor = "rgba(0,207,255,0.15)")}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <div style={{ width: "44px", height: "44px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Megaphone size={20} color={ACCENT} strokeWidth={1.5} />
               </div>
               <div>
-                <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 6px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{card.label}</p>
-                <p style={{ fontSize: "30px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 2px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
-                <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{card.sub}</p>
+                <p style={{ fontSize: "15px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 3px" }}>Anúncios</p>
+                <p style={{ fontSize: "12px", color: "#777068", margin: 0, fontWeight: "300" }}>Visualize e gerencie suas campanhas de tráfego pago</p>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "32px" }}>
-          <div style={{ flex: 1, height: "1px", background: BORDER }} />
-          <span style={{ fontSize: "10px", fontWeight: "500", color: "#777068", letterSpacing: "0.2em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
-            Em desenvolvimento
-          </span>
-          <div style={{ flex: 1, height: "1px", background: BORDER }} />
-        </div>
-
-        {/* Coming soon modules */}
-        <div className="dash-grid-coming">
-          {comingSoon.map((item) => (
-            <div
-              key={item.label}
-              style={{
-                background: "#111111",
-                border: `1px solid ${BORDER}`,
-                borderRadius: "10px",
-                padding: "24px",
-                display: "flex",
-                gap: "16px",
-                alignItems: "flex-start",
-                opacity: 0.55,
-              }}
-            >
-              <div style={{
-                width: "36px", height: "36px",
-                background: "rgba(0,207,255,0.05)",
-                border: "1px solid rgba(0,207,255,0.1)",
-                borderRadius: "8px",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}>
-                <item.icon size={16} color={ACCENT} strokeWidth={1.5} />
-              </div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                  <p style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>
-                    {item.label}
-                  </p>
-                  <span style={{
-                    fontSize: "8px", fontWeight: "600", color: ACCENT,
-                    background: "rgba(0,207,255,0.07)",
-                    border: "1px solid rgba(0,207,255,0.15)",
-                    padding: "2px 6px", borderRadius: "3px",
-                    letterSpacing: "0.1em", textTransform: "uppercase",
-                  }}>
-                    Em breve
-                  </span>
-                </div>
-                <p style={{ fontSize: "12px", color: "#777068", margin: 0, fontWeight: "300", lineHeight: 1.6 }}>
-                  {item.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Bottom banner */}
-        <div style={{
-          marginTop: "48px",
-          background: "#111111",
-          border: `1px solid ${BORDER_STRONG}`,
-          borderRadius: "10px",
-          padding: "28px 32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "24px",
-          position: "relative",
-          overflow: "hidden",
-        }}>
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{
-              width: "40px", height: "40px",
-              background: "rgba(0,207,255,0.07)",
-              border: "1px solid rgba(0,207,255,0.15)",
-              borderRadius: "8px",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <BrainCircuit size={18} color={ACCENT} strokeWidth={1.5} />
-            </div>
-            <div>
-              <p style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 2px" }}>
-                UPFLU · IA & Automação
-              </p>
-              <p style={{ fontSize: "12px", color: "#777068", margin: 0, fontWeight: "300" }}>
-                Implementando inteligência nos negócios que querem crescer.
-              </p>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: ACCENT, fontSize: "12px", fontWeight: "600", flexShrink: 0 }}>
+              Acessar <ArrowRight size={14} />
             </div>
           </div>
-          <p style={{ fontSize: "11px", color: "#777068", whiteSpace: "nowrap", letterSpacing: "0.08em" }}>
-            upflu.digital
-          </p>
-        </div>
+        </Link>
 
       </div>
     </>
