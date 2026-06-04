@@ -106,7 +106,7 @@ export async function evolutionFindMessages(instance?: string, remoteJid?: strin
     const body = remoteJid
       ? { where: { key: { remoteJid } }, limit, offset: 0 }
       : { where: {}, limit, offset: 0 };
-    const res = await fetch(`${base}/message/findMessages/${encodeURIComponent(inst)}`, {
+    const res = await fetch(`${base}/chat/findMessages/${encodeURIComponent(inst)}`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(body),
@@ -117,7 +117,6 @@ export async function evolutionFindMessages(instance?: string, remoteJid?: strin
     const records = data?.messages?.records
       ?? data?.records
       ?? (Array.isArray(data) ? data : []);
-    // Filter by remoteJid client-side as fallback
     const filtered = remoteJid
       ? records.filter((m: EvolutionMessage) => m.key?.remoteJid === remoteJid)
       : records;
@@ -130,7 +129,7 @@ export async function evolutionFindContacts(instance?: string): Promise<Evolutio
   const inst = instance ?? INSTANCE();
   if (!base || !API_KEY() || !inst) return [];
   try {
-    const res = await fetch(`${base}/contact/findContacts/${encodeURIComponent(inst)}`, {
+    const res = await fetch(`${base}/chat/findContacts/${encodeURIComponent(inst)}`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({ where: {} }),
