@@ -7,6 +7,7 @@ import {
   evolutionSend,
   evolutionFindChats,
   evolutionFindMessages,
+  evolutionFindContacts,
   evolutionMeasureLatency,
 } from "@/lib/evolution-api";
 
@@ -42,6 +43,11 @@ export async function GET(req: NextRequest) {
   if (action === "latency") {
     const ms = await evolutionMeasureLatency();
     return NextResponse.json({ ms });
+  }
+
+  if (action === "contacts") {
+    const contacts = await evolutionFindContacts(instance);
+    return NextResponse.json({ contacts });
   }
 
   const instances = await evolutionInstances();

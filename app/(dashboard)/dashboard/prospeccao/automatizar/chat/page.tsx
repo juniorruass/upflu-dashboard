@@ -10,10 +10,19 @@ const GREEN  = "#4ADE80";
 
 type Chat = {
   id: string;
+  remoteJid?: string;
   name?: string;
   pushName?: string;
   unreadCount?: number;
   lastMessage?: { conversation?: string; timestamp?: number };
+};
+
+type Contact = {
+  id?: string;
+  remoteJid?: string;
+  pushName?: string;
+  profileName?: string;
+  name?: string;
 };
 
 type Msg = {
@@ -37,9 +46,21 @@ const inp: React.CSSProperties = {
   width: "100%", boxSizing: "border-box", fontFamily: "inherit",
 };
 
+function formatPhone(jid: string): string {
+  const num = jid.replace("@s.whatsapp.net", "").replace("@lid", "").replace(/\D/g, "");
+  if (num.startsWith("55") && num.length === 13) {
+    return `+55 (${num.slice(2,4)}) ${num.slice(4,9)}-${num.slice(9)}`;
+  }
+  if (num.startsWith("55") && num.length === 12) {
+    return `+55 (${num.slice(2,4)}) ${num.slice(4,8)}-${num.slice(8)}`;
+  }
+  return num || jid;
+}
+
 export default function ChatPage() {
   const [chats, setChats]               = useState<Chat[]>([]);
   const [chatsLoading, setChatsLoading] = useState(true);
+  const [contacts, setContacts]         = useState<Record<string, string>>({});
   const [activeChat, setActiveChat]     = useState<Chat | null>(null);
   const [msgs, setMsgs]                 = useState<Msg[]>([]);
   const [msgsLoading, setMsgsLoading]   = useState(false);
@@ -48,7 +69,7 @@ export default function ChatPage() {
   const [search, setSearch]             = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { loadChats(); }, []);
+  useEffect(() => { loadChats(); loadContacts(); }, []);
 
   useEffect(() => {
     if (!activeChat) return;
@@ -69,6 +90,20 @@ export default function ChatPage() {
       setChats(d.chats ?? []);
     } catch { setChats([]); }
     setChatsLoading(false);
+  }
+
+  async function loadContacts() {
+    try {
+      const r = await fetch("/api/evolution?action=contacts");
+      const d = await r.json();
+      const map: Record<string, string> = {};
+      (d.contacts ?? []).forEach((c: Contact) => {
+        const jid = c.remoteJid ?? c.id ?? "";
+        const name = c.pushName ?? c.profileName ?? c.name ?? "";
+        if (jid && name) map[jid] = name;
+      });
+      setContacts(map);
+    } catch {}
   }
 
   async function loadMsgs(jid: string) {
@@ -94,14 +129,19 @@ export default function ChatPage() {
     await loadMsgs(activeChat.id);
   }
 
+  function resolveName(c: Chat): string {
+    return contacts[c.id]
+      ?? c.pushName
+      ?? c.name
+      ?? formatPhone(c.id);
+  }
+
   const filteredChats = chats.filter((c) => {
-    const name = c.pushName ?? c.name ?? c.id ?? "";
+    const name = resolveName(c);
     return name.toLowerCase().includes(search.toLowerCase());
   });
 
-  const chatName = activeChat
-    ? (activeChat.pushName ?? activeChat.name ?? (activeChat.id ?? "").replace("@s.whatsapp.net", "").replace("@lid", ""))
-    : "";
+  const chatName = activeChat ? resolveName(activeChat) : "";
 
   return (
     <>
@@ -141,7 +181,7 @@ export default function ChatPage() {
                 </p>
               ) : filteredChats.map((c, i) => {
                 const id   = c.id || String(i);
-                const name = c.pushName ?? c.name ?? id.replace("@s.whatsapp.net", "").replace("@lid", "");
+                const name = resolveName(c);
                 const isActive = activeChat?.id === id;
                 return (
                   <div key={id} onClick={() => setActiveChat(c)}

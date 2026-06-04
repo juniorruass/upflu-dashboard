@@ -98,24 +98,47 @@ export async function evolutionFindChats(instance?: string, limit = 30): Promise
   } catch { return []; }
 }
 
-export async function evolutionFindMessages(instance?: string, remoteJid?: string, limit = 20): Promise<EvolutionMessage[]> {
+export async function evolutionFindMessages(instance?: string, remoteJid?: string, limit = 40): Promise<EvolutionMessage[]> {
   const base = BASE();
   const inst = instance ?? INSTANCE();
   if (!base || !API_KEY() || !inst) return [];
   try {
-    const where: Record<string, unknown> = remoteJid
-      ? { key: { remoteJid } }
-      : {};
+    const body = remoteJid
+      ? { where: { key: { remoteJid } }, limit, offset: 0 }
+      : { where: {}, limit, offset: 0 };
     const res = await fetch(`${base}/message/findMessages/${encodeURIComponent(inst)}`, {
       method: "POST",
       headers: headers(),
-      body: JSON.stringify({ where, page: { limit, offset: 0 } }),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const records = data?.messages?.records
+      ?? data?.records
+      ?? (Array.isArray(data) ? data : []);
+    // Filter by remoteJid client-side as fallback
+    const filtered = remoteJid
+      ? records.filter((m: EvolutionMessage) => m.key?.remoteJid === remoteJid)
+      : records;
+    return filtered.slice(0, limit);
+  } catch { return []; }
+}
+
+export async function evolutionFindContacts(instance?: string): Promise<EvolutionContact[]> {
+  const base = BASE();
+  const inst = instance ?? INSTANCE();
+  if (!base || !API_KEY() || !inst) return [];
+  try {
+    const res = await fetch(`${base}/contact/findContacts/${encodeURIComponent(inst)}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ where: {} }),
       signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return [];
     const data = await res.json();
-    const records = data?.messages?.records ?? data?.records ?? (Array.isArray(data) ? data : []);
-    return records.slice(0, limit);
+    return Array.isArray(data) ? data : (data?.contacts ?? []);
   } catch { return []; }
 }
 
@@ -154,11 +177,20 @@ export type EvolutionQR = {
 
 export type EvolutionChat = {
   id: string;
+  remoteJid?: string;
   name?: string;
   pushName?: string;
   unreadCount?: number;
   lastMessage?: { conversation?: string; timestamp?: number };
   updatedAt?: string;
+};
+
+export type EvolutionContact = {
+  id?: string;
+  remoteJid?: string;
+  pushName?: string;
+  profileName?: string;
+  name?: string;
 };
 
 export type EvolutionMessage = {
