@@ -76,14 +76,6 @@ function latencyColor(ms: number) {
   return PINK;
 }
 
-function msgText(m: EvolutionMsg) {
-  return m.message?.conversation ?? m.message?.extendedTextMessage?.text ?? "";
-}
-
-function formatTime(ts?: number) {
-  if (!ts) return "";
-  return new Date(ts * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-}
 
 export default function AutomatizarPage() {
   // ── prospecting configs ──
