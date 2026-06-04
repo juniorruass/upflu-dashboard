@@ -9,14 +9,14 @@ const DIAS_LABEL: Record<number, string> = { 0:"Dom", 1:"Seg", 2:"Ter", 3:"Qua",
 interface Props {
   step1: Step1Data;
   automacaoName: string;
-  message: string;
+  messages: string[];
   schedule: ScheduleData;
   saving: boolean;
   onSalvar: () => void;
   onCriar: () => void;
 }
 
-export default function Step4Review({ step1, automacaoName, message, schedule, saving, onSalvar, onCriar }: Props) {
+export default function Step4Review({ step1, automacaoName, messages, schedule, saving, onSalvar, onCriar }: Props) {
   const isGoogle = step1.source === "google";
 
   return (
@@ -50,10 +50,11 @@ export default function Step4Review({ step1, automacaoName, message, schedule, s
         {/* Mensagem */}
         <Block icon={MessageSquare} color="#A78BFA" title="Mensagem">
           <Row label="Nome" value={automacaoName || "—"} />
+          <Row label="Variações" value={`${messages.filter(m => m.trim()).length} mensagem${messages.filter(m => m.trim()).length !== 1 ? "s" : ""}`} />
           <div>
-            <p className="text-[10px] font-semibold text-[#555] tracking-wide uppercase mb-1">Texto</p>
+            <p className="text-[10px] font-semibold text-[#555] tracking-wide uppercase mb-1">Variação 1</p>
             <p className="text-[12px] text-[#AAA] bg-[#0d0d0d] rounded-lg px-3 py-2 border border-white/[0.05] leading-relaxed line-clamp-3">
-              {message || "—"}
+              {messages[0] || "—"}
             </p>
           </div>
         </Block>

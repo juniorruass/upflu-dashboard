@@ -75,6 +75,14 @@ const sec: React.CSSProperties = {
   letterSpacing: "0.15em", textTransform: "uppercase" as const, marginBottom: "16px",
 };
 
+function parseMessages(template: string): string[] {
+  try {
+    const parsed = JSON.parse(template);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch {}
+  return template ? [template] : [""];
+}
+
 function latencyColor(ms: number) {
   if (ms < 0) return "#555";
   if (ms < 200) return GREEN;
@@ -116,7 +124,7 @@ export default function AutomatizarPage() {
   const [step, setStep]   = useState(1);
   const [done, setDone]   = useState<number[]>([]);
   const [step1, setStep1] = useState<Step1Data>(STEP1_DEFAULT);
-  const [step2, setStep2] = useState<Step2Data>({ name: "", message: "" });
+  const [step2, setStep2] = useState<Step2Data>({ name: "", messages: [""] });
   const [sched, setSched] = useState<ScheduleData>(SCHED_DEFAULT);
   const [editId, setEditId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -216,7 +224,7 @@ export default function AutomatizarPage() {
     }
     if (step === 2) {
       if (!step2.name.trim()) return "Nome da automação é obrigatório.";
-      if (!step2.message.trim()) return "A mensagem não pode estar vazia.";
+      if (!step2.messages.some((m) => m.trim())) return "Escreva ao menos uma mensagem.";
     }
     return "";
   }
@@ -236,7 +244,7 @@ export default function AutomatizarPage() {
 
   function resetForm() {
     setEditId(null); setStep(1); setDone([]);
-    setStep1(STEP1_DEFAULT); setStep2({ name: "", message: "" });
+    setStep1(STEP1_DEFAULT); setStep2({ name: "", messages: [""] });
     setSched(SCHED_DEFAULT); setStepErr(""); setSaving(false);
   }
 
@@ -247,7 +255,7 @@ export default function AutomatizarPage() {
       search_term: step1.searchTerm, cities: step1.cities,
       cnae: step1.cnae, cnae_label: step1.cnaeLabel,
       municipio: step1.municipio, uf: step1.uf,
-      message_template: step2.message, daily_limit: step1.dailyLimit,
+      message_template: JSON.stringify(step2.messages.filter((m) => m.trim())), daily_limit: step1.dailyLimit,
       active, send_hour: sched.startHour, end_hour: sched.endHour,
       active_days: sched.activeDays, min_delay_seconds: sched.minDelay,
       max_delay_seconds: sched.maxDelay, session_max: sched.sessionMax,
@@ -276,7 +284,7 @@ export default function AutomatizarPage() {
       municipio: config.municipio, uf: config.uf,
       dailyLimit: config.daily_limit,
     });
-    setStep2({ name: config.name, message: config.message_template });
+    setStep2({ name: config.name, messages: parseMessages(config.message_template) });
     setSched({
       minDelay: config.min_delay_seconds ?? 45,
       maxDelay: config.max_delay_seconds ?? 120,
@@ -519,7 +527,7 @@ export default function AutomatizarPage() {
               <Step4Review
                 step1={step1}
                 automacaoName={step2.name}
-                message={step2.message}
+                messages={step2.messages}
                 schedule={sched}
                 saving={saving}
                 onSalvar={() => salvar(false)}
