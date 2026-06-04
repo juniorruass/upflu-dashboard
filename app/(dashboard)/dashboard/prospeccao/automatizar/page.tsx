@@ -423,38 +423,6 @@ export default function AutomatizarPage() {
           })}
         </div>
 
-        {/* ── DISPARO IMEDIATO ── */}
-        <div style={{ marginBottom: "32px" }}>
-          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "24px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
-              <Zap size={14} color={YELLOW} />
-              <p style={{ ...sec, margin: 0, color: YELLOW }}>Disparo Imediato</p>
-            </div>
-            <div style={{ marginBottom: "14px" }}>
-              <label style={lbl}>Números (um por linha)</label>
-              <textarea
-                style={{ ...inp, minHeight: "100px", resize: "vertical" }}
-                placeholder={"11999999999\n21988888888\n31977777777"}
-                value={dispNumbers}
-                onChange={(e) => setDispNumbers(e.target.value)}
-              />
-              <p style={{ fontSize: "11px", color: "#555", margin: "4px 0 0" }}>
-                {dispNumbers.split("\n").filter((s) => s.trim()).length} número(s)
-              </p>
-            </div>
-            <div style={{ marginBottom: "16px" }}>
-              <label style={lbl}>Mensagem</label>
-              <textarea style={{ ...inp, minHeight: "80px", resize: "vertical" }} placeholder="Escreva a mensagem..." value={dispMsg} onChange={(e) => setDispMsg(e.target.value)} />
-            </div>
-            <button onClick={sendNow} disabled={dispSending || !dispNumbers.trim() || !dispMsg.trim()}
-              style={{ display: "flex", alignItems: "center", gap: "8px", background: YELLOW, color: "#000", border: "none", borderRadius: "8px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer", opacity: dispSending ? 0.7 : 1, width: "100%", justifyContent: "center" }}>
-              {dispSending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={14} />}
-              {dispSending ? "Enviando..." : "Disparar agora"}
-            </button>
-            {dispResult && <p style={{ fontSize: "12px", color: GREEN, margin: "10px 0 0", textAlign: "center" }}>{dispResult}</p>}
-          </div>
-        </div>
-
         {/* ── HISTÓRICO RÁPIDO ── */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
@@ -525,7 +493,65 @@ export default function AutomatizarPage() {
           <div className="mt-6">
             {step === 1 && <Step1Alvo value={step1} onChange={setStep1} />}
             {step === 2 && <Step2Message value={step2} onChange={setStep2} />}
-            {step === 3 && <ScheduleConfig onChange={setSched} initial={sched} />}
+            {step === 3 && (
+              <div className="flex flex-col gap-8">
+                <ScheduleConfig onChange={setSched} initial={sched} />
+
+                {/* Disparo Imediato */}
+                <div className="rounded-xl border border-[#F0B429]/20 bg-[#F0B429]/03 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Zap size={13} color={YELLOW} />
+                    <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: YELLOW }}>
+                      Disparo Imediato
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#777068] tracking-[0.1em] uppercase mb-2">
+                        Números (um por linha)
+                      </label>
+                      <textarea
+                        className="w-full bg-[#0d0d0d] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] text-[#F0EDE8] placeholder-[#444] resize-y outline-none focus:border-[#F0B429]/40 transition-colors"
+                        rows={4}
+                        placeholder={"11999999999\n21988888888\n31977777777"}
+                        value={dispNumbers}
+                        onChange={(e) => setDispNumbers(e.target.value)}
+                      />
+                      <p className="text-[11px] text-[#555] mt-1">
+                        {dispNumbers.split("\n").filter((s) => s.trim()).length} número(s)
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#777068] tracking-[0.1em] uppercase mb-2">
+                        Mensagem
+                      </label>
+                      <textarea
+                        className="w-full bg-[#0d0d0d] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] text-[#F0EDE8] placeholder-[#444] resize-y outline-none focus:border-[#F0B429]/40 transition-colors"
+                        rows={3}
+                        placeholder="Escreva a mensagem..."
+                        value={dispMsg}
+                        onChange={(e) => setDispMsg(e.target.value)}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={sendNow}
+                      disabled={dispSending || !dispNumbers.trim() || !dispMsg.trim()}
+                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-50"
+                      style={{ background: YELLOW, color: "#000" }}
+                    >
+                      {dispSending
+                        ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
+                        : <Zap size={14} />}
+                      {dispSending ? "Enviando..." : "Disparar agora"}
+                    </button>
+                    {dispResult && (
+                      <p className="text-[12px] text-center" style={{ color: GREEN }}>{dispResult}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {step === 4 && (
               <Step4Review
                 step1={step1}
