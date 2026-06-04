@@ -12,8 +12,8 @@ const BORDER = "rgba(255,255,255,0.07)";
 
 const navItems = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, disabled: false, exact: true  },
-  { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search,          disabled: false, exact: true  },
-  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar", icon: Zap,    disabled: false, exact: false, sub: true },
+  { label: "Prospecção",   href: "/dashboard/prospeccao",             icon: Search, disabled: false, exact: true  },
+  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar", icon: Zap,    disabled: false, exact: false },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
