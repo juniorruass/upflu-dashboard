@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader2, Plus, Trash2, Play, Pause, X,
   RefreshCw, Wifi, WifiOff, QrCode, LogOut,
-  Send, MessageSquare, Zap, Clock, ChevronLeft,
+  Send, Zap, Clock,
 } from "lucide-react";
 import Header from "@/components/header";
 
@@ -41,8 +41,6 @@ const PRESETS_SEGURANCA = [
 ];
 
 type EvolutionInst = { id?: string; name: string; connectionStatus: string; ownerJid?: string; profileName?: string; profilePicUrl?: string; };
-type EvolutionChat = { id: string; name?: string; pushName?: string; unreadCount?: number; lastMessage?: { conversation?: string; timestamp?: number }; updatedAt?: string; };
-type EvolutionMsg  = { key: { remoteJid: string; fromMe: boolean; id: string }; message?: { conversation?: string; extendedTextMessage?: { text: string } }; messageTimestamp?: number; pushName?: string; };
 type WaLog         = { id: string; nome: string; telefone: string; template: string; status: string; sent_at: string; };
 
 type Config = {
@@ -122,34 +120,12 @@ export default function AutomatizarPage() {
   const [dispSending, setDispSending] = useState(false);
   const [dispResult, setDispResult]   = useState<string | null>(null);
 
-  // ── live chat ──
-  const [chats, setChats]               = useState<EvolutionChat[]>([]);
-  const [chatsLoading, setChatsLoading] = useState(true);
-  const [activeChat, setActiveChat]     = useState<EvolutionChat | null>(null);
-  const [chatMsgs, setChatMsgs]         = useState<EvolutionMsg[]>([]);
-  const [chatMsgsLoading, setChatMsgsLoading] = useState(false);
-  const [chatInput, setChatInput]       = useState("");
-  const [chatSending, setChatSending]   = useState(false);
-  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadConfigs();
     loadInstances();
     loadHistory();
-    loadChats();
   }, []);
-
-  // Poll chat messages every 5s when a chat is open
-  useEffect(() => {
-    if (!activeChat) return;
-    loadChatMessages(activeChat.id);
-    const t = setInterval(() => loadChatMessages(activeChat.id), 5000);
-    return () => clearInterval(t);
-  }, [activeChat]);
-
-  useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMsgs]);
 
   // ── loaders ──
   async function loadInstances() {
@@ -174,25 +150,6 @@ export default function AutomatizarPage() {
     setHistLoading(false);
   }
 
-  async function loadChats() {
-    setChatsLoading(true);
-    try {
-      const r = await fetch("/api/evolution?action=chats&limit=30");
-      const d = await r.json();
-      setChats(d.chats ?? []);
-    } catch { setChats([]); }
-    setChatsLoading(false);
-  }
-
-  async function loadChatMessages(jid: string) {
-    setChatMsgsLoading(true);
-    try {
-      const r = await fetch(`/api/evolution?action=messages&jid=${encodeURIComponent(jid)}&limit=30`);
-      const d = await r.json();
-      setChatMsgs(d.messages ?? []);
-    } catch {}
-    setChatMsgsLoading(false);
-  }
 
   async function loadConfigs() {
     setLoading(true);
@@ -244,15 +201,6 @@ export default function AutomatizarPage() {
     loadHistory();
   }
 
-  // ── chat send ──
-  async function sendChatMsg() {
-    if (!chatInput.trim() || !activeChat) return;
-    setChatSending(true);
-    await fetch("/api/evolution", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", phone: activeChat.id.replace("@s.whatsapp.net", ""), message: chatInput }) });
-    setChatInput("");
-    setChatSending(false);
-    await loadChatMessages(activeChat.id);
-  }
 
   // ── prospecting config ──
   function addCity() {
@@ -410,8 +358,8 @@ export default function AutomatizarPage() {
           })}
         </div>
 
-        {/* ── DISPARO IMEDIATO + CHAT AO VIVO ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "32px" }}>
+        {/* ── DISPARO IMEDIATO ── */}
+        <div style={{ marginBottom: "32px" }}>
 
           {/* Disparo Imediato */}
           <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "24px" }}>
@@ -443,82 +391,6 @@ export default function AutomatizarPage() {
               {dispSending ? "Enviando..." : "Disparar agora"}
             </button>
             {dispResult && <p style={{ fontSize: "12px", color: GREEN, margin: "10px 0 0", textAlign: "center" }}>{dispResult}</p>}
-          </div>
-
-          {/* Chat ao Vivo */}
-          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", minHeight: "380px" }}>
-            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", gap: "8px" }}>
-              {activeChat && (
-                <button onClick={() => { setActiveChat(null); setChatMsgs([]); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#555", padding: 0, display: "flex" }}>
-                  <ChevronLeft size={16} />
-                </button>
-              )}
-              <MessageSquare size={14} color={ACCENT} />
-              <p style={{ ...sec, margin: 0, color: ACCENT }}>
-                {activeChat ? (activeChat.pushName ?? activeChat.name ?? (activeChat.id ?? "").replace("@s.whatsapp.net", "").replace("@lid", "")) : "Chat ao Vivo"}
-              </p>
-              {!activeChat && (
-                <button onClick={loadChats} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#555" }}>
-                  <RefreshCw size={12} style={{ animation: chatsLoading ? "spin 1s linear infinite" : "none" }} />
-                </button>
-              )}
-            </div>
-
-            {/* Chat list */}
-            {!activeChat && (
-              <div style={{ flex: 1, overflowY: "auto" }}>
-                {chatsLoading ? (
-                  <div style={{ padding: "32px", textAlign: "center" }}><Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} /></div>
-                ) : chats.length === 0 ? (
-                  <div style={{ padding: "32px", textAlign: "center" }}>
-                    <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma conversa encontrada.</p>
-                  </div>
-                ) : chats.map((c, i) => {
-                  const chatId   = c.id || String(i);
-                  const chatName = c.pushName ?? c.name ?? chatId.replace("@s.whatsapp.net", "").replace("@lid", "");
-                  return (
-                    <div key={chatId} onClick={() => setActiveChat(c)} style={{ padding: "12px 20px", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", transition: "background .15s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}>
-                        <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{chatName}</span>
-                        {c.unreadCount ? <span style={{ fontSize: "10px", fontWeight: "700", background: GREEN, color: "#000", borderRadius: "10px", padding: "1px 6px" }}>{c.unreadCount}</span> : null}
-                      </div>
-                      <p style={{ fontSize: "11px", color: "#555", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {c.lastMessage?.conversation ?? ""}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Message thread */}
-            {activeChat && (
-              <>
-                <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {chatMsgsLoading && chatMsgs.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "20px" }}><Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} /></div>
-                  ) : chatMsgs.length === 0 ? (
-                    <p style={{ fontSize: "12px", color: "#555", textAlign: "center" }}>Sem mensagens.</p>
-                  ) : chatMsgs.map((m) => (
-                    <div key={m.key.id} style={{ display: "flex", justifyContent: m.key.fromMe ? "flex-end" : "flex-start" }}>
-                      <div style={{ maxWidth: "75%", background: m.key.fromMe ? "rgba(0,207,255,0.15)" : "rgba(255,255,255,0.06)", border: `1px solid ${m.key.fromMe ? "rgba(0,207,255,0.25)" : BORDER}`, borderRadius: "10px", padding: "8px 12px" }}>
-                        <p style={{ fontSize: "13px", color: "#F0EDE8", margin: "0 0 4px", whiteSpace: "pre-wrap" }}>{msgText(m)}</p>
-                        <p style={{ fontSize: "10px", color: "#555", margin: 0, textAlign: "right" }}>{formatTime(m.messageTimestamp)}</p>
-                      </div>
-                    </div>
-                  ))}
-                  <div ref={chatBottomRef} />
-                </div>
-                <div style={{ padding: "10px 12px", borderTop: `1px solid ${BORDER}`, display: "flex", gap: "8px" }}>
-                  <input style={{ ...inp, flex: 1 }} placeholder="Escreva uma mensagem..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendChatMsg())} />
-                  <button onClick={sendChatMsg} disabled={chatSending || !chatInput.trim()} style={{ background: ACCENT, border: "none", borderRadius: "8px", padding: "10px 14px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center" }}>
-                    {chatSending ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={14} />}
-                  </button>
-                </div>
-              </>
-            )}
           </div>
         </div>
 
