@@ -1,14 +1,13 @@
 import { createServerClient } from "@/lib/supabase";
 import Header from "@/components/header";
 import Link from "next/link";
-import { Megaphone, TrendingUp, ArrowRight } from "lucide-react";
+import { Megaphone, ArrowRight } from "lucide-react";
 import ProspeccaoChart from "@/components/charts/prospeccao-chart";
 import ClientesChart   from "@/components/charts/clientes-chart";
 import FinanceiroChart from "@/components/charts/financeiro-chart";
 
 const ACCENT  = "#00CFFF";
 const BORDER  = "rgba(255,255,255,0.07)";
-const GREEN   = "#4ADE80";
 
 async function getDashboardData() {
   const supabase = await createServerClient();
