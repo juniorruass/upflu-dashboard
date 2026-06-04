@@ -10,6 +10,7 @@ import {
   evolutionFindContacts,
   evolutionMeasureLatency,
 } from "@/lib/evolution-api";
+import { createAdminClient } from "@/lib/supabase";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -32,6 +33,41 @@ export async function GET(req: NextRequest) {
 
   if (action === "chats") {
     const chats = await evolutionFindChats(instance, limit);
+
+    // Enrich names from prospects table for contacts without pushName
+    const unnamed = chats.filter((c) => !c.pushName && !c.name);
+    if (unnamed.length > 0) {
+      try {
+        const supabase = createAdminClient();
+        const phones = unnamed.map((c) =>
+          c.id.replace("@s.whatsapp.net", "").replace("@lid", "").replace(/\D/g, "")
+        ).filter(Boolean);
+
+        if (phones.length > 0) {
+          const { data: prospects } = await supabase
+            .from("prospects")
+            .select("nome, telefone")
+            .in("telefone", phones.flatMap((p) => [p, p.replace(/^55/, "")]));
+
+          if (prospects?.length) {
+            const phoneMap: Record<string, string> = {};
+            prospects.forEach((p) => {
+              const normalized = (p.telefone ?? "").replace(/\D/g, "");
+              phoneMap[normalized] = p.nome;
+              phoneMap[normalized.replace(/^55/, "")] = p.nome;
+            });
+
+            chats.forEach((c) => {
+              if (!c.pushName && !c.name) {
+                const num = c.id.replace("@s.whatsapp.net", "").replace("@lid", "").replace(/\D/g, "");
+                if (phoneMap[num]) c.pushName = phoneMap[num];
+              }
+            });
+          }
+        }
+      } catch {}
+    }
+
     return NextResponse.json({ chats });
   }
 
