@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { evolutionFindGroups, evolutionInstances } from "@/lib/evolution-api";
+import { evolutionInstances } from "@/lib/evolution-api";
 
 // GET /api/grupos?action=list-groups&instance=X  — lista grupos do Evolution
 // GET /api/grupos                                — lista mensagens agendadas
