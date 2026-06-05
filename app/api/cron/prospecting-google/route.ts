@@ -89,93 +89,92 @@ export async function GET(req: NextRequest) {
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhuma config Google ativa neste horário" });
 
-  const primeiraConfig = configs[0];
-  const safety  = safetyFromConfig(primeiraConfig as Record<string, unknown>);
-  const horario = horarioPermitido(safety);
-  const delayMs = delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds);
-  const templates = parseTemplates(primeiraConfig.message_template ?? "");
-
   let totalSalvos   = 0;
   let totalEnviados = 0;
 
-  if (!horario.ok) {
-    return NextResponse.json({ ok: true, message: `Bloqueado: ${horario.motivo}` });
-  }
+  const { data: todosExistentes } = await supabase.from("prospects").select("place_id, nome, cidade");
+  const idsExistentes        = new Set((todosExistentes ?? []).map((r: { place_id: string }) => r.place_id));
+  const nomeCidadeExistentes = new Set((todosExistentes ?? []).map((r: { nome: string; cidade: string }) => `${r.nome?.toLowerCase().trim()}|${r.cidade?.toLowerCase().trim()}`));
 
-  // ── 1. Primeiro: envia para quem já está no CRM como "novo" ──
-  const { data: pendentes } = await supabase
-    .from("prospects")
-    .select("id, nome, telefone, cidade, tipo, mensagem")
-    .eq("status", "novo")
-    .eq("whatsapp_enviado", false)
-    .not("telefone", "is", null)
-    .limit(safety.daily_limit);
+  // Processa cada automação com suas próprias configurações
+  for (const config of configs) {
+    const safety    = safetyFromConfig(config as Record<string, unknown>);
+    const horario   = horarioPermitido(safety);
+    const delayMs   = delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds);
+    const templates = parseTemplates(config.message_template ?? "");
 
-  const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
+    if (!horario.ok) continue;
 
-  for (let i = 0; i < comTelefone.length; i++) {
-    const p = comTelefone[i];
-    if (i > 0) await sleep(delayMs);
+    // ── 1. Primeiro: envia para quem já está no CRM como "novo" ──
+    const { data: pendentes } = await supabase
+      .from("prospects")
+      .select("id, nome, telefone, cidade, tipo, mensagem")
+      .eq("status", "novo")
+      .eq("whatsapp_enviado", false)
+      .not("telefone", "is", null)
+      .limit(safety.daily_limit);
 
-    const tpl = templates.length
-      ? templates[Math.floor(Math.random() * templates.length)]
-      : p.mensagem;
+    const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
 
-    const mensagem = tpl
-      ? aplicarVariaveis(tpl, {
-          nome_empresa: p.nome ?? "", nome: p.nome ?? "",
-          cidade: p.cidade ?? "", ramo: p.tipo ?? "",
-          tipo: p.tipo ?? "", telefone: p.telefone ?? "",
-        })
-      : p.mensagem;
+    for (let i = 0; i < comTelefone.length; i++) {
+      const p = comTelefone[i];
+      if (i > 0) await sleep(delayMs);
 
-    const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), mensagem);
-    if (ok) {
-      await supabase.from("prospects").update({
-        whatsapp_enviado: true,
-        whatsapp_enviado_at: new Date().toISOString(),
-        status: "contactado",
-      }).eq("id", p.id);
-      totalEnviados++;
-    }
-  }
+      const tpl = templates.length
+        ? templates[Math.floor(Math.random() * templates.length)]
+        : p.mensagem;
 
-  // ── 2. Se não havia ninguém no CRM, busca novas empresas no Google Maps ──
-  if (comTelefone.length === 0) {
-    const { data: todosExistentes } = await supabase.from("prospects").select("place_id, nome, cidade");
-    const idsExistentes        = new Set((todosExistentes ?? []).map((r: { place_id: string }) => r.place_id));
-    const nomeCidadeExistentes = new Set((todosExistentes ?? []).map((r: { nome: string; cidade: string }) => `${r.nome?.toLowerCase().trim()}|${r.cidade?.toLowerCase().trim()}`));
-
-    for (const config of configs) {
-      const cities: string[] = Array.isArray(config.cities) ? config.cities : [];
-      const term = config.search_term ?? config.cnae_label ?? "empresa";
-      const allResults: { place: Record<string, unknown>; cidade: string }[] = [];
-
-      const BATCH = 5;
-      for (let i = 0; i < cities.length; i += BATCH) {
-        const batchCities = cities.slice(i, i + BATCH);
-        const results = await Promise.allSettled(
-          batchCities.map(async (cidade) => {
-            const places = await searchGoogle(`${term} em ${cidade}`, serpKey);
-            return places.map((place) => ({ place, cidade }));
+      const mensagem = tpl
+        ? aplicarVariaveis(tpl, {
+            nome_empresa: p.nome ?? "", nome: p.nome ?? "",
+            cidade: p.cidade ?? "", ramo: p.tipo ?? "",
+            tipo: p.tipo ?? "", telefone: p.telefone ?? "",
           })
-        );
-        for (const r of results) {
-          if (r.status === "fulfilled") allResults.push(...r.value);
-        }
-        if (i + BATCH < cities.length) await sleep(1000);
+        : p.mensagem;
+
+      const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), mensagem);
+      if (ok) {
+        await supabase.from("prospects").update({
+          whatsapp_enviado: true,
+          whatsapp_enviado_at: new Date().toISOString(),
+          status: "contactado",
+        }).eq("id", p.id);
+        totalEnviados++;
       }
+    }
 
-      const novos = allResults.filter(({ place, cidade }) => {
-        const id        = (place.place_id as string) ?? (place.title as string);
-        const nome      = (place.title as string ?? "").toLowerCase().trim();
-        const nomeCidade = `${nome}|${cidade.toLowerCase().trim()}`;
-        return id && !idsExistentes.has(id) && !nomeCidadeExistentes.has(nomeCidade);
-      });
+    if (comTelefone.length > 0) continue;
 
-      if (!novos.length) continue;
+    // ── 2. Se não havia ninguém no CRM, busca novas empresas no Google Maps ──
+    const cities: string[] = Array.isArray(config.cities) ? config.cities : [];
+    const term = config.search_term ?? config.cnae_label ?? "empresa";
+    const allResults: { place: Record<string, unknown>; cidade: string }[] = [];
 
-      const cfgTemplates = parseTemplates(config.message_template ?? "");
+    const BATCH = 5;
+    for (let i = 0; i < cities.length; i += BATCH) {
+      const batchCities = cities.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batchCities.map(async (cidade) => {
+          const places = await searchGoogle(`${term} em ${cidade}`, serpKey);
+          return places.map((place) => ({ place, cidade }));
+        })
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled") allResults.push(...r.value);
+      }
+      if (i + BATCH < cities.length) await sleep(1000);
+    }
+
+    const novos = allResults.filter(({ place, cidade }) => {
+      const id        = (place.place_id as string) ?? (place.title as string);
+      const nome      = (place.title as string ?? "").toLowerCase().trim();
+      const nomeCidade = `${nome}|${cidade.toLowerCase().trim()}`;
+      return id && !idsExistentes.has(id) && !nomeCidadeExistentes.has(nomeCidade);
+    });
+
+    if (!novos.length) continue;
+
+    const cfgTemplates = parseTemplates(config.message_template ?? "");
 
       const toInsert = novos.map(({ place, cidade }) => {
         const nome    = (place.title as string) ?? "";
@@ -233,7 +232,6 @@ export async function GET(req: NextRequest) {
           totalEnviados++;
         }
       }
-    }
   }
 
   return NextResponse.json({ ok: true, salvos: totalSalvos, enviados: totalEnviados });
