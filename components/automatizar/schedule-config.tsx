@@ -50,16 +50,24 @@ export default function ScheduleConfig({ onChange, initial }: {
       <div>
         <p className="text-[10px] font-semibold text-[#555] tracking-[0.12em] uppercase mb-3">🛡️ Preset anti-ban</p>
         <div className="grid grid-cols-3 gap-3">
-          {PRESETS.map((p) => (
-            <button key={p.key} type="button"
-              onClick={() => upd({ minDelay: p.min, maxDelay: p.max, sessionMax: p.session, sessionBreak: p.brk, activeDays: p.days })}
-              className="p-3 rounded-xl border border-[#F0B429]/20 bg-[#F0B429]/04 text-[#F0B429] hover:bg-[#F0B429]/10 transition-all text-[12px] font-semibold text-left">
-              {p.label}
-              <span className="block text-[10px] font-normal text-[#F0B429]/60 mt-0.5">
-                {p.min}–{p.max}s · {p.session} msgs/sessão
-              </span>
-            </button>
-          ))}
+          {PRESETS.map((p) => {
+            const active = d.minDelay === p.min && d.maxDelay === p.max;
+            return (
+              <button key={p.key} type="button"
+                onClick={() => upd({ minDelay: p.min, maxDelay: p.max, sessionMax: p.session, sessionBreak: p.brk, activeDays: p.days })}
+                className={`p-3 rounded-xl border transition-all text-[12px] font-semibold text-left ${
+                  active
+                    ? "bg-[#F0B429]/15 border-[#F0B429]/60 text-[#F0B429]"
+                    : "bg-[#F0B429]/04 border-[#F0B429]/20 text-[#F0B429]/60 hover:bg-[#F0B429]/10 hover:text-[#F0B429]"
+                }`}>
+                {p.label}
+                {active && <span className="ml-1.5 text-[9px] bg-[#F0B429]/20 px-1.5 py-0.5 rounded-md">ativo</span>}
+                <span className="block text-[10px] font-normal text-[#F0B429]/60 mt-0.5">
+                  {p.min}–{p.max}s · {p.session} msgs/sessão
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -77,11 +85,11 @@ export default function ScheduleConfig({ onChange, initial }: {
               )}
             </div>
           </div>
-          <input type="number" min={10} max={300} value={d.minDelay} onChange={(e) => upd({ minDelay: +e.target.value })} className={field} />
+          <input type="number" min={10} max={900} value={d.minDelay} onChange={(e) => upd({ minDelay: +e.target.value })} className={field} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-semibold text-[#777068] tracking-wide uppercase">Delay máx. (seg)</label>
-          <input type="number" min={10} max={600} value={d.maxDelay} onChange={(e) => upd({ maxDelay: +e.target.value })} className={field} />
+          <input type="number" min={10} max={1800} value={d.maxDelay} onChange={(e) => upd({ maxDelay: +e.target.value })} className={field} />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-[11px] font-semibold text-[#777068] tracking-wide uppercase">Msgs por sessão</label>
