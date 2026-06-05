@@ -11,16 +11,32 @@ export async function GET(req: NextRequest) {
 
   if (action === "list-groups") {
     const inst = searchParams.get("instance") ?? "";
+    const adminOnly = searchParams.get("adminOnly") === "true";
+    const ownerJid = searchParams.get("ownerJid") ?? "";
     const base = (process.env.EVOLUTION_API_URL ?? "").replace(/\/$/, "");
     const apiKey = process.env.EVOLUTION_API_KEY ?? "";
     try {
+      const withParticipants = adminOnly;
       const res = await fetch(
-        `${base}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
+        `${base}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=${withParticipants}`,
         { headers: { "Content-Type": "application/json", apikey: apiKey } },
       );
       if (!res.ok) return NextResponse.json({ groups: [] });
       const data = await res.json();
-      const groups = Array.isArray(data) ? data : (data?.groups ?? []);
+      let groups: Record<string, unknown>[] = Array.isArray(data) ? data : (data?.groups ?? []);
+
+      if (adminOnly && ownerJid) {
+        // extrai a parte numérica do ownerJid para comparar com os participantes
+        const ownerNum = ownerJid.replace(/@.*/, "");
+        groups = groups.filter((g) => {
+          const participants = (g.participants ?? []) as { id: string; admin: string | null }[];
+          return participants.some((p) => {
+            const pNum = p.id.replace(/@.*/, "");
+            return (pNum === ownerNum) && p.admin !== null;
+          });
+        });
+      }
+
       return NextResponse.json({ groups });
     } catch {
       return NextResponse.json({ groups: [] });

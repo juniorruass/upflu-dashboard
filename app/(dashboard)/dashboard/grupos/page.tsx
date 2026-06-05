@@ -25,7 +25,7 @@ type GroupMsg = {
 };
 
 type Group = { id: string; subject: string; size?: number };
-type Instance = { name: string; connectionStatus: string };
+type Instance = { name: string; connectionStatus: string; ownerJid?: string };
 
 const STATUS_COLOR: Record<string, string> = {
   pending: "#FF9500",
@@ -55,6 +55,8 @@ export default function GruposPage() {
   });
   const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
   const [mediaFile, setMediaFile] = useState<{ base64: string; type: "image" | "video"; name: string } | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [adminOnly, setAdminOnly] = useState(false);
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
@@ -75,14 +77,23 @@ export default function GruposPage() {
     fetchInstances();
   }, [fetchMessages, fetchInstances]);
 
-  async function loadGroups(instance: string) {
+  async function loadGroups(instance: string, onlyAdmin = false) {
     if (!instance) { setGroups([]); setSelectedGroups([]); return; }
     setLoadingGroups(true);
-    const res = await fetch(`/api/grupos?action=list-groups&instance=${encodeURIComponent(instance)}`);
+    const ownerJid = instances.find((i) => i.name === instance)?.ownerJid ?? "";
+    const params = new URLSearchParams({ action: "list-groups", instance });
+    if (onlyAdmin && ownerJid) { params.set("adminOnly", "true"); params.set("ownerJid", ownerJid); }
+    const res = await fetch(`/api/grupos?${params}`);
     const data = await res.json();
     setGroups(data.groups ?? []);
     setSelectedGroups([]);
     setLoadingGroups(false);
+  }
+
+  async function handleAdminToggle(value: boolean) {
+    setAdminOnly(value);
+    setSearchText("");
+    if (form.instance) loadGroups(form.instance, value);
   }
 
   function toggleGroup(group: Group) {
@@ -257,8 +268,9 @@ export default function GruposPage() {
                   value={form.instance}
                   onChange={(e) => {
                     const inst = e.target.value;
-                    setForm((f) => ({ ...f, instance: inst, group_jid: "", group_name: "" }));
-                    loadGroups(inst);
+                    setForm((f) => ({ ...f, instance: inst }));
+                    setSearchText("");
+                    loadGroups(inst, adminOnly);
                   }}
                   style={selectStyle}
                   required
@@ -283,6 +295,35 @@ export default function GruposPage() {
                     </button>
                   )}
                 </div>
+
+                {/* Busca + filtro admin */}
+                {form.instance && groups.length > 0 && (
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "6px" }}>
+                    <input
+                      type="text"
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      placeholder="Buscar grupo..."
+                      style={{ ...inputStyle, flex: 1, padding: "8px 10px", fontSize: "12px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAdminToggle(!adminOnly)}
+                      title="Somente grupos onde sou admin"
+                      style={{
+                        background: adminOnly ? "rgba(0,207,255,0.12)" : "transparent",
+                        border: `1px solid ${adminOnly ? ACCENT : BORDER}`,
+                        borderRadius: "6px", padding: "8px 12px", cursor: "pointer",
+                        fontSize: "11px", fontWeight: adminOnly ? "600" : "400",
+                        color: adminOnly ? ACCENT : "#555",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      👑 Só admin
+                    </button>
+                  </div>
+                )}
+
                 <div style={{
                   maxHeight: "200px", overflowY: "auto", background: "#0d0d0d",
                   border: `1px solid ${!form.instance || loadingGroups ? BORDER : (selectedGroups.length > 0 ? ACCENT : BORDER)}`,
@@ -292,11 +333,19 @@ export default function GruposPage() {
                   {!form.instance ? (
                     <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Selecione uma instância primeiro</div>
                   ) : loadingGroups ? (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Carregando grupos...</div>
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Carregando grupos{adminOnly ? " (filtrando admins...)" : ""}...</div>
                   ) : groups.length === 0 ? (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Nenhum grupo encontrado</div>
-                  ) : (
-                    groups.map((g) => {
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>
+                      {adminOnly ? "Nenhum grupo onde você é admin" : "Nenhum grupo encontrado"}
+                    </div>
+                  ) : (() => {
+                    const filtered = searchText
+                      ? groups.filter((g) => g.subject.toLowerCase().includes(searchText.toLowerCase()))
+                      : groups;
+                    if (filtered.length === 0) return (
+                      <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Nenhum grupo com "{searchText}"</div>
+                    );
+                    return filtered.map((g) => {
                       const checked = !!selectedGroups.find((s) => s.id === g.id);
                       return (
                         <label key={g.id} style={{
@@ -317,8 +366,8 @@ export default function GruposPage() {
                           {g.size && <span style={{ fontSize: "11px", color: "#444" }}>{g.size}</span>}
                         </label>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </div>
               </div>
 
