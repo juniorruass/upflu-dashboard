@@ -3,7 +3,14 @@ import { createAdminClient } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-const CRON_HOURS = [8, 14];
+// Horários do cron em BRT (Brasília = UTC-3)
+const CRON_BRT_HOURS = [8, 14];
+const BRT_OFFSET = -3; // horas
+
+// Converte Date UTC para "Date em BRT" (getUTCHours() = hora BRT)
+function toBRT(date: Date): Date {
+  return new Date(date.getTime() + BRT_OFFSET * 3600000);
+}
 
 function calcProximoEnvio(
   status: string,
@@ -12,36 +19,35 @@ function calcProximoEnvio(
   activeDays: number[],
 ): Date | null {
   const diasSet = new Set(activeDays.length ? activeDays : [1, 2, 3, 4, 5]);
-  const now = new Date();
-  let startFrom: Date;
+  const nowBrt  = toBRT(new Date());
+  let startBrt: Date;
 
   if (status === "novo") {
-    startFrom = now;
+    startBrt = nowBrt;
   } else if ((status === "contatado" || status === "followup") && whatsappEnviadoAt) {
-    const due = new Date(whatsappEnviadoAt);
-    due.setDate(due.getDate() + followupDays);
-    startFrom = due > now ? due : now;
+    const dueBrt = toBRT(new Date(new Date(whatsappEnviadoAt).getTime() + followupDays * 86400000));
+    startBrt = dueBrt > nowBrt ? dueBrt : nowBrt;
   } else {
     return null;
   }
 
   for (let d = 0; d <= 30; d++) {
-    const day = new Date(startFrom);
-    day.setDate(startFrom.getDate() + d);
-    const dow = day.getDay();
+    // Avança d dias em BRT
+    const dayBrt = new Date(startBrt);
+    dayBrt.setUTCDate(startBrt.getUTCDate() + d);
+    dayBrt.setUTCHours(0, 0, 0, 0);
+
+    const dow = dayBrt.getUTCDay();
     if (!diasSet.has(dow)) continue;
 
-    const hoursAvail = d === 0
-      ? CRON_HOURS.filter((h) => {
-          const t = new Date(day); t.setHours(h, 0, 0, 0);
-          return t > startFrom;
-        })
-      : CRON_HOURS;
-
+    // Hora BRT atual no dia de início; -1 nos dias seguintes (todas as horas disponíveis)
+    const startHourBrt = d === 0 ? startBrt.getUTCHours() : -1;
+    const hoursAvail   = CRON_BRT_HOURS.filter((h) => h > startHourBrt);
     if (!hoursAvail.length) continue;
 
-    const result = new Date(day);
-    result.setHours(hoursAvail[0], 0, 0, 0);
+    // Converte hora BRT de volta para UTC: UTC = BRT - BRT_OFFSET = BRT + 3
+    const result = new Date(dayBrt);
+    result.setUTCHours(hoursAvail[0] - BRT_OFFSET, 0, 0, 0);
     return result;
   }
   return null;
