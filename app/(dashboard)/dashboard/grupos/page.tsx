@@ -149,11 +149,13 @@ export default function GruposPage() {
             media_caption: mediaFile ? form.message : null,
           }),
         });
-        const data = await res.json();
-        setSendResult(res.ok
-          ? `Enviado: ${data.sent ?? 0} ✓  Falhou: ${data.failed ?? 0}`
-          : `Erro: ${data.error ?? "falha no envio"}`
-        );
+        const text = await res.text();
+        if (!res.ok || text.trimStart().startsWith("<")) {
+          setSendResult(`Erro HTTP ${res.status}: ${text.slice(0, 150)}`);
+          return;
+        }
+        const data = JSON.parse(text);
+        setSendResult(`Enviado: ${data.sent ?? 0} ✓  Falhou: ${data.failed ?? 0}`);
         fetchMessages();
       } else {
         await Promise.all(selectedGroups.map((group) =>

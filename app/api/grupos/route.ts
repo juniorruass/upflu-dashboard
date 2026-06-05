@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { evolutionInstances, evolutionSendGroup, evolutionSendMedia } from "@/lib/evolution-api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/grupos?action=list-groups&instance=X  — lista grupos do Evolution
 // GET /api/grupos                                — lista mensagens agendadas
 // POST /api/grupos                               — cria mensagem agendada
