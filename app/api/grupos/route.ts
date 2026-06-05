@@ -10,9 +10,21 @@ export async function GET(req: NextRequest) {
   const action = searchParams.get("action");
 
   if (action === "list-groups") {
-    const instance = searchParams.get("instance") ?? undefined;
-    const groups = await evolutionFindGroups(instance);
-    return NextResponse.json({ groups });
+    const inst = searchParams.get("instance") ?? "";
+    const base = (process.env.EVOLUTION_API_URL ?? "").replace(/\/$/, "");
+    const apiKey = process.env.EVOLUTION_API_KEY ?? "";
+    try {
+      const res = await fetch(
+        `${base}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
+        { headers: { "Content-Type": "application/json", apikey: apiKey } },
+      );
+      if (!res.ok) return NextResponse.json({ groups: [] });
+      const data = await res.json();
+      const groups = Array.isArray(data) ? data : (data?.groups ?? []);
+      return NextResponse.json({ groups });
+    } catch {
+      return NextResponse.json({ groups: [] });
+    }
   }
 
   if (action === "list-instances") {
