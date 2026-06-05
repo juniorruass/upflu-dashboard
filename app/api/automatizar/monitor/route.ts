@@ -12,40 +12,41 @@ function toBRT(date: Date): Date {
   return new Date(date.getTime() + BRT_OFFSET * 3600000);
 }
 
-function calcProximoEnvio(
-  status: string,
-  whatsappEnviadoAt: string | null,
-  followupDays: number,
-  activeDays: number[],
-): Date | null {
+// Retorna todos os próximos horários de execução do cron em UTC
+function getCronRuns(activeDays: number[], maxRuns = 20): Date[] {
   const diasSet = new Set(activeDays.length ? activeDays : [1, 2, 3, 4, 5]);
   const nowBrt  = toBRT(new Date());
-  let startBrt: Date;
+  const runs: Date[] = [];
 
-  if (status === "novo") {
-    startBrt = nowBrt;
-  } else if ((status === "contatado" || status === "followup") && whatsappEnviadoAt) {
-    const dueBrt = toBRT(new Date(new Date(whatsappEnviadoAt).getTime() + followupDays * 86400000));
-    startBrt = dueBrt > nowBrt ? dueBrt : nowBrt;
-  } else {
-    return null;
-  }
-
-  for (let d = 0; d <= 30; d++) {
-    // Avança d dias em BRT
-    const dayBrt = new Date(startBrt);
-    dayBrt.setUTCDate(startBrt.getUTCDate() + d);
+  for (let d = 0; d <= 60 && runs.length < maxRuns; d++) {
+    const dayBrt = new Date(nowBrt);
+    dayBrt.setUTCDate(nowBrt.getUTCDate() + d);
     dayBrt.setUTCHours(0, 0, 0, 0);
 
-    const dow = dayBrt.getUTCDay();
-    if (!diasSet.has(dow)) continue;
+    if (!diasSet.has(dayBrt.getUTCDay())) continue;
 
-    // Hora BRT atual no dia de início; -1 nos dias seguintes (todas as horas disponíveis)
-    const startHourBrt = d === 0 ? startBrt.getUTCHours() : -1;
-    const hoursAvail   = CRON_BRT_HOURS.filter((h) => h > startHourBrt);
+    const startHourBrt = d === 0 ? nowBrt.getUTCHours() : -1;
+    for (const h of CRON_BRT_HOURS) {
+      if (h <= startHourBrt) continue;
+      const run = new Date(dayBrt);
+      run.setUTCHours(h - BRT_OFFSET, 0, 0, 0);
+      runs.push(run);
+    }
+  }
+  return runs;
+}
+
+// Para follow-up: primeiro cron run após a data de vencimento
+function primeiroCronApos(dueBrt: Date, activeDays: number[]): Date | null {
+  const diasSet = new Set(activeDays.length ? activeDays : [1, 2, 3, 4, 5]);
+  for (let d = 0; d <= 60; d++) {
+    const dayBrt = new Date(dueBrt);
+    dayBrt.setUTCDate(dueBrt.getUTCDate() + d);
+    dayBrt.setUTCHours(0, 0, 0, 0);
+    if (!diasSet.has(dayBrt.getUTCDay())) continue;
+    const startHourBrt = d === 0 ? dueBrt.getUTCHours() : -1;
+    const hoursAvail = CRON_BRT_HOURS.filter(h => h > startHourBrt);
     if (!hoursAvail.length) continue;
-
-    // Converte hora BRT de volta para UTC: UTC = BRT - BRT_OFFSET = BRT + 3
     const result = new Date(dayBrt);
     result.setUTCHours(hoursAvail[0] - BRT_OFFSET, 0, 0, 0);
     return result;
@@ -114,14 +115,62 @@ export async function GET(req: NextRequest) {
 
   const { data: rawProspects } = await query.limit(500);
 
-  // Calcula proximo_envio para cada prospect
-  const prospects = (rawProspects ?? []).map((p) => {
-    const cfg = configMap.get((p.tipo ?? "").toLowerCase().trim()) ?? defaultCfg;
-    const followupDays = cfg?.followup_days ?? 3;
-    const activeDays   = cfg?.active_days   ?? [1,2,3,4,5];
-    const proximo = calcProximoEnvio(p.status, p.whatsapp_enviado_at, followupDays, activeDays);
-    return { ...p, proximo_envio: proximo?.toISOString() ?? null };
-  });
+  // Calcula proximo_envio distribuído por posição na fila
+  const raw = rawProspects ?? [];
+
+  // Separa "novo" (fila 1ª mensagem) de "followup" (fila follow-up)
+  // e calcula o proximo_envio baseado em posição × delay médio
+  const byConfig = new Map<string, typeof raw>();
+  for (const p of raw) {
+    const key = (p.tipo ?? "").toLowerCase().trim();
+    if (!byConfig.has(key)) byConfig.set(key, []);
+    byConfig.get(key)!.push(p);
+  }
+
+  const prospects: (typeof raw[0] & { proximo_envio: string | null })[] = [];
+
+  for (const [tipoKey, group] of byConfig) {
+    const cfg        = configMap.get(tipoKey) ?? defaultCfg;
+    const activeDays = cfg?.active_days      ?? [1,2,3,4,5];
+    const sessionMax = Math.max(1, cfg?.session_max   ?? 20);
+    const avgDelayMs = ((cfg?.min_delay_seconds ?? 45) + (cfg?.max_delay_seconds ?? 120)) / 2 * 1000;
+    const followupDays = cfg?.followup_days  ?? 3;
+    const cronRuns   = getCronRuns(activeDays, 40);
+
+    // Divide em: novo (1ª mensagem) e followup pendente
+    const novoQueue     = group.filter(p => p.status === "novo");
+    const followupQueue = group.filter(p => p.status === "contatado" || p.status === "followup");
+
+    // Distribui "novo" pelos cron runs com delay individual
+    novoQueue.forEach((p, idx) => {
+      const runIdx     = Math.floor(idx / sessionMax);
+      const posInRun   = idx % sessionMax;
+      const run        = cronRuns[runIdx];
+      const proximo    = run ? new Date(run.getTime() + posInRun * avgDelayMs) : null;
+      prospects.push({ ...p, proximo_envio: proximo?.toISOString() ?? null });
+    });
+
+    // Distribui "followup" pelo primeiro cron após o vencimento
+    followupQueue.forEach((p, idx) => {
+      let baseRun: Date | null = null;
+      if (p.whatsapp_enviado_at) {
+        const dueBrt = toBRT(new Date(new Date(p.whatsapp_enviado_at).getTime() + followupDays * 86400000));
+        baseRun = primeiroCronApos(dueBrt, activeDays);
+      }
+      if (!baseRun) baseRun = cronRuns[0] ?? null;
+      const posInRun = idx % sessionMax;
+      const proximo  = baseRun ? new Date(baseRun.getTime() + posInRun * avgDelayMs) : null;
+      prospects.push({ ...p, proximo_envio: proximo?.toISOString() ?? null });
+    });
+  }
+
+  // Prospects sem config conhecida
+  for (const p of raw) {
+    const key = (p.tipo ?? "").toLowerCase().trim();
+    if (!byConfig.has(key)) {
+      prospects.push({ ...p, proximo_envio: null });
+    }
+  }
 
   // Ordena por proximo_envio asc (nulls no final)
   if (mode === "pending") {
