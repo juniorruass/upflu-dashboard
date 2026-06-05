@@ -37,8 +37,8 @@ const STEP1_DEFAULT: Step1Data = {
 };
 
 const SCHED_DEFAULT: ScheduleData = {
-  minDelay: 45, maxDelay: 120, sessionMax: 20, sessionBreak: 30,
-  startHour: 9, endHour: 18, activeDays: [1, 2, 3, 4, 5], dailyLimit: 30,
+  minDelay: 120, maxDelay: 300, sessionMax: 20, sessionBreak: 30,
+  startHour: 8, endHour: 17, activeDays: [1, 2, 3, 4, 5], dailyLimit: 30,
 };
 
 type EvolutionInst = {

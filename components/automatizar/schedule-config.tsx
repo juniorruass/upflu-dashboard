@@ -8,9 +8,9 @@ const DIAS = [
 ];
 
 const PRESETS = [
-  { key: "conservador", label: "Conservador", min: 90, max: 180, session: 10, brk: 60, days: [1,2,3] },
-  { key: "moderado",    label: "Moderado",    min: 45, max: 120, session: 20, brk: 30, days: [1,2,3,4,5] },
-  { key: "agressivo",  label: "Agressivo",   min: 25, max: 70,  session: 30, brk: 20, days: [1,2,3,4,5,6] },
+  { key: "conservador", label: "Conservador", min: 300, max: 600, session: 10, brk: 60, days: [1,2,3,4,5] },
+  { key: "moderado",    label: "Moderado",    min: 120, max: 300, session: 20, brk: 30, days: [1,2,3,4,5] },
+  { key: "agressivo",  label: "Agressivo",   min: 60,  max: 120, session: 30, brk: 20, days: [1,2,3,4,5,6] },
 ];
 
 export interface ScheduleData {
@@ -21,8 +21,8 @@ export interface ScheduleData {
 }
 
 const DEFAULT: ScheduleData = {
-  minDelay: 45, maxDelay: 120, sessionMax: 20, sessionBreak: 30,
-  startHour: 9, endHour: 18, activeDays: [1,2,3,4,5], dailyLimit: 30,
+  minDelay: 120, maxDelay: 300, sessionMax: 20, sessionBreak: 30,
+  startHour: 8, endHour: 17, activeDays: [1,2,3,4,5], dailyLimit: 30,
 };
 
 export default function ScheduleConfig({ onChange, initial }: {
