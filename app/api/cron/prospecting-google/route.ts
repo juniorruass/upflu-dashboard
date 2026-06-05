@@ -110,8 +110,9 @@ export async function GET(req: NextRequest) {
       .from("prospects")
       .select("id, nome, telefone, cidade, tipo, mensagem")
       .eq("status", "novo")
-      .eq("whatsapp_enviado", false)
+      .or("whatsapp_enviado.is.null,whatsapp_enviado.eq.false")
       .not("telefone", "is", null)
+      .neq("telefone", "")
       .limit(safety.daily_limit);
 
     const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
