@@ -50,6 +50,7 @@ function safetyFromConfig(config: Record<string, unknown>) {
     start_hour:           Number(config.send_hour            ?? SAFETY_DEFAULTS.start_hour),
     end_hour:             Number(config.end_hour             ?? SAFETY_DEFAULTS.end_hour),
     active_days:          Array.isArray(config.active_days)  ? config.active_days as number[] : SAFETY_DEFAULTS.active_days,
+    daily_limit:          Number(config.daily_limit          ?? 30),
   };
 }
 
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
   const primeiraConfig = configs[0];
   const safety  = safetyFromConfig(primeiraConfig as Record<string, unknown>);
   const horario = horarioPermitido(safety);
-  const delayMs = Math.min(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds), 2000);
+  const delayMs = delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds);
   const templates = parseTemplates(primeiraConfig.message_template ?? "");
 
   let totalSalvos   = 0;
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
     .eq("status", "novo")
     .eq("whatsapp_enviado", false)
     .not("telefone", "is", null)
-    .limit(safety.session_max);
+    .limit(safety.daily_limit);
 
   const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
 
