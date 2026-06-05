@@ -5,7 +5,7 @@ export async function GET() {
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("agenda_events")
-    .select("*, clients(id, name, phone, email)")
+    .select("*, clients(id, name, contact_phone, contact_email)")
     .order("starts_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       notify_client_email: notify_client_email ?? false,
       status: "pending",
     })
-    .select("*, clients(id, name, phone, email)")
+    .select("*, clients(id, name, contact_phone, contact_email)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

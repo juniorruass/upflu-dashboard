@@ -47,16 +47,16 @@ export async function GET(req: NextRequest) {
       }).catch(() => null);
     }
 
-    const client = ev.clients as { phone?: string; email?: string; name?: string } | null;
+    const client = ev.clients as { contact_phone?: string; contact_email?: string; name?: string } | null;
 
-    if (ev.notify_client_whatsapp && client?.phone) {
+    if (ev.notify_client_whatsapp && client?.contact_phone) {
       const clientMsg = `📅 *Lembrete*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}⏰ ${startsAt}`;
-      await evolutionSend(client.phone, clientMsg);
+      await evolutionSend(client.contact_phone, clientMsg);
     }
 
-    if (ev.notify_client_email && client?.email) {
+    if (ev.notify_client_email && client?.contact_email) {
       await sendEmail({
-        to: client.email,
+        to: client.contact_email,
         subject: `Lembrete: ${ev.title}`,
         text: `${ev.title}\n\n${ev.description ?? ""}\n\n⏰ ${startsAt}`,
       }).catch(() => null);

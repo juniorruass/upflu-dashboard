@@ -5,7 +5,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("agenda_events")
-    .select("*, clients(id, name, phone, email)")
+    .select("*, clients(id, name, contact_phone, contact_email)")
     .eq("id", params.id)
     .single();
 
@@ -20,7 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     .from("agenda_events")
     .update(body)
     .eq("id", params.id)
-    .select("*, clients(id, name, phone, email)")
+    .select("*, clients(id, name, contact_phone, contact_email)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

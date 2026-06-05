@@ -7,7 +7,7 @@ import { Plus, Trash2, Check, X, User, Bell, RefreshCw, ChevronRight } from "luc
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
-type Client = { id: string; name: string; phone?: string; email?: string };
+type Client = { id: string; name: string; contact_phone?: string; contact_email?: string };
 
 type AgendaEvent = {
   id: string;
