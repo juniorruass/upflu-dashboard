@@ -88,9 +88,13 @@ export async function GET(req: NextRequest) {
 
   const configs = configsRes.data ?? [];
 
-  // Mapa: search_term → config
-  const configMap = new Map(configs.map((c) => [(c.search_term ?? "").toLowerCase().trim(), c]));
-  const defaultCfg = configs[0];
+  // Config principal para calcular timing
+  const cfg        = configs[0];
+  const activeDays = cfg?.active_days        ?? [1,2,3,4,5];
+  const avgDelaySec= ((cfg?.min_delay_seconds ?? 120) + (cfg?.max_delay_seconds ?? 300)) / 2;
+  const followupDays = cfg?.followup_days    ?? 3;
+  const SESSION_MAX  = 20; // msgs por execução do cron
+  const cronRuns   = getCronRuns(activeDays, 100);
 
   // Busca prospects
   let query = supabase
@@ -98,7 +102,6 @@ export async function GET(req: NextRequest) {
     .select("id, nome, telefone, cidade, tipo, status, whatsapp_enviado, whatsapp_enviado_at, followup_enviado, followup_enviado_at, created_at");
 
   if (mode === "pending") {
-    // Novo sem envio OU contatado/followup sem follow-up enviado
     query = query.or(
       "status.eq.novo," +
       "and(status.eq.contatado,followup_enviado.is.null)," +
@@ -114,63 +117,34 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: rawProspects } = await query.limit(500);
-
-  // Calcula proximo_envio distribuído por posição na fila
   const raw = rawProspects ?? [];
 
-  // Separa "novo" (fila 1ª mensagem) de "followup" (fila follow-up)
-  // e calcula o proximo_envio baseado em posição × delay médio
-  const byConfig = new Map<string, typeof raw>();
-  for (const p of raw) {
-    const key = (p.tipo ?? "").toLowerCase().trim();
-    if (!byConfig.has(key)) byConfig.set(key, []);
-    byConfig.get(key)!.push(p);
-  }
+  // Distribui horários: novo = fila principal, followup = após vencimento
+  const novoList     = raw.filter(p => p.status === "novo");
+  const followupList = raw.filter(p => p.status === "contatado" || p.status === "followup");
+  const outrosList   = raw.filter(p => p.status !== "novo" && p.status !== "contatado" && p.status !== "followup");
 
-  const prospects: (typeof raw[0] & { proximo_envio: string | null })[] = [];
+  const withTiming = (p: typeof raw[0], idx: number, baseRun: Date | null) => {
+    if (!baseRun) return { ...p, proximo_envio: null };
+    const runIdx   = Math.floor(idx / SESSION_MAX);
+    const posInRun = idx % SESSION_MAX;
+    const run      = cronRuns[runIdx] ?? baseRun;
+    const ms       = posInRun * avgDelaySec * 1000;
+    return { ...p, proximo_envio: new Date(run.getTime() + ms).toISOString() };
+  };
 
-  for (const [tipoKey, group] of byConfig) {
-    const cfg        = configMap.get(tipoKey) ?? defaultCfg;
-    const activeDays = cfg?.active_days      ?? [1,2,3,4,5];
-    const sessionMax = Math.max(1, cfg?.session_max   ?? 20);
-    const avgDelayMs = ((cfg?.min_delay_seconds ?? 45) + (cfg?.max_delay_seconds ?? 120)) / 2 * 1000;
-    const followupDays = cfg?.followup_days  ?? 3;
-    const cronRuns   = getCronRuns(activeDays, 40);
-
-    // Divide em: novo (1ª mensagem) e followup pendente
-    const novoQueue     = group.filter(p => p.status === "novo");
-    const followupQueue = group.filter(p => p.status === "contatado" || p.status === "followup");
-
-    // Distribui "novo" pelos cron runs com delay individual
-    novoQueue.forEach((p, idx) => {
-      const runIdx     = Math.floor(idx / sessionMax);
-      const posInRun   = idx % sessionMax;
-      const run        = cronRuns[runIdx];
-      const proximo    = run ? new Date(run.getTime() + posInRun * avgDelayMs) : null;
-      prospects.push({ ...p, proximo_envio: proximo?.toISOString() ?? null });
-    });
-
-    // Distribui "followup" pelo primeiro cron após o vencimento
-    followupQueue.forEach((p, idx) => {
-      let baseRun: Date | null = null;
+  const prospects = [
+    ...novoList.map((p, idx) => withTiming(p, idx, cronRuns[0] ?? null)),
+    ...followupList.map((p, idx) => {
+      let base = cronRuns[0] ?? null;
       if (p.whatsapp_enviado_at) {
         const dueBrt = toBRT(new Date(new Date(p.whatsapp_enviado_at).getTime() + followupDays * 86400000));
-        baseRun = primeiroCronApos(dueBrt, activeDays);
+        base = primeiroCronApos(dueBrt, activeDays) ?? base;
       }
-      if (!baseRun) baseRun = cronRuns[0] ?? null;
-      const posInRun = idx % sessionMax;
-      const proximo  = baseRun ? new Date(baseRun.getTime() + posInRun * avgDelayMs) : null;
-      prospects.push({ ...p, proximo_envio: proximo?.toISOString() ?? null });
-    });
-  }
-
-  // Prospects sem config conhecida
-  for (const p of raw) {
-    const key = (p.tipo ?? "").toLowerCase().trim();
-    if (!byConfig.has(key)) {
-      prospects.push({ ...p, proximo_envio: null });
-    }
-  }
+      return withTiming(p, idx, base);
+    }),
+    ...outrosList.map(p => ({ ...p, proximo_envio: null })),
+  ];
 
   // Ordena por proximo_envio asc (nulls no final)
   if (mode === "pending") {
