@@ -213,5 +213,54 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // ── Envia para prospects "novo" já existentes no CRM (não enviados ainda) ──
+  const primeiraConfig = configs[0];
+  if (primeiraConfig) {
+    const safety  = safetyFromConfig(primeiraConfig as Record<string, unknown>);
+    const horario = horarioPermitido(safety);
+
+    if (horario.ok) {
+      const templates = parseTemplates(primeiraConfig.message_template ?? "");
+
+      const { data: pendentes } = await supabase
+        .from("prospects")
+        .select("id, nome, telefone, cidade, tipo, mensagem")
+        .eq("status", "novo")
+        .eq("whatsapp_enviado", false)
+        .not("telefone", "is", null)
+        .limit(safety.session_max);
+
+      const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
+      const delayMs = Math.min(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds), 2000);
+
+      for (let i = 0; i < comTelefone.length; i++) {
+        const p = comTelefone[i];
+        if (i > 0) await sleep(delayMs);
+
+        const tpl = templates.length
+          ? templates[Math.floor(Math.random() * templates.length)]
+          : p.mensagem;
+
+        const mensagem = tpl
+          ? aplicarVariaveis(tpl, {
+              nome_empresa: p.nome ?? "", nome: p.nome ?? "",
+              cidade: p.cidade ?? "", ramo: p.tipo ?? "",
+              tipo: p.tipo ?? "", telefone: p.telefone ?? "",
+            })
+          : p.mensagem;
+
+        const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), mensagem);
+        if (ok) {
+          await supabase.from("prospects").update({
+            whatsapp_enviado: true,
+            whatsapp_enviado_at: new Date().toISOString(),
+            status: "contactado",
+          }).eq("id", p.id);
+          totalEnviados++;
+        }
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true, salvos: totalSalvos, enviados: totalEnviados });
 }
