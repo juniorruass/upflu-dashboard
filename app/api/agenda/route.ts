@@ -69,28 +69,47 @@ export async function POST(req: NextRequest) {
 
   if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });
 
-  // notificação imediata — usa valores do body diretamente
+  // notificação imediata — usa valores do body + dados do cliente retornados pelo insert
   const notifyLog: Record<string, unknown> = {};
+  const instance  = await resolveInstance(notify_instance as string);
+  const startsAt  = new Date(starts_at as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  notifyLog.instance = instance || "(não encontrado)";
+
+  function normalize(phone: string) {
+    const d = phone.replace(/\D/g, "");
+    return d.startsWith("55") ? d : `55${d}`;
+  }
+
+  // Admin
   if (notify_admin_whatsapp) {
     const adminPhone = (notify_admin_phone as string) || process.env.ADMIN_PHONE || "";
-    const instance   = await resolveInstance(notify_instance as string);
     notifyLog.adminPhone = adminPhone || "(não configurado)";
-    notifyLog.instance   = instance   || "(não encontrado)";
-
     if (adminPhone && instance) {
-      // normaliza: adiciona 55 se não tiver código do país
-      const digits = adminPhone.replace(/\D/g, "");
-      const normalizedPhone = digits.startsWith("55") ? digits : `55${digits}`;
-      notifyLog.normalizedPhone = normalizedPhone;
-
-      const startsAt = new Date(starts_at as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
       const msg = `✅ *Evento agendado*\n\n*${title}*\n${description ? `${description}\n` : ""}🕐 ${startsAt}\n\nVocê receberá um lembrete 30 minutos antes.`;
-      const ok = await evolutionSend(normalizedPhone, msg, instance);
-      notifyLog.sent = ok;
-      if (!ok) notifyLog.reason = "Evolution API retornou erro — verifique se a instância está conectada";
+      const ok = await evolutionSend(normalize(adminPhone), msg, instance);
+      notifyLog.adminSent = ok;
+      if (!ok) notifyLog.adminReason = "Evolution API retornou erro";
     } else {
-      notifyLog.sent = false;
-      notifyLog.reason = !adminPhone ? "telefone não configurado" : "instância não encontrada";
+      notifyLog.adminSent = false;
+      notifyLog.adminReason = !adminPhone ? "telefone não configurado" : "instância não encontrada";
+    }
+  }
+
+  // Cliente
+  if (notify_client_whatsapp) {
+    const clientData = result.data?.clients as { contact_phone?: string; name?: string } | null;
+    const clientPhone = clientData?.contact_phone || "";
+    notifyLog.clientPhone = clientPhone || "(não cadastrado no perfil do cliente)";
+    if (clientPhone && instance) {
+      const msg = `📅 *Compromisso agendado*\n\n*${title}*\n${description ? `${description}\n` : ""}🕐 ${startsAt}`;
+      const ok = await evolutionSend(normalize(clientPhone), msg, instance);
+      notifyLog.clientSent = ok;
+      if (!ok) notifyLog.clientReason = "Evolution API retornou erro";
+    } else {
+      notifyLog.clientSent = false;
+      notifyLog.clientReason = !clientPhone
+        ? "cliente sem telefone cadastrado — vá em Clientes e preencha o campo Telefone"
+        : "instância não encontrada";
     }
   }
 

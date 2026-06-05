@@ -169,10 +169,11 @@ export default function AgendaPage() {
       // mostra resultado da notificação
       if (data.notifyLog) {
         const log = data.notifyLog;
-        if (log.sent === true) {
-          setSaveError(""); // limpa erros
-        } else {
-          setSaveError(`⚠️ Evento salvo mas notificação falhou: ${log.reason ?? ""} | telefone: ${log.adminPhone} | instância: ${log.instance}`);
+        const erros: string[] = [];
+        if (log.adminSent === false)  erros.push(`Admin: ${log.adminReason ?? log.adminPhone}`);
+        if (log.clientSent === false) erros.push(`Cliente: ${log.clientReason ?? log.clientPhone}`);
+        if (erros.length > 0) {
+          setSaveError(`⚠️ Evento salvo. Notificação falhou — ${erros.join(" | ")}`);
           setSaving(false);
           fetchEvents();
           return;
