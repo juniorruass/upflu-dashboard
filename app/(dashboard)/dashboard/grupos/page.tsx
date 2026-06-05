@@ -131,56 +131,61 @@ export default function GruposPage() {
     setSending(true);
     setSendResult("");
 
-    if (sendNow) {
-      const res = await fetch("/api/grupos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          send_now: true,
-          instance: form.instance,
-          group_jid: selectedGroups[0]?.id,
-          group_name: selectedGroups[0]?.subject,
-          groups: selectedGroups.map((g) => ({ group_jid: g.id, group_name: g.subject })),
-          message: mediaFile ? "" : form.message,
-          media_type: mediaFile?.type ?? null,
-          media_data: mediaFile?.base64 ?? null,
-          media_filename: mediaFile?.name ?? null,
-          media_caption: mediaFile ? form.message : null,
-        }),
-      });
-      const data = await res.json();
+    try {
+      if (sendNow) {
+        const res = await fetch("/api/grupos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            send_now: true,
+            instance: form.instance,
+            group_jid: selectedGroups[0]?.id,
+            group_name: selectedGroups[0]?.subject,
+            groups: selectedGroups.map((g) => ({ group_jid: g.id, group_name: g.subject })),
+            message: mediaFile ? "" : form.message,
+            media_type: mediaFile?.type ?? null,
+            media_data: mediaFile?.base64 ?? null,
+            media_filename: mediaFile?.name ?? null,
+            media_caption: mediaFile ? form.message : null,
+          }),
+        });
+        const data = await res.json();
+        setSendResult(res.ok
+          ? `Enviado: ${data.sent ?? 0} ✓  Falhou: ${data.failed ?? 0}`
+          : `Erro: ${data.error ?? "falha no envio"}`
+        );
+        fetchMessages();
+      } else {
+        await Promise.all(selectedGroups.map((group) =>
+          fetch("/api/grupos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              instance: form.instance,
+              group_jid: group.id,
+              group_name: group.subject,
+              message: mediaFile ? "" : form.message,
+              type: form.type,
+              scheduled_at: form.scheduled_at,
+              media_type: mediaFile?.type ?? null,
+              media_data: mediaFile?.base64 ?? null,
+              media_filename: mediaFile?.name ?? null,
+              media_caption: mediaFile ? form.message : null,
+            }),
+          })
+        ));
+        setShowForm(false);
+        setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" });
+        setSelectedGroups([]);
+        setMediaFile(null);
+        setSendNow(false);
+        fetchMessages();
+      }
+    } catch (err) {
+      setSendResult(`Erro de conexão: ${String(err)}`);
+    } finally {
       setSending(false);
-      setSendResult(`Enviado: ${data.sent ?? 0} ✓  Falhou: ${data.failed ?? 0}`);
-      fetchMessages();
-      return;
     }
-
-    await Promise.all(selectedGroups.map((group) =>
-      fetch("/api/grupos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          instance: form.instance,
-          group_jid: group.id,
-          group_name: group.subject,
-          message: mediaFile ? "" : form.message,
-          type: form.type,
-          scheduled_at: form.scheduled_at,
-          media_type: mediaFile?.type ?? null,
-          media_data: mediaFile?.base64 ?? null,
-          media_filename: mediaFile?.name ?? null,
-          media_caption: mediaFile ? form.message : null,
-        }),
-      })
-    ));
-
-    setSending(false);
-    setShowForm(false);
-    setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" });
-    setSelectedGroups([]);
-    setMediaFile(null);
-    setSendNow(false);
-    fetchMessages();
   }
 
   async function deleteMsg(id: string) {
