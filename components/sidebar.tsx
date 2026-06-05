@@ -49,7 +49,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: "2px" }}>
+      <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto" }}>
         {navItems.map((item) => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
           if (item.disabled) {
