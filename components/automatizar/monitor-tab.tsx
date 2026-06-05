@@ -46,7 +46,7 @@ function ProximoEnvio({ dt }: { dt: string | null }) {
   const diff = d.getTime() - now.getTime();
   const horas = Math.round(diff / 3_600_000);
 
-  const hora = `${String(d.getHours()).padStart(2,"0")}:00`;
+  const hora = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   let label: string;
   let color: string;
 
