@@ -174,18 +174,55 @@ export async function evolutionFindGroups(instance?: string): Promise<EvolutionG
   const inst = instance ?? INSTANCE();
   if (!base || !API_KEY() || !inst) return [];
   try {
+    // tenta GET primeiro (Evolution API v2)
     const res = await fetch(
       `${base}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
-      { headers: headers(), signal: AbortSignal.timeout(12000) },
+      { headers: headers(), signal: AbortSignal.timeout(15000) },
     );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return Array.isArray(data) ? data : [];
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+      // alguns builds retornam { groups: [...] }
+      if (data?.groups && Array.isArray(data.groups)) return data.groups;
+    }
+    // fallback: busca via findChats e filtra grupos (@g.us)
+    const chats = await evolutionFindChats(inst, 500);
+    return chats
+      .filter((c) => (c.id ?? c.remoteJid ?? "").endsWith("@g.us"))
+      .map((c) => ({ id: c.id, subject: c.name ?? c.pushName ?? c.id }));
   } catch { return []; }
 }
 
 export async function evolutionSendGroup(groupJid: string, text: string, instance?: string): Promise<boolean> {
   return evolutionSend(groupJid, text, instance);
+}
+
+export async function evolutionSendMedia(
+  number: string,
+  mediaBase64: string,
+  mediaType: "image" | "video" | "document",
+  caption: string,
+  fileName: string,
+  instance?: string,
+): Promise<boolean> {
+  const base = BASE();
+  const inst = instance ?? INSTANCE();
+  if (!base || !API_KEY() || !inst) return false;
+  try {
+    const res = await fetch(`${base}/message/sendMedia/${encodeURIComponent(inst)}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({
+        number,
+        mediatype: mediaType,
+        media: mediaBase64.startsWith("data:") ? mediaBase64.split(",")[1] : mediaBase64,
+        caption,
+        fileName,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    return res.ok;
+  } catch { return false; }
 }
 
 export async function evolutionMeasureLatency(): Promise<number> {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { evolutionSendGroup } from "@/lib/evolution-api";
+import { evolutionSendGroup, evolutionSendMedia } from "@/lib/evolution-api";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -26,7 +26,19 @@ export async function GET(req: NextRequest) {
   let failed = 0;
 
   for (const msg of pending) {
-    const ok = await evolutionSendGroup(msg.group_jid, msg.message, msg.instance);
+    let ok: boolean;
+    if (msg.media_data && msg.media_type) {
+      ok = await evolutionSendMedia(
+        msg.group_jid,
+        msg.media_data,
+        msg.media_type as "image" | "video" | "document",
+        msg.media_caption ?? msg.message ?? "",
+        msg.media_filename ?? "arquivo",
+        msg.instance,
+      );
+    } else {
+      ok = await evolutionSendGroup(msg.group_jid, msg.message, msg.instance);
+    }
     if (ok) {
       await supabase
         .from("group_messages")

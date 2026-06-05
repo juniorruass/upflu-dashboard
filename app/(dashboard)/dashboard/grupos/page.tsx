@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
-import { Plus, Trash2, Send, RefreshCw, Users, Calendar, Clock, X } from "lucide-react";
+import { Plus, Trash2, Send, RefreshCw, Users, Calendar, Clock, X, ImageIcon, Video, FileX } from "lucide-react";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
@@ -19,6 +19,9 @@ type GroupMsg = {
   sent_at: string | null;
   error: string | null;
   created_at: string;
+  media_type?: string | null;
+  media_filename?: string | null;
+  media_caption?: string | null;
 };
 
 type Group = { id: string; subject: string; size?: number };
@@ -52,6 +55,7 @@ export default function GruposPage() {
     type: "marketing",
     scheduled_at: "",
   });
+  const [mediaFile, setMediaFile] = useState<{ base64: string; type: "image" | "video"; name: string } | null>(null);
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
@@ -81,17 +85,40 @@ export default function GruposPage() {
     setLoadingGroups(false);
   }
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) { setMediaFile(null); return; }
+    const isVideo = file.type.startsWith("video/");
+    const reader = new FileReader();
+    reader.onload = () => {
+      setMediaFile({ base64: reader.result as string, type: isVideo ? "video" : "image", name: file.name });
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.instance || !form.group_jid || !form.message || !form.scheduled_at) return;
+    if (!form.instance || !form.group_jid || !form.scheduled_at) return;
+    if (!form.message && !mediaFile) return;
+
+    const payload = {
+      ...form,
+      media_type: mediaFile?.type ?? null,
+      media_data: mediaFile?.base64 ?? null,
+      media_filename: mediaFile?.name ?? null,
+      media_caption: mediaFile ? form.message : null,
+      message: mediaFile ? "" : form.message,
+    };
+
     const res = await fetch("/api/grupos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       setShowForm(false);
       setForm({ instance: "", group_jid: "", group_name: "", message: "", type: "marketing", scheduled_at: "" });
+      setMediaFile(null);
       fetchMessages();
     }
   }
@@ -143,7 +170,7 @@ export default function GruposPage() {
               <RefreshCw size={13} /> Atualizar
             </button>
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setShowForm(true); setMediaFile(null); }}
               style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "8px 16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}
             >
               <Plus size={14} /> Nova mensagem
@@ -262,15 +289,45 @@ export default function GruposPage() {
                 </select>
               </div>
 
+              {/* Media upload */}
+              <div>
+                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
+                  Imagem / Vídeo (opcional)
+                </label>
+                {mediaFile ? (
+                  <div style={{ background: "#0d0d0d", border: `1px solid ${ACCENT}`, borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
+                    {mediaFile.type === "image" ? <ImageIcon size={16} color={ACCENT} /> : <Video size={16} color={ACCENT} />}
+                    <span style={{ fontSize: "12px", color: "#ccc", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mediaFile.name}</span>
+                    <button type="button" onClick={() => setMediaFile(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+                      <FileX size={15} />
+                    </button>
+                  </div>
+                ) : (
+                  <label style={{ display: "block", cursor: "pointer" }}>
+                    <div style={{ ...inputStyle, display: "flex", alignItems: "center", gap: "8px", color: "#555", cursor: "pointer" }}>
+                      <ImageIcon size={14} /> Clique para selecionar arquivo
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                )}
+              </div>
+
               {/* Message */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Mensagem</label>
+                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
+                  {mediaFile ? "Legenda (opcional)" : "Mensagem *"}
+                </label>
                 <textarea
                   value={form.message}
                   onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                   rows={5}
-                  placeholder="Digite a mensagem..."
-                  required
+                  placeholder={mediaFile ? "Legenda da mídia..." : "Digite a mensagem..."}
+                  required={!mediaFile}
                   style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }}
                 />
                 <div style={{ fontSize: "11px", color: "#555", marginTop: "4px" }}>{form.message.length} caracteres</div>
@@ -330,8 +387,14 @@ function MsgCard({ msg, onDelete }: { msg: GroupMsg; onDelete: (id: string) => v
             </span>
           </div>
 
+          {msg.media_type && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+              {msg.media_type === "image" ? <ImageIcon size={13} color="#555" /> : <Video size={13} color="#555" />}
+              <span style={{ fontSize: "11px", color: "#555" }}>{msg.media_filename ?? msg.media_type}</span>
+            </div>
+          )}
           <p style={{ fontSize: "12px", color: "#888", margin: "0 0 8px", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {msg.message.length > 200 ? msg.message.slice(0, 200) + "..." : msg.message}
+            {(msg.media_caption ?? msg.message ?? "").slice(0, 200)}{(msg.media_caption ?? msg.message ?? "").length > 200 ? "..." : ""}
           </p>
 
           <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>

@@ -72,7 +72,8 @@ export default function AgendaPage() {
   const fetchClients = useCallback(async () => {
     const res = await fetch("/api/clients");
     const data = await res.json();
-    setClients(data.clients ?? []);
+    // /api/clients retorna array direto
+    setClients(Array.isArray(data) ? data : (data.clients ?? []));
   }, []);
 
   useEffect(() => {
