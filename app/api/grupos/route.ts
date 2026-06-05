@@ -75,49 +75,53 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { instance, group_jid, group_name, message, type, scheduled_at, media_type, media_data, media_filename, media_caption } = body;
+  try {
+    const body = await req.json();
+    const { instance, group_jid, group_name, message, type, scheduled_at, media_type, media_data, media_filename, media_caption, send_now } = body;
 
-  if (!instance || !group_jid || !group_name || !scheduled_at) {
-    return NextResponse.json({ error: "Campos obrigatórios: instance, group_jid, group_name, scheduled_at" }, { status: 400 });
+    if (!instance) return NextResponse.json({ error: "Instância obrigatória" }, { status: 400 });
+    if (!message && !media_data) return NextResponse.json({ error: "Informe mensagem ou arquivo de mídia" }, { status: 400 });
+
+    // ── Envio imediato ────────────────────────────────────────
+    if (send_now) {
+      const groups: { group_jid: string; group_name: string }[] = body.groups ?? [{ group_jid, group_name }];
+      const results = await Promise.all(groups.map(async (g) => {
+        let ok: boolean;
+        if (media_data && media_type) {
+          ok = await evolutionSendMedia(g.group_jid, media_data, media_type as "image" | "video" | "document", media_caption ?? message ?? "", media_filename ?? "arquivo", instance);
+        } else {
+          ok = await evolutionSendGroup(g.group_jid, message, instance);
+        }
+        return { group_name: g.group_name, ok };
+      }));
+      const sent = results.filter((r) => r.ok).length;
+      return NextResponse.json({ sent, failed: results.length - sent, results });
+    }
+
+    // ── Agendamento ───────────────────────────────────────────
+    if (!group_jid || !group_name || !scheduled_at) {
+      return NextResponse.json({ error: "Campos obrigatórios: group_jid, group_name, scheduled_at" }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from("group_messages")
+      .insert({
+        instance, group_jid, group_name,
+        message: message ?? "",
+        type: type ?? "marketing",
+        scheduled_at, status: "pending",
+        media_type: media_type ?? null,
+        media_data: media_data ?? null,
+        media_filename: media_filename ?? null,
+        media_caption: media_caption ?? null,
+      })
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ message: data });
+  } catch (err) {
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
-  if (!message && !media_data) {
-    return NextResponse.json({ error: "Informe mensagem ou arquivo de mídia" }, { status: 400 });
-  }
-
-  // Envio imediato — não salva no banco, dispara agora
-  const { send_now } = body;
-  if (send_now) {
-    const groups: { group_jid: string; group_name: string }[] = body.groups ?? [{ group_jid, group_name }];
-    const results = await Promise.all(groups.map(async (g) => {
-      let ok: boolean;
-      if (media_data && media_type) {
-        ok = await evolutionSendMedia(g.group_jid, media_data, media_type as "image" | "video" | "document", body.media_caption ?? message ?? "", body.media_filename ?? "arquivo", instance);
-      } else {
-        ok = await evolutionSendGroup(g.group_jid, message, instance);
-      }
-      return { group_name: g.group_name, ok };
-    }));
-    const sent = results.filter((r) => r.ok).length;
-    return NextResponse.json({ sent, failed: results.length - sent, results });
-  }
-
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("group_messages")
-    .insert({
-      instance, group_jid, group_name,
-      message: message ?? "",
-      type: type ?? "marketing",
-      scheduled_at, status: "pending",
-      media_type: media_type ?? null,
-      media_data: media_data ?? null,
-      media_filename: media_filename ?? null,
-      media_caption: media_caption ?? null,
-    })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ message: data });
 }
