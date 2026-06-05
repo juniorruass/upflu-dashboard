@@ -15,8 +15,21 @@ function telefoneValido(tel: string): boolean {
   return n.length >= 12 && n.length <= 14;
 }
 
+function parseTemplates(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(Boolean);
+  } catch {}
+  return raw ? [raw] : [];
+}
+
 function renderTemplate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+  return template
+    .replace(/\{nome_empresa\}/g, vars.nome ?? "")
+    .replace(/\{nome\}/g,         vars.nome ?? "")
+    .replace(/\{cidade\}/g,       vars.cidade ?? "")
+    .replace(/\{ramo\}/g,         vars.ramo ?? "")
+    .replace(/\{(\w+)\}/g,        (_, k) => vars[k] ?? "");
 }
 
 async function enviarWhatsApp(phone: string, message: string): Promise<boolean> {
@@ -32,53 +45,65 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
 
-  // Busca configs ativas com template de follow-up definido
+  // Busca a config com followup_days mais curto como referência global
   const { data: configs } = await supabase
     .from("prospecting_configs")
-    .select("cnae, followup_days, followup_template, daily_limit")
+    .select("followup_days, followup_template, daily_limit, min_delay_seconds, max_delay_seconds")
     .eq("active", true)
-    .not("followup_template", "is", null);
+    .not("followup_template", "is", null)
+    .order("followup_days", { ascending: true })
+    .limit(1);
 
   if (!configs?.length) return NextResponse.json({ ok: true, message: "Nenhum follow-up configurado" });
 
+  const config = configs[0];
+  if (!config.followup_template || !config.followup_days) {
+    return NextResponse.json({ ok: true, message: "Follow-up sem template ou dias definidos" });
+  }
+
+  const templates = parseTemplates(config.followup_template);
   let totalEnviados = 0;
 
-  for (const config of configs) {
-    if (!config.followup_template || !config.followup_days) continue;
+  // Todos os prospects contatados há X dias que ainda não receberam follow-up
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - config.followup_days);
 
-    // Prospects que receberam 1º contato há X dias e ainda não receberam follow-up
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - config.followup_days);
+  const { data: prospects } = await supabase
+    .from("prospects")
+    .select("id, nome, telefone, cidade, tipo")
+    .eq("whatsapp_enviado", true)
+    .eq("followup_enviado", false)
+    .lte("whatsapp_enviado_at", cutoff.toISOString())
+    .not("telefone", "is", null)
+    .limit(config.daily_limit ?? 30);
 
-    const { data: prospects } = await supabase
-      .from("prospects")
-      .select("id, nome, telefone, cidade, mensagem")
-      .eq("whatsapp_enviado", true)
-      .eq("followup_enviado", false)
-      .eq("cnae", config.cnae)
-      .lte("whatsapp_enviado_at", cutoff.toISOString())
-      .not("telefone", "is", null)
-      .limit(config.daily_limit ?? 30);
+  if (!prospects?.length) return NextResponse.json({ ok: true, enviados: 0 });
 
-    if (!prospects?.length) continue;
+  const comTelefone = prospects.filter((p) => p.telefone && telefoneValido(p.telefone));
 
-    const comTelefone = prospects.filter((p) => p.telefone && telefoneValido(p.telefone));
+  for (let i = 0; i < comTelefone.length; i++) {
+    const p = comTelefone[i];
+    const phone = normalizarTelefone(p.telefone);
+    const tpl = templates[Math.floor(Math.random() * templates.length)];
+    const mensagem = renderTemplate(tpl, {
+      nome: p.nome ?? "", nome_empresa: p.nome ?? "",
+      cidade: p.cidade ?? "", ramo: p.tipo ?? "",
+    });
 
-    for (let i = 0; i < comTelefone.length; i++) {
-      const p = comTelefone[i];
-      const phone = normalizarTelefone(p.telefone);
-      const mensagem = renderTemplate(config.followup_template, {
-        nome: p.nome,
-        cidade: p.cidade ?? "",
-      });
+    {
 
-      if (i > 0) await sleep(Math.random() * 60_000 + 30_000);
+      if (i > 0) {
+        const minMs = (config.min_delay_seconds ?? 45) * 1000;
+        const maxMs = (config.max_delay_seconds ?? 120) * 1000;
+        await sleep(minMs + Math.random() * (maxMs - minMs));
+      }
 
       const ok = await enviarWhatsApp(phone, mensagem);
       if (ok) {
         await supabase.from("prospects").update({
           followup_enviado: true,
           followup_enviado_at: new Date().toISOString(),
+          status: "followup",
         }).eq("id", p.id);
         totalEnviados++;
       }
