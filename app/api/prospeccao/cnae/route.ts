@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         website: "",
         email: r.email,
         mensagem: r.mensagem,
-        status: "potencial",
+        status: "novo",
         email_enviado: false,
         cnpj: r.cnpj,
         cnae: r.cnae,

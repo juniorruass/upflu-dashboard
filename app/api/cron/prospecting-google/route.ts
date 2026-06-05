@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
         total_avaliacoes: reviews,
         email: "",
         mensagem,
-        status: "potencial",
+        status: "novo",
         email_enviado: false,
         whatsapp_enviado: false,
         evaluation_score: evaluation.score,

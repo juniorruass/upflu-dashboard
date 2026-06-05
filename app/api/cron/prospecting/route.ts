@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
         website: "",
         email: e.email?.toLowerCase().trim() ?? "",
         mensagem,
-        status: "potencial",
+        status: "novo",
         email_enviado: false,
         cnpj: e.cnpj,
         cnpj_formatado: formatarCNPJ(e.cnpj),

@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
           total_avaliacoes: (place.reviews as number) || 0,
           email,
           mensagem: generateMessage(nome, cidadeShort, type),
-          status: "potencial",
+          status: "novo",
           email_enviado: false,
         });
       }

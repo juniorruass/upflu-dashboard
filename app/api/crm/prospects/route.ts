@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     website: "",
     email: body.email || "",
     mensagem: body.mensagem || "",
-    status: "potencial",
+    status: "novo",
     email_enviado: false,
     cnpj: body.cnpj || null,
     cnae: body.cnae || null,
