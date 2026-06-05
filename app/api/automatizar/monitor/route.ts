@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       .not("status", "in", '("respondeu","fechado","sem_interesse")'),
     supabase.from("prospects").select("*", { count: "exact", head: true })
       .eq("status", "respondeu"),
-    supabase.from("prospecting_configs").select("id, name, search_term, source").eq("active", true),
+    supabase.from("prospecting_configs").select("id, name, search_term, source, send_hour, end_hour, active_days, daily_limit, min_delay_seconds, max_delay_seconds").eq("active", true),
   ]);
 
   // Prospects com filtros

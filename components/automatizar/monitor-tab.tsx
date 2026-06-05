@@ -7,7 +7,11 @@ interface Prospect {
   status: string; whatsapp_enviado: boolean; whatsapp_enviado_at: string | null;
   followup_enviado: boolean; followup_enviado_at: string | null; created_at: string;
 }
-interface Config { id: string; name: string; search_term: string; source: string; }
+interface Config {
+  id: string; name: string; search_term: string; source: string;
+  send_hour: number; end_hour: number; active_days: number[];
+  daily_limit: number; min_delay_seconds: number; max_delay_seconds: number;
+}
 interface Stats { fila: number; enviados_hoje: number; aguardando_followup: number; responderam: number; }
 
 const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -28,6 +32,35 @@ function StatusBadge({ status }: { status: string }) {
       {cfg.label}
     </span>
   );
+}
+
+const DIAS_LABEL: Record<number, string> = { 0:"Dom", 1:"Seg", 2:"Ter", 3:"Qua", 4:"Qui", 5:"Sex", 6:"Sáb" };
+const CRON_HOURS = [8, 14]; // horários do crontab
+
+function proximoDisparo(activeDays: number[]): string {
+  const now  = new Date();
+  const diasSet = new Set(activeDays);
+
+  for (let d = 0; d <= 7; d++) {
+    const candidate = new Date(now);
+    candidate.setDate(now.getDate() + d);
+    const dow = candidate.getDay();
+    if (!diasSet.has(dow)) continue;
+
+    const hours = d === 0
+      ? CRON_HOURS.filter((h) => h > now.getHours())
+      : CRON_HOURS;
+
+    if (!hours.length) continue;
+
+    const next = new Date(candidate);
+    next.setHours(hours[0], 0, 0, 0);
+
+    if (d === 0) return `Hoje às ${String(hours[0]).padStart(2,"0")}:00`;
+    if (d === 1) return `Amanhã às ${String(hours[0]).padStart(2,"0")}:00`;
+    return `${DIAS_LABEL[dow]} às ${String(hours[0]).padStart(2,"0")}:00`;
+  }
+  return "—";
 }
 
 function fmt(dt: string | null) {
@@ -96,6 +129,33 @@ export default function MonitorTab() {
           </div>
         ))}
       </div>
+
+      {/* Horários das automações */}
+      {configs.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {configs.map((c) => (
+            <div key={c.id} className="flex items-center justify-between bg-[#111] border border-white/[0.07] rounded-xl px-5 py-3">
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#4ADE80]" />
+                <span className="text-[13px] font-semibold text-[#F0EDE8]">{c.name}</span>
+                <span className="text-[11px] text-[#555]">
+                  {String(c.send_hour).padStart(2,"0")}:00 – {String(c.end_hour).padStart(2,"0")}:00
+                  {" · "}
+                  {(c.active_days ?? []).map((d) => DIAS_LABEL[d]).join(", ")}
+                  {" · "}
+                  {c.daily_limit} msgs/dia
+                  {" · "}
+                  delay {c.min_delay_seconds}–{c.max_delay_seconds}s
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[12px]" style={{ color: "#00CFFF" }}>
+                <Clock size={12} />
+                <span>Próximo: {proximoDisparo(c.active_days ?? [])}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex items-center gap-3">
