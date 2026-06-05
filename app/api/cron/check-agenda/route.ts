@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   const { data: events, error } = await supabase
     .from("agenda_events")
-    .select("*, clients(id, name, phone, email)")
+    .select("*, clients(id, name, contact_phone, contact_email)")
     .eq("status", "pending")
     .gte("starts_at", windowStart)
     .lte("starts_at", windowEnd);
