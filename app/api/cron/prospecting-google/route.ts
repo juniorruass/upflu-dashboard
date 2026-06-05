@@ -174,64 +174,62 @@ export async function GET(req: NextRequest) {
 
     if (!novos.length) continue;
 
-    const cfgTemplates = parseTemplates(config.message_template ?? "");
+    const toInsert = novos.map(({ place, cidade }) => {
+      const nome    = (place.title as string) ?? "";
+      const rating  = (place.rating as number) ?? null;
+      const reviews = (place.reviews as number) ?? 0;
+      const website = (place.website as string) ?? "";
+      const phone   = (place.phone as string) ?? "";
+      const placeId = (place.place_id as string) ?? nome;
 
-      const toInsert = novos.map(({ place, cidade }) => {
-        const nome    = (place.title as string) ?? "";
-        const rating  = (place.rating as number) ?? null;
-        const reviews = (place.reviews as number) ?? 0;
-        const website = (place.website as string) ?? "";
-        const phone   = (place.phone as string) ?? "";
-        const placeId = (place.place_id as string) ?? nome;
+      const evaluation   = avaliarProspect({ rating, reviews, website, tipo: term });
+      const tplEscolhido = templates.length
+        ? templates[Math.floor(Math.random() * templates.length)]
+        : null;
+      const mensagem = tplEscolhido
+        ? aplicarVariaveis(tplEscolhido, {
+            nome_empresa: nome, nome, cidade, ramo: term, tipo: term,
+            telefone: phone, rating: rating?.toFixed(1) ?? "—", reviews: String(reviews),
+          })
+        : gerarMensagemAvaliacao(nome, cidade, term, rating, reviews, website, evaluation);
 
-        const evaluation   = avaliarProspect({ rating, reviews, website, tipo: term });
-        const tplEscolhido = cfgTemplates.length
-          ? cfgTemplates[Math.floor(Math.random() * cfgTemplates.length)]
-          : null;
-        const mensagem = tplEscolhido
-          ? aplicarVariaveis(tplEscolhido, {
-              nome_empresa: nome, nome, cidade, ramo: term, tipo: term,
-              telefone: phone, rating: rating?.toFixed(1) ?? "—", reviews: String(reviews),
-            })
-          : gerarMensagemAvaliacao(nome, cidade, term, rating, reviews, website, evaluation);
+      idsExistentes.add(placeId);
+      nomeCidadeExistentes.add(`${nome.toLowerCase().trim()}|${cidade.toLowerCase().trim()}`);
 
-        idsExistentes.add(placeId);
-        nomeCidadeExistentes.add(`${nome.toLowerCase().trim()}|${cidade.toLowerCase().trim()}`);
+      return {
+        place_id: placeId, nome, tipo: term, cidade, telefone: phone,
+        website, endereco: (place.address as string) ?? "",
+        avaliacao: rating, total_avaliacoes: reviews,
+        email: "", mensagem, status: "novo",
+        email_enviado: false, whatsapp_enviado: false,
+        evaluation_score: evaluation.score, evaluation_angle: evaluation.angle,
+      };
+    });
 
-        return {
-          place_id: placeId, nome, tipo: term, cidade, telefone: phone,
-          website, endereco: (place.address as string) ?? "",
-          avaliacao: rating, total_avaliacoes: reviews,
-          email: "", mensagem, status: "novo",
-          email_enviado: false, whatsapp_enviado: false,
-          evaluation_score: evaluation.score, evaluation_angle: evaluation.angle,
-        };
-      });
+    const { data: inseridos } = await supabase
+      .from("prospects").insert(toInsert)
+      .select("id, telefone, mensagem, nome, evaluation_score");
 
-      const { data: inseridos } = await supabase
-        .from("prospects").insert(toInsert)
-        .select("id, telefone, mensagem, nome, evaluation_score");
+    totalSalvos += inseridos?.length ?? 0;
 
-      totalSalvos += inseridos?.length ?? 0;
+    const ordenados = (inseridos ?? [])
+      .filter((p) => p.telefone && telefoneValido(p.telefone))
+      .sort((a, b) => (b.evaluation_score ?? 0) - (a.evaluation_score ?? 0))
+      .slice(0, safety.daily_limit);
 
-      const ordenados = (inseridos ?? [])
-        .filter((p) => p.telefone && telefoneValido(p.telefone))
-        .sort((a, b) => (b.evaluation_score ?? 0) - (a.evaluation_score ?? 0))
-        .slice(0, safety.session_max);
-
-      for (let i = 0; i < ordenados.length; i++) {
-        const p = ordenados[i];
-        if (i > 0) await sleep(delayMs);
-        const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), p.mensagem);
-        if (ok) {
-          await supabase.from("prospects").update({
-            whatsapp_enviado: true,
-            whatsapp_enviado_at: new Date().toISOString(),
-            status: "contactado",
-          }).eq("id", p.id);
-          totalEnviados++;
-        }
+    for (let i = 0; i < ordenados.length; i++) {
+      const p = ordenados[i];
+      if (i > 0) await sleep(delayMs);
+      const ok = await enviarWhatsApp(normalizarTelefone(p.telefone), p.mensagem);
+      if (ok) {
+        await supabase.from("prospects").update({
+          whatsapp_enviado: true,
+          whatsapp_enviado_at: new Date().toISOString(),
+          status: "contactado",
+        }).eq("id", p.id);
+        totalEnviados++;
       }
+    }
   }
 
   return NextResponse.json({ ok: true, salvos: totalSalvos, enviados: totalEnviados });
