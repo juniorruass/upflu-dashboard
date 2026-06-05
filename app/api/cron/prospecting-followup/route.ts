@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
   for (let i = 0; i < comTelefone.length; i++) {
     const p = comTelefone[i];
     const phone = normalizarTelefone(p.telefone);
-    const tpl = templates[Math.floor(Math.random() * templates.length)];
+    const tpl = templates[i % templates.length];
     const mensagem = renderTemplate(tpl, {
       nome: p.nome ?? "", nome_empresa: p.nome ?? "",
       cidade: p.cidade ?? "", ramo: p.tipo ?? "",

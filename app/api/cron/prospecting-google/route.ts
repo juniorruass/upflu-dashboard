@@ -136,8 +136,9 @@ export async function GET(req: NextRequest) {
       const p = comTelefone[i];
       if (i > 0) await sleep(delayMs);
 
+      // Rotação sequencial: contato 1→var1, 2→var2, 3→var3, 4→var1...
       const tpl = templates.length
-        ? templates[Math.floor(Math.random() * templates.length)]
+        ? templates[i % templates.length]
         : p.mensagem;
 
       const mensagem = tpl
