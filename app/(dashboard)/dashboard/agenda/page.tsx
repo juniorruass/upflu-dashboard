@@ -172,7 +172,7 @@ export default function AgendaPage() {
       <Header title="Agenda" />
 
       <style>{`
-        .agenda-wrap { padding: 24px 32px 32px; flex: 1; max-width: 800px; }
+        .agenda-wrap { padding: 24px 32px 32px; flex: 1; }
         .ev-card { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
         .ev-card:hover { border-color: rgba(255,255,255,0.12); }
         .toggle-btn { width: 40px; height: 22px; border-radius: 11px; border: none; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; }
