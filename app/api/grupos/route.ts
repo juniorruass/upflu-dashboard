@@ -20,6 +20,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ instances });
   }
 
+  if (action === "debug-groups") {
+    const instance = searchParams.get("instance") ?? "";
+    const base = (process.env.EVOLUTION_API_URL ?? "").replace(/\/$/, "");
+    const apiKey = process.env.EVOLUTION_API_KEY ?? "";
+    const headers = { "Content-Type": "application/json", apikey: apiKey };
+    try {
+      const r1 = await fetch(`${base}/group/fetchAllGroups/${encodeURIComponent(instance)}?getParticipants=false`, { headers });
+      const body1 = await r1.text();
+      const r2 = await fetch(`${base}/chat/findChats/${encodeURIComponent(instance)}`, { method: "POST", headers, body: JSON.stringify({ where: {} }) });
+      const body2 = await r2.text();
+      return NextResponse.json({ fetchAllGroups: { status: r1.status, body: body1.slice(0, 2000) }, findChats: { status: r2.status, body: body2.slice(0, 2000) } });
+    } catch (err) {
+      return NextResponse.json({ error: String(err) });
+    }
+  }
+
   const supabase = createAdminClient();
   const { data, error } = await supabase
     .from("group_messages")
