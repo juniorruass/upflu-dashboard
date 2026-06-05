@@ -49,12 +49,11 @@ export default function GruposPage() {
 
   const [form, setForm] = useState({
     instance: "",
-    group_jid: "",
-    group_name: "",
     message: "",
     type: "marketing",
     scheduled_at: "",
   });
+  const [selectedGroups, setSelectedGroups] = useState<Group[]>([]);
   const [mediaFile, setMediaFile] = useState<{ base64: string; type: "image" | "video"; name: string } | null>(null);
 
   const fetchMessages = useCallback(async () => {
@@ -77,12 +76,25 @@ export default function GruposPage() {
   }, [fetchMessages, fetchInstances]);
 
   async function loadGroups(instance: string) {
-    if (!instance) { setGroups([]); return; }
+    if (!instance) { setGroups([]); setSelectedGroups([]); return; }
     setLoadingGroups(true);
     const res = await fetch(`/api/grupos?action=list-groups&instance=${encodeURIComponent(instance)}`);
     const data = await res.json();
     setGroups(data.groups ?? []);
+    setSelectedGroups([]);
     setLoadingGroups(false);
+  }
+
+  function toggleGroup(group: Group) {
+    setSelectedGroups((prev) =>
+      prev.find((g) => g.id === group.id)
+        ? prev.filter((g) => g.id !== group.id)
+        : [...prev, group]
+    );
+  }
+
+  function toggleAllGroups() {
+    setSelectedGroups((prev) => prev.length === groups.length ? [] : [...groups]);
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -98,29 +110,34 @@ export default function GruposPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.instance || !form.group_jid || !form.scheduled_at) return;
+    if (!form.instance || selectedGroups.length === 0 || !form.scheduled_at) return;
     if (!form.message && !mediaFile) return;
 
-    const payload = {
-      ...form,
-      media_type: mediaFile?.type ?? null,
-      media_data: mediaFile?.base64 ?? null,
-      media_filename: mediaFile?.name ?? null,
-      media_caption: mediaFile ? form.message : null,
-      message: mediaFile ? "" : form.message,
-    };
+    // cria um agendamento por grupo selecionado
+    await Promise.all(selectedGroups.map((group) =>
+      fetch("/api/grupos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instance: form.instance,
+          group_jid: group.id,
+          group_name: group.subject,
+          message: mediaFile ? "" : form.message,
+          type: form.type,
+          scheduled_at: form.scheduled_at,
+          media_type: mediaFile?.type ?? null,
+          media_data: mediaFile?.base64 ?? null,
+          media_filename: mediaFile?.name ?? null,
+          media_caption: mediaFile ? form.message : null,
+        }),
+      })
+    ));
 
-    const res = await fetch("/api/grupos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok) {
-      setShowForm(false);
-      setForm({ instance: "", group_jid: "", group_name: "", message: "", type: "marketing", scheduled_at: "" });
-      setMediaFile(null);
-      fetchMessages();
-    }
+    setShowForm(false);
+    setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" });
+    setSelectedGroups([]);
+    setMediaFile(null);
+    fetchMessages();
   }
 
   async function deleteMsg(id: string) {
@@ -170,7 +187,7 @@ export default function GruposPage() {
               <RefreshCw size={13} /> Atualizar
             </button>
             <button
-              onClick={() => { setShowForm(true); setMediaFile(null); }}
+              onClick={() => { setShowForm(true); setMediaFile(null); setSelectedGroups([]); }}
               style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "8px 16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}
             >
               <Plus size={14} /> Nova mensagem
@@ -253,27 +270,56 @@ export default function GruposPage() {
                 </select>
               </div>
 
-              {/* Group */}
+              {/* Groups multi-select */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
-                  Grupo {loadingGroups && <span style={{ color: "#555" }}>carregando...</span>}
-                </label>
-                <select
-                  value={form.group_jid}
-                  onChange={(e) => {
-                    const jid = e.target.value;
-                    const g = groups.find((g) => g.id === jid);
-                    setForm((f) => ({ ...f, group_jid: jid, group_name: g?.subject ?? "" }));
-                  }}
-                  style={selectStyle}
-                  required
-                  disabled={!form.instance || loadingGroups}
-                >
-                  <option value="">Selecionar grupo...</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>{g.subject}{g.size ? ` (${g.size})` : ""}</option>
-                  ))}
-                </select>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Grupos {loadingGroups && <span style={{ color: "#555" }}>carregando...</span>}
+                    {selectedGroups.length > 0 && <span style={{ color: ACCENT, marginLeft: "6px" }}>{selectedGroups.length} selecionado{selectedGroups.length > 1 ? "s" : ""}</span>}
+                  </label>
+                  {groups.length > 0 && (
+                    <button type="button" onClick={toggleAllGroups} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "11px", color: "#555" }}>
+                      {selectedGroups.length === groups.length ? "Desmarcar todos" : "Selecionar todos"}
+                    </button>
+                  )}
+                </div>
+                <div style={{
+                  maxHeight: "200px", overflowY: "auto", background: "#0d0d0d",
+                  border: `1px solid ${!form.instance || loadingGroups ? BORDER : (selectedGroups.length > 0 ? ACCENT : BORDER)}`,
+                  borderRadius: "6px",
+                  opacity: !form.instance || loadingGroups ? 0.5 : 1,
+                }}>
+                  {!form.instance ? (
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Selecione uma instância primeiro</div>
+                  ) : loadingGroups ? (
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Carregando grupos...</div>
+                  ) : groups.length === 0 ? (
+                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Nenhum grupo encontrado</div>
+                  ) : (
+                    groups.map((g) => {
+                      const checked = !!selectedGroups.find((s) => s.id === g.id);
+                      return (
+                        <label key={g.id} style={{
+                          display: "flex", alignItems: "center", gap: "10px",
+                          padding: "9px 12px", cursor: "pointer",
+                          borderBottom: `1px solid ${BORDER}`,
+                          background: checked ? "rgba(0,207,255,0.05)" : "transparent",
+                        }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleGroup(g)}
+                            style={{ accentColor: ACCENT, width: "14px", height: "14px", flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: "13px", color: checked ? "#F0EDE8" : "#888", flex: 1 }}>
+                            {g.subject}
+                          </span>
+                          {g.size && <span style={{ fontSize: "11px", color: "#444" }}>{g.size}</span>}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               {/* Type */}
@@ -350,7 +396,7 @@ export default function GruposPage() {
                   type="submit"
                   style={{ flex: 1, background: ACCENT, border: "none", borderRadius: "6px", padding: "11px", fontSize: "13px", fontWeight: "600", color: "#000", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
                 >
-                  <Send size={14} /> Agendar
+                  <Send size={14} /> {selectedGroups.length > 1 ? `Agendar para ${selectedGroups.length} grupos` : "Agendar"}
                 </button>
                 <button
                   type="button"
