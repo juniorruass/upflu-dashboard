@@ -324,51 +324,15 @@ export default function GruposPage() {
                   </div>
                 )}
 
-                <div style={{
-                  maxHeight: "200px", overflowY: "auto", background: "#0d0d0d",
-                  border: `1px solid ${!form.instance || loadingGroups ? BORDER : (selectedGroups.length > 0 ? ACCENT : BORDER)}`,
-                  borderRadius: "6px",
-                  opacity: !form.instance || loadingGroups ? 0.5 : 1,
-                }}>
-                  {!form.instance ? (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Selecione uma instância primeiro</div>
-                  ) : loadingGroups ? (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Carregando grupos{adminOnly ? " (filtrando admins...)" : ""}...</div>
-                  ) : groups.length === 0 ? (
-                    <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>
-                      {adminOnly ? "Nenhum grupo onde você é admin" : "Nenhum grupo encontrado"}
-                    </div>
-                  ) : (() => {
-                    const filtered = searchText
-                      ? groups.filter((g) => g.subject.toLowerCase().includes(searchText.toLowerCase()))
-                      : groups;
-                    if (filtered.length === 0) return (
-                      <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Nenhum grupo com "{searchText}"</div>
-                    );
-                    return filtered.map((g) => {
-                      const checked = !!selectedGroups.find((s) => s.id === g.id);
-                      return (
-                        <label key={g.id} style={{
-                          display: "flex", alignItems: "center", gap: "10px",
-                          padding: "9px 12px", cursor: "pointer",
-                          borderBottom: `1px solid ${BORDER}`,
-                          background: checked ? "rgba(0,207,255,0.05)" : "transparent",
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleGroup(g)}
-                            style={{ accentColor: ACCENT, width: "14px", height: "14px", flexShrink: 0 }}
-                          />
-                          <span style={{ fontSize: "13px", color: checked ? "#F0EDE8" : "#888", flex: 1 }}>
-                            {g.subject}
-                          </span>
-                          {g.size && <span style={{ fontSize: "11px", color: "#444" }}>{g.size}</span>}
-                        </label>
-                      );
-                    });
-                  })()}
-                </div>
+                <GroupList
+                  groups={groups}
+                  selected={selectedGroups}
+                  loading={loadingGroups}
+                  hasInstance={!!form.instance}
+                  adminOnly={adminOnly}
+                  search={searchText}
+                  onToggle={toggleGroup}
+                />
               </div>
 
               {/* Type */}
@@ -460,6 +424,64 @@ export default function GruposPage() {
         </div>
       )}
     </>
+  );
+}
+
+function GroupList({ groups, selected, loading, hasInstance, adminOnly, search, onToggle }: {
+  groups: Group[];
+  selected: Group[];
+  loading: boolean;
+  hasInstance: boolean;
+  adminOnly: boolean;
+  search: string;
+  onToggle: (g: Group) => void;
+}) {
+  const ACCENT = "#00CFFF";
+  const BORDER = "rgba(255,255,255,0.07)";
+
+  const borderColor = selected.length > 0 ? ACCENT : BORDER;
+  const opacity = !hasInstance || loading ? 0.5 : 1;
+
+  let content: React.ReactNode;
+
+  if (!hasInstance) {
+    content = <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Selecione uma instância primeiro</div>;
+  } else if (loading) {
+    content = <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Carregando grupos{adminOnly ? " (filtrando admins...)" : ""}...</div>;
+  } else if (groups.length === 0) {
+    content = <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>{adminOnly ? "Nenhum grupo onde você é admin" : "Nenhum grupo encontrado"}</div>;
+  } else {
+    const filtered = search ? groups.filter((g) => g.subject.toLowerCase().includes(search.toLowerCase())) : groups;
+    if (filtered.length === 0) {
+      content = <div style={{ padding: "12px", fontSize: "12px", color: "#444" }}>Nenhum grupo com &ldquo;{search}&rdquo;</div>;
+    } else {
+      content = filtered.map((g) => {
+        const checked = !!selected.find((s) => s.id === g.id);
+        return (
+          <label key={g.id} style={{
+            display: "flex", alignItems: "center", gap: "10px",
+            padding: "9px 12px", cursor: "pointer",
+            borderBottom: `1px solid ${BORDER}`,
+            background: checked ? "rgba(0,207,255,0.05)" : "transparent",
+          }}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => onToggle(g)}
+              style={{ accentColor: ACCENT, width: "14px", height: "14px", flexShrink: 0 }}
+            />
+            <span style={{ fontSize: "13px", color: checked ? "#F0EDE8" : "#888", flex: 1 }}>{g.subject}</span>
+            {g.size && <span style={{ fontSize: "11px", color: "#444" }}>{g.size}</span>}
+          </label>
+        );
+      });
+    }
+  }
+
+  return (
+    <div style={{ maxHeight: "200px", overflowY: "auto", background: "#0d0d0d", border: `1px solid ${borderColor}`, borderRadius: "6px", opacity }}>
+      {content}
+    </div>
   );
 }
 
