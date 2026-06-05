@@ -105,6 +105,21 @@ export async function GET(req: NextRequest) {
 
     if (!horario.ok) continue;
 
+    // Conta quantos novos já foram enviados hoje (BRT = UTC+3h offset)
+    const hojeBRT = new Date(Date.now() - 3 * 3600000);
+    hojeBRT.setUTCHours(3, 0, 0, 0); // meia-noite BRT = 03:00 UTC
+    const { count: enviadosHoje } = await supabase
+      .from("prospects")
+      .select("*", { count: "exact", head: true })
+      .eq("whatsapp_enviado", true)
+      .gte("whatsapp_enviado_at", hojeBRT.toISOString());
+
+    const restante = Math.max(0, safety.daily_limit - (enviadosHoje ?? 0));
+    if (restante === 0) {
+      console.log(`[prospecting-google] Limite diário (${safety.daily_limit}) atingido.`);
+      continue;
+    }
+
     // ── 1. Primeiro: envia para quem já está no CRM como "novo" ──
     const { data: pendentes } = await supabase
       .from("prospects")
@@ -113,7 +128,7 @@ export async function GET(req: NextRequest) {
       .or("whatsapp_enviado.is.null,whatsapp_enviado.eq.false")
       .not("telefone", "is", null)
       .neq("telefone", "")
-      .limit(safety.daily_limit);
+      .limit(restante);
 
     const comTelefone = (pendentes ?? []).filter((p) => p.telefone && telefoneValido(p.telefone));
 

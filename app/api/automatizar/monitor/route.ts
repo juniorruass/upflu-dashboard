@@ -88,13 +88,34 @@ export async function GET(req: NextRequest) {
 
   const configs = configsRes.data ?? [];
 
-  // Config principal para calcular timing
-  const cfg        = configs[0];
-  const activeDays = cfg?.active_days        ?? [1,2,3,4,5];
-  const avgDelaySec= ((cfg?.min_delay_seconds ?? 120) + (cfg?.max_delay_seconds ?? 300)) / 2;
-  const followupDays = cfg?.followup_days    ?? 3;
-  const SESSION_MAX  = 20; // msgs por execução do cron
-  const cronRuns   = getCronRuns(activeDays, 100);
+  // Config principal
+  const cfg          = configs[0];
+  const activeDays   = cfg?.active_days        ?? [1,2,3,4,5];
+  const avgDelaySec  = ((cfg?.min_delay_seconds ?? 120) + (cfg?.max_delay_seconds ?? 300)) / 2;
+  const followupDays = cfg?.followup_days      ?? 3;
+  const NOVO_DAILY   = cfg?.daily_limit        ?? 50;
+  const FUP_DAILY    = 10;
+  const NOVO_PER_RUN = Math.ceil(NOVO_DAILY / 2); // dividido entre 8h e 14h
+  const cronRuns     = getCronRuns(activeDays, 100);
+
+  // Runs do follow-up (13h BRT) — cron separado
+  const followupRuns = (() => {
+    const diasSet = new Set(activeDays.length ? activeDays : [1,2,3,4,5]);
+    const nowBrt  = toBRT(new Date());
+    const runs: Date[] = [];
+    for (let d = 0; d <= 60 && runs.length < 20; d++) {
+      const day = new Date(nowBrt);
+      day.setUTCDate(nowBrt.getUTCDate() + d);
+      day.setUTCHours(0, 0, 0, 0);
+      if (!diasSet.has(day.getUTCDay())) continue;
+      const startH = d === 0 ? nowBrt.getUTCHours() : -1;
+      if (13 <= startH) continue;
+      const run = new Date(day);
+      run.setUTCHours(13 - BRT_OFFSET, 0, 0, 0); // 13h BRT = 16h UTC
+      runs.push(run);
+    }
+    return runs;
+  })();
 
   // Busca prospects
   let query = supabase
@@ -124,25 +145,54 @@ export async function GET(req: NextRequest) {
   const followupList = raw.filter(p => p.status === "contatado" || p.status === "followup");
   const outrosList   = raw.filter(p => p.status !== "novo" && p.status !== "contatado" && p.status !== "followup");
 
-  const withTiming = (p: typeof raw[0], idx: number, baseRun: Date | null) => {
-    if (!baseRun) return { ...p, proximo_envio: null };
-    const runIdx   = Math.floor(idx / SESSION_MAX);
-    const posInRun = idx % SESSION_MAX;
-    const run      = cronRuns[runIdx] ?? baseRun;
+  // Distribui novos: 50/dia, dividido entre 8h (25) e 14h (25)
+  const prospectNovos = novoList.slice(0, NOVO_DAILY).map((p, idx) => {
+    const runIdx   = Math.floor(idx / NOVO_PER_RUN);
+    const posInRun = idx % NOVO_PER_RUN;
+    const run      = cronRuns[runIdx] ?? cronRuns[cronRuns.length - 1] ?? null;
     const ms       = posInRun * avgDelaySec * 1000;
-    return { ...p, proximo_envio: new Date(run.getTime() + ms).toISOString() };
-  };
+    const proximo  = run ? new Date(run.getTime() + ms).toISOString() : null;
+    return { ...p, proximo_envio: proximo };
+  });
+
+  // Novos além do limite diário → próximos dias
+  const prospectNovosProxDia = novoList.slice(NOVO_DAILY).map((p, idx) => {
+    const dayOffset = Math.floor((idx + NOVO_DAILY) / NOVO_DAILY);
+    const runIdx    = dayOffset * 2 + Math.floor((idx % NOVO_DAILY) / NOVO_PER_RUN);
+    const posInRun  = (idx % NOVO_DAILY) % NOVO_PER_RUN;
+    const run       = cronRuns[runIdx] ?? cronRuns[cronRuns.length - 1] ?? null;
+    const ms        = posInRun * avgDelaySec * 1000;
+    return { ...p, proximo_envio: run ? new Date(run.getTime() + ms).toISOString() : null };
+  });
+
+  // Distribui follow-ups: 10/dia, às 13h
+  const prospectFollowup = followupList.slice(0, FUP_DAILY).map((p, idx) => {
+    let base = followupRuns[0] ?? null;
+    if (p.whatsapp_enviado_at) {
+      const dueBrt = toBRT(new Date(new Date(p.whatsapp_enviado_at).getTime() + followupDays * 86400000));
+      const apos = primeiroCronApos(dueBrt, activeDays);
+      // Usa o followupRun mais próximo após o vencimento
+      if (apos) {
+        const melhor = followupRuns.find(r => r >= apos);
+        base = melhor ?? followupRuns[0] ?? null;
+      }
+    }
+    const ms = idx * avgDelaySec * 1000;
+    return { ...p, proximo_envio: base ? new Date(base.getTime() + ms).toISOString() : null };
+  });
+
+  const prospectFollowupProxDia = followupList.slice(FUP_DAILY).map((p, idx) => {
+    const runIdx = Math.floor((idx + FUP_DAILY) / FUP_DAILY);
+    const run    = followupRuns[runIdx] ?? null;
+    const ms     = (idx % FUP_DAILY) * avgDelaySec * 1000;
+    return { ...p, proximo_envio: run ? new Date(run.getTime() + ms).toISOString() : null };
+  });
 
   const prospects = [
-    ...novoList.map((p, idx) => withTiming(p, idx, cronRuns[0] ?? null)),
-    ...followupList.map((p, idx) => {
-      let base = cronRuns[0] ?? null;
-      if (p.whatsapp_enviado_at) {
-        const dueBrt = toBRT(new Date(new Date(p.whatsapp_enviado_at).getTime() + followupDays * 86400000));
-        base = primeiroCronApos(dueBrt, activeDays) ?? base;
-      }
-      return withTiming(p, idx, base);
-    }),
+    ...prospectNovos,
+    ...prospectNovosProxDia,
+    ...prospectFollowup,
+    ...prospectFollowupProxDia,
     ...outrosList.map(p => ({ ...p, proximo_envio: null })),
   ];
 

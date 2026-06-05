@@ -61,10 +61,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, message: "Follow-up sem template ou dias definidos" });
   }
 
+  const FOLLOWUP_DAILY = 10;
   const templates = parseTemplates(config.followup_template);
   let totalEnviados = 0;
 
-  // Todos os prospects contatados há X dias que ainda não receberam follow-up
+  // Conta follow-ups já enviados hoje
+  const hojeBRT = new Date(Date.now() - 3 * 3600000);
+  hojeBRT.setUTCHours(3, 0, 0, 0);
+  const { count: followupHoje } = await supabase
+    .from("prospects")
+    .select("*", { count: "exact", head: true })
+    .eq("followup_enviado", true)
+    .gte("followup_enviado_at", hojeBRT.toISOString());
+
+  const restante = Math.max(0, FOLLOWUP_DAILY - (followupHoje ?? 0));
+  if (restante === 0) return NextResponse.json({ ok: true, enviados: 0, message: "Limite de follow-ups (10) atingido hoje" });
+
+  // Prospects contatados há X dias sem follow-up
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - config.followup_days);
 
@@ -75,7 +88,7 @@ export async function GET(req: NextRequest) {
     .eq("followup_enviado", false)
     .lte("whatsapp_enviado_at", cutoff.toISOString())
     .not("telefone", "is", null)
-    .limit(config.daily_limit ?? 30);
+    .limit(restante);
 
   if (!prospects?.length) return NextResponse.json({ ok: true, enviados: 0 });
 
