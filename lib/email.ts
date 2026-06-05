@@ -8,6 +8,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendEmail({ to, subject, text, html }: { to: string; subject: string; text?: string; html?: string }) {
+  await transporter.sendMail({
+    from: `"Upflu" <${process.env.GMAIL_USER}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+}
+
 export async function sendWelcomeEmail({
   name,
   email,

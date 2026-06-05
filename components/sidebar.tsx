@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -20,6 +20,8 @@ const navItems = [
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
+  { label: "Grupos",       href: "/dashboard/grupos",        icon: UsersRound,      disabled: false, exact: false },
+  { label: "Agenda",       href: "/dashboard/agenda",        icon: CalendarDays,    disabled: false, exact: false },
 ];
 
 export default function Sidebar() {

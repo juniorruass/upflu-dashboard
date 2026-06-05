@@ -141,6 +141,25 @@ export async function evolutionFindContacts(instance?: string): Promise<Evolutio
   } catch { return []; }
 }
 
+export async function evolutionFindGroups(instance?: string): Promise<EvolutionGroup[]> {
+  const base = BASE();
+  const inst = instance ?? INSTANCE();
+  if (!base || !API_KEY() || !inst) return [];
+  try {
+    const res = await fetch(
+      `${base}/group/fetchAllGroups/${encodeURIComponent(inst)}?getParticipants=false`,
+      { headers: headers(), signal: AbortSignal.timeout(12000) },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch { return []; }
+}
+
+export async function evolutionSendGroup(groupJid: string, text: string, instance?: string): Promise<boolean> {
+  return evolutionSend(groupJid, text, instance);
+}
+
 export async function evolutionMeasureLatency(): Promise<number> {
   const base = BASE();
   if (!base || !API_KEY()) return -1;
@@ -198,4 +217,19 @@ export type EvolutionMessage = {
   messageTimestamp?: number;
   pushName?: string;
   status?: string;
+};
+
+export type EvolutionGroup = {
+  id: string;
+  subject: string;
+  subjectOwner?: string;
+  subjectTime?: number;
+  pictureUrl?: string | null;
+  size?: number;
+  creation?: number;
+  owner?: string;
+  desc?: string;
+  descId?: string;
+  restrict?: boolean;
+  announce?: boolean;
 };
