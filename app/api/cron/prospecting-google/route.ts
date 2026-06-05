@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
         await supabase.from("prospects").update({
           whatsapp_enviado: true,
           whatsapp_enviado_at: new Date().toISOString(),
-          status: "contactado",
+          status: "contatado",
         }).eq("id", p.id);
         totalEnviados++;
       }
@@ -225,7 +225,7 @@ export async function GET(req: NextRequest) {
         await supabase.from("prospects").update({
           whatsapp_enviado: true,
           whatsapp_enviado_at: new Date().toISOString(),
-          status: "contactado",
+          status: "contatado",
         }).eq("id", p.id);
         totalEnviados++;
       }

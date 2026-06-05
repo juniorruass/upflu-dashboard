@@ -12,12 +12,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   potencial:     { label: "Potencial",     color: "#FF9500" },
   novo:          { label: "Novo",          color: "#00CFFF" },
   contatado:     { label: "Contatado",     color: "#f59e0b" },
-  respondeu:     { label: "Respondeu",     color: "#a064ff" },
+  followup:      { label: "Follow-up",     color: "#a78bfa" },
+  respondeu:     { label: "Respondeu",     color: "#4ADE80" },
   fechado:       { label: "Fechado",       color: "#22c55e" },
   sem_interesse: { label: "Sem interesse", color: "#666"    },
 };
 
-const ALL_STATUS = ["todos", "potencial", "novo", "contatado", "respondeu", "fechado", "sem_interesse"];
+const ALL_STATUS = ["todos", "novo", "contatado", "followup", "respondeu", "fechado", "sem_interesse", "potencial"];
 
 const TIPO_OPTIONS = [
   { value: "todos",                label: "Todos os tipos"  },
