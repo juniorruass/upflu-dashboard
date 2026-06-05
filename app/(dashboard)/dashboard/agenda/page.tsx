@@ -165,6 +165,20 @@ export default function AgendaPage() {
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await res.json();
       if (!res.ok) { setSaveError(data.error ?? "Erro ao salvar."); return; }
+
+      // mostra resultado da notificação
+      if (data.notifyLog) {
+        const log = data.notifyLog;
+        if (log.sent === true) {
+          setSaveError(""); // limpa erros
+        } else {
+          setSaveError(`⚠️ Evento salvo mas notificação falhou: ${log.reason ?? ""} | telefone: ${log.adminPhone} | instância: ${log.instance}`);
+          setSaving(false);
+          fetchEvents();
+          return;
+        }
+      }
+
       setShowForm(false);
       fetchEvents();
     } catch {
