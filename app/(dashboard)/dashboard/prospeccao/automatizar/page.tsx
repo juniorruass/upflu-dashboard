@@ -13,6 +13,7 @@ import Step1Alvo, { type Step1Data } from "@/components/automatizar/step1-alvo";
 import Step2Message, { type Step2Data } from "@/components/automatizar/step2-message";
 import ScheduleConfig, { type ScheduleData } from "@/components/automatizar/schedule-config";
 import Step4Review from "@/components/automatizar/step4-review";
+import MonitorTab from "@/components/automatizar/monitor-tab";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
@@ -119,6 +120,9 @@ export default function AutomatizarPage() {
   // ── configs list ──
   const [configs, setConfigs] = useState<Config[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ── tabs ──
+  const [activeTab, setActiveTab] = useState<"automacoes" | "monitor">("automacoes");
 
   // ── stepper ──
   const [step, setStep]   = useState(1);
@@ -319,6 +323,27 @@ export default function AutomatizarPage() {
     <>
       <Header title="Prospecção Automática" />
       <div style={{ padding: "40px", maxWidth: "1100px" }}>
+
+        {/* ── TABS ── */}
+        <div className="flex gap-1 mb-8 p-1 bg-[#111] border border-white/[0.07] rounded-xl w-fit">
+          {([
+            { key: "automacoes", label: "Automações" },
+            { key: "monitor",    label: "Monitor de envios" },
+          ] as const).map((t) => (
+            <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
+              className={`px-5 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                activeTab === t.key
+                  ? "bg-[#00CFFF]/10 text-[#00CFFF] border border-[#00CFFF]/25"
+                  : "text-[#555] hover:text-[#888]"
+              }`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "monitor" && <MonitorTab />}
+
+        {activeTab === "automacoes" && <>
 
         {/* ── INSTANCE CARD ── */}
         <div style={{ marginBottom: "32px" }}>
@@ -647,6 +672,8 @@ export default function AutomatizarPage() {
             ))}
           </div>
         </div>
+
+        </> /* fim automacoes */}
 
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
