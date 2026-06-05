@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -13,14 +13,15 @@ const BORDER = "rgba(255,255,255,0.07)";
 const navItems = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, disabled: false, exact: true  },
   { label: "Prospecção",   href: "/dashboard/prospeccao",             icon: Search, disabled: false, exact: true  },
-  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar",       icon: Zap,          disabled: false, exact: true  },
-  { label: "Chat ao Vivo", href: "/dashboard/prospeccao/automatizar/chat", icon: MessageSquare, disabled: false, exact: false, sub: true },
+  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar",            icon: Zap,          disabled: false, exact: true  },
+  { label: "Chat ao Vivo", href: "/dashboard/prospeccao/automatizar/chat",       icon: MessageSquare, disabled: false, exact: false, sub: true },
+  { label: "Grupos",       href: "/dashboard/grupos",                             icon: UsersRound,    disabled: false, exact: false, sub: true },
+  { label: "Instâncias",   href: "/dashboard/prospeccao/automatizar/instancias", icon: Wifi,          disabled: false, exact: false, sub: true },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
-  { label: "Grupos",       href: "/dashboard/grupos",        icon: UsersRound,      disabled: false, exact: false },
   { label: "Agenda",       href: "/dashboard/agenda",        icon: CalendarDays,    disabled: false, exact: false },
 ];
 

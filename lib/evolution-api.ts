@@ -141,6 +141,34 @@ export async function evolutionFindContacts(instance?: string): Promise<Evolutio
   } catch { return []; }
 }
 
+export async function evolutionCreateInstance(instanceName: string): Promise<{ instance?: { instanceName: string }; qrcode?: { base64?: string; code?: string } } | null> {
+  const base = BASE();
+  if (!base || !API_KEY()) return null;
+  try {
+    const res = await fetch(`${base}/instance/create`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ instanceName, qrcode: true, integration: "WHATSAPP-BAILEYS" }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+export async function evolutionDeleteInstance(instance: string): Promise<boolean> {
+  const base = BASE();
+  if (!base || !API_KEY()) return false;
+  try {
+    const res = await fetch(`${base}/instance/delete/${encodeURIComponent(instance)}`, {
+      method: "DELETE",
+      headers: headers(),
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok;
+  } catch { return false; }
+}
+
 export async function evolutionFindGroups(instance?: string): Promise<EvolutionGroup[]> {
   const base = BASE();
   const inst = instance ?? INSTANCE();

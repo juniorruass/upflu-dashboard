@@ -9,6 +9,8 @@ import {
   evolutionFindMessages,
   evolutionFindContacts,
   evolutionMeasureLatency,
+  evolutionCreateInstance,
+  evolutionDeleteInstance,
 } from "@/lib/evolution-api";
 import { createAdminClient } from "@/lib/supabase";
 
@@ -96,6 +98,19 @@ export async function POST(req: NextRequest) {
 
   if (action === "disconnect") {
     const ok = await evolutionDisconnect(instance);
+    return NextResponse.json({ ok });
+  }
+
+  if (action === "create") {
+    const { instanceName } = body;
+    if (!instanceName) return NextResponse.json({ error: "instanceName obrigatório" }, { status: 400 });
+    const data = await evolutionCreateInstance(instanceName);
+    if (!data) return NextResponse.json({ error: "Erro ao criar instância" }, { status: 502 });
+    return NextResponse.json(data);
+  }
+
+  if (action === "delete") {
+    const ok = await evolutionDeleteInstance(instance);
     return NextResponse.json({ ok });
   }
 
