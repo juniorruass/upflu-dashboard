@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Chat ao Vivo", href: "/dashboard/prospeccao/automatizar/chat",       icon: MessageSquare, disabled: false, exact: false, sub: true },
   { label: "Grupos",       href: "/dashboard/grupos",                             icon: UsersRound,    disabled: false, exact: false, sub: true },
   { label: "Instâncias",   href: "/dashboard/prospeccao/automatizar/instancias", icon: Wifi,          disabled: false, exact: false, sub: true },
+  { label: "Blacklist",    href: "/dashboard/blacklist",                          icon: ShieldOff,     disabled: false, exact: false, sub: true },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },

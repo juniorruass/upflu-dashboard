@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { evolutionSendGroup, evolutionSendMedia } from "@/lib/evolution-api";
+import { isBlacklisted } from "@/lib/blacklist";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -26,6 +27,11 @@ export async function GET(req: NextRequest) {
   let failed = 0;
 
   for (const msg of pending) {
+    if (await isBlacklisted(msg.group_jid)) {
+      await supabase.from("group_messages").update({ status: "failed", error: "Número na blacklist" }).eq("id", msg.id);
+      failed++;
+      continue;
+    }
     let ok: boolean;
     if (msg.media_data && msg.media_type) {
       ok = await evolutionSendMedia(

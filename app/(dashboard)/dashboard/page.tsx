@@ -21,7 +21,17 @@ async function getDashboardData() {
   const clients       = clientsRaw ?? [];
   const activeClients = clients.filter((c) => c.status === "active");
   const mrr           = activeClients.reduce((s, c) => s + (c.monthly_value || 0), 0);
+  const arr           = mrr * 12;
   const leads         = clients.filter((c) => c.status === "onboarding").length;
+
+  // renovações nos próximos 30 dias
+  const today30 = new Date(now); today30.setDate(today30.getDate() + 30);
+  const renewalsSoon = activeClients.filter((c) => {
+    if (!c.start_date) return false;
+    const renewal = new Date(c.start_date);
+    renewal.setFullYear(renewal.getFullYear() + 1);
+    return renewal >= now && renewal <= today30;
+  }).length;
 
   // ── prospecção chart (últimos 30 dias) ────────
   const since30 = new Date(now); since30.setDate(since30.getDate() - 29);
@@ -83,7 +93,7 @@ async function getDashboardData() {
   // MRR atual repetido nos últimos meses (sem histórico, usa valor atual)
   months.forEach((m) => { if (m.mrr === 0) m.mrr = mrr; });
 
-  return { mrr, activeClients: activeClients.length, totalClients: clients.length, leads, prospectsChart, statusData, mrrData, financeiroChart: months };
+  return { mrr, arr, activeClients: activeClients.length, totalClients: clients.length, leads, renewalsSoon, prospectsChart, statusData, mrrData, financeiroChart: months };
 }
 
 export default async function DashboardPage() {
@@ -95,14 +105,14 @@ export default async function DashboardPage() {
 
       <style>{`
         .dash-pad { padding: 40px 40px 60px; }
-        .dash-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+        .dash-grid-3 { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; margin-bottom: 24px; }
         .chart-card { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 24px; }
         .chart-title { font-size: 11px; font-weight: 600; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 20px; }
         .anuncios-link > div { transition: border-color 0.2s; }
         .anuncios-link:hover > div { border-color: rgba(0,207,255,0.35) !important; }
         @media (max-width: 768px) {
           .dash-pad { padding: 20px 16px 48px; }
-          .dash-grid-3 { grid-template-columns: 1fr; gap: 10px; }
+          .dash-grid-3 { grid-template-columns: repeat(2,1fr); gap: 10px; }
         }
       `}</style>
 
@@ -124,14 +134,16 @@ export default async function DashboardPage() {
         {/* Stats row */}
         <div className="dash-grid-3" style={{ marginBottom: "32px" }}>
           {[
-            { label: "Clientes ativos",   value: String(d.activeClients), sub: `${d.totalClients} cadastrados no total`, accent: false },
-            { label: "MRR",               value: `R$ ${d.mrr.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`, sub: "receita mensal recorrente", accent: true },
-            { label: "Em onboarding",     value: String(d.leads), sub: "clientes em implantação", accent: false },
+            { label: "Clientes ativos",   value: String(d.activeClients), sub: `${d.totalClients} cadastrados no total`, accent: false, warn: false },
+            { label: "MRR",               value: `R$ ${d.mrr.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`, sub: "receita mensal recorrente", accent: true, warn: false },
+            { label: "ARR",               value: `R$ ${d.arr.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}`, sub: "receita anual recorrente", accent: false, warn: false },
+            { label: "Em onboarding",     value: String(d.leads), sub: "clientes em implantação", accent: false, warn: false },
+            { label: "Renovações (30d)",  value: String(d.renewalsSoon), sub: d.renewalsSoon > 0 ? "⚠️ contratos vencendo em breve" : "nenhuma renovação pendente", accent: false, warn: d.renewalsSoon > 0 },
           ].map((card) => (
-            <div key={card.label} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", position: "relative", overflow: "hidden" }}>
-              {card.accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
+            <div key={card.label} style={{ background: "#111", border: `1px solid ${card.warn ? "rgba(255,149,0,0.3)" : BORDER}`, borderRadius: "12px", padding: "24px", position: "relative", overflow: "hidden" }}>
+              {(card.accent || card.warn) && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: card.warn ? "linear-gradient(90deg,transparent,#FF9500,transparent)" : `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
               <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{card.label}</p>
-              <p style={{ fontSize: "36px", fontWeight: "700", color: card.accent ? ACCENT : "#F0EDE8", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
+              <p style={{ fontSize: "36px", fontWeight: "700", color: card.warn ? "#FF9500" : card.accent ? ACCENT : "#F0EDE8", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
               <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{card.sub}</p>
             </div>
           ))}
