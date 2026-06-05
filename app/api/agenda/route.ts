@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { evolutionSend, evolutionInstances } from "@/lib/evolution-api";
 
 export async function GET() {
   const supabase = createAdminClient();
@@ -46,5 +47,23 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // notificação imediata de criação
+  if (data && notify_admin_whatsapp) {
+    try {
+      const adminPhone = notify_admin_phone || process.env.ADMIN_PHONE;
+      if (adminPhone) {
+        const allInstances = await evolutionInstances();
+        const instance = notify_instance
+          || process.env.EVOLUTION_INSTANCE
+          || allInstances.find((i) => i.connectionStatus === "open")?.name
+          || "";
+        const startsAt = new Date(data.starts_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+        const msg = `✅ *Evento agendado*\n\n*${data.title}*\n${data.description ? `${data.description}\n` : ""}🕐 ${startsAt}\n\nVocê receberá um lembrete 30 minutos antes.`;
+        await evolutionSend(adminPhone, msg, instance);
+      }
+    } catch { /* não bloqueia a resposta */ }
+  }
+
   return NextResponse.json({ event: data });
 }

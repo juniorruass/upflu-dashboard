@@ -13,8 +13,9 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
   const now = new Date();
-  const windowStart = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
-  const windowEnd = now.toISOString();
+  // janela: eventos que começam entre 25 e 35 minutos a partir de agora
+  const windowStart = new Date(now.getTime() + 25 * 60 * 1000).toISOString();
+  const windowEnd   = new Date(now.getTime() + 35 * 60 * 1000).toISOString();
 
   const { data: events, error } = await supabase
     .from("agenda_events")
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
     const instance = ev.notify_instance || fallbackInstance;
     const adminPhone = ev.notify_admin_phone || process.env.ADMIN_PHONE;
     const startsAt = new Date(ev.starts_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-    const adminMsg = `📅 *Lembrete de agenda*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}⏰ ${startsAt}${ev.clients?.name ? `\n👤 ${ev.clients.name}` : ""}`;
+    const adminMsg = `⏰ *Lembrete — começa em 30 minutos*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}🕐 ${startsAt}${ev.clients?.name ? `\n👤 ${ev.clients.name}` : ""}`;
 
     if (ev.notify_admin_whatsapp && adminPhone) {
       await evolutionSend(adminPhone, adminMsg, instance);
