@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { evolutionInstances } from "@/lib/evolution-api";
+import { evolutionInstances, evolutionSendGroup, evolutionSendMedia } from "@/lib/evolution-api";
 
 // GET /api/grupos?action=list-groups&instance=X  — lista grupos do Evolution
 // GET /api/grupos                                — lista mensagens agendadas
@@ -83,6 +83,23 @@ export async function POST(req: NextRequest) {
   }
   if (!message && !media_data) {
     return NextResponse.json({ error: "Informe mensagem ou arquivo de mídia" }, { status: 400 });
+  }
+
+  // Envio imediato — não salva no banco, dispara agora
+  const { send_now } = body;
+  if (send_now) {
+    const groups: { group_jid: string; group_name: string }[] = body.groups ?? [{ group_jid, group_name }];
+    const results = await Promise.all(groups.map(async (g) => {
+      let ok: boolean;
+      if (media_data && media_type) {
+        ok = await evolutionSendMedia(g.group_jid, media_data, media_type as "image" | "video" | "document", body.media_caption ?? message ?? "", body.media_filename ?? "arquivo", instance);
+      } else {
+        ok = await evolutionSendGroup(g.group_jid, message, instance);
+      }
+      return { group_name: g.group_name, ok };
+    }));
+    const sent = results.filter((r) => r.ok).length;
+    return NextResponse.json({ sent, failed: results.length - sent, results });
   }
 
   const supabase = createAdminClient();

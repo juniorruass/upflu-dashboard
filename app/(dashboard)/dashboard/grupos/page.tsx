@@ -57,6 +57,9 @@ export default function GruposPage() {
   const [mediaFile, setMediaFile] = useState<{ base64: string; type: "image" | "video"; name: string } | null>(null);
   const [searchText, setSearchText] = useState("");
   const [adminOnly, setAdminOnly] = useState(false);
+  const [sendNow, setSendNow] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<string>("");
 
   const fetchMessages = useCallback(async () => {
     setLoading(true);
@@ -121,10 +124,37 @@ export default function GruposPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.instance || selectedGroups.length === 0 || !form.scheduled_at) return;
+    if (!form.instance || selectedGroups.length === 0) return;
+    if (!sendNow && !form.scheduled_at) return;
     if (!form.message && !mediaFile) return;
 
-    // cria um agendamento por grupo selecionado
+    setSending(true);
+    setSendResult("");
+
+    if (sendNow) {
+      const res = await fetch("/api/grupos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          send_now: true,
+          instance: form.instance,
+          group_jid: selectedGroups[0]?.id,
+          group_name: selectedGroups[0]?.subject,
+          groups: selectedGroups.map((g) => ({ group_jid: g.id, group_name: g.subject })),
+          message: mediaFile ? "" : form.message,
+          media_type: mediaFile?.type ?? null,
+          media_data: mediaFile?.base64 ?? null,
+          media_filename: mediaFile?.name ?? null,
+          media_caption: mediaFile ? form.message : null,
+        }),
+      });
+      const data = await res.json();
+      setSending(false);
+      setSendResult(`Enviado: ${data.sent ?? 0} ✓  Falhou: ${data.failed ?? 0}`);
+      fetchMessages();
+      return;
+    }
+
     await Promise.all(selectedGroups.map((group) =>
       fetch("/api/grupos", {
         method: "POST",
@@ -144,10 +174,12 @@ export default function GruposPage() {
       })
     ));
 
+    setSending(false);
     setShowForm(false);
     setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" });
     setSelectedGroups([]);
     setMediaFile(null);
+    setSendNow(false);
     fetchMessages();
   }
 
@@ -392,30 +424,53 @@ export default function GruposPage() {
                 <div style={{ fontSize: "11px", color: "#555", marginTop: "4px" }}>{form.message.length} caracteres</div>
               </div>
 
-              {/* Date/time */}
-              <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Data e hora</label>
-                <input
-                  type="datetime-local"
-                  value={form.scheduled_at}
-                  onChange={(e) => setForm((f) => ({ ...f, scheduled_at: e.target.value }))}
-                  required
-                  style={inputStyle}
-                />
+              {/* Enviar agora ou agendar */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "12px 14px" }}>
+                <div>
+                  <div style={{ fontSize: "13px", color: "#F0EDE8", fontWeight: "600" }}>Enviar agora</div>
+                  <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>Dispara imediatamente sem agendar</div>
+                </div>
+                <div
+                  onClick={() => { setSendNow((v) => !v); setSendResult(""); }}
+                  style={{ width: "40px", height: "22px", borderRadius: "11px", cursor: "pointer", background: sendNow ? ACCENT : "#2a2a2a", position: "relative", flexShrink: 0, transition: "background 0.2s", border: `1px solid ${sendNow ? ACCENT : "#3a3a3a"}` }}
+                >
+                  <div style={{ position: "absolute", top: "3px", left: sendNow ? "19px" : "3px", width: "14px", height: "14px", borderRadius: "50%", background: sendNow ? "#000" : "#666", transition: "left 0.2s" }} />
+                </div>
               </div>
+
+              {/* Date/time — só mostra se não for envio imediato */}
+              {!sendNow && (
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Data e hora</label>
+                  <input
+                    type="datetime-local"
+                    value={form.scheduled_at}
+                    onChange={(e) => setForm((f) => ({ ...f, scheduled_at: e.target.value }))}
+                    required
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+
+              {sendResult && (
+                <div style={{ background: "rgba(0,207,255,0.08)", border: `1px solid rgba(0,207,255,0.2)`, borderRadius: "6px", padding: "10px 14px", fontSize: "13px", color: ACCENT }}>
+                  {sendResult}
+                  <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSelectedGroups([]); setMediaFile(null); setSendNow(false); setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" }); }} style={{ marginLeft: "12px", background: "transparent", border: "none", cursor: "pointer", color: "#555", fontSize: "12px" }}>Fechar</button>
+                </div>
+              )}
 
               <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                 <button
                   type="submit"
-                  style={{ flex: 1, background: ACCENT, border: "none", borderRadius: "6px", padding: "11px", fontSize: "13px", fontWeight: "600", color: "#000", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}
+                  disabled={sending}
+                  style={{ flex: 1, background: sendNow ? "#22c55e" : ACCENT, border: "none", borderRadius: "6px", padding: "11px", fontSize: "13px", fontWeight: "600", color: "#000", cursor: sending ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", opacity: sending ? 0.7 : 1 }}
                 >
-                  <Send size={14} /> {selectedGroups.length > 1 ? `Agendar para ${selectedGroups.length} grupos` : "Agendar"}
+                  <Send size={14} />
+                  {sending ? "Enviando..." : sendNow
+                    ? `Enviar agora${selectedGroups.length > 1 ? ` (${selectedGroups.length} grupos)` : ""}`
+                    : selectedGroups.length > 1 ? `Agendar para ${selectedGroups.length} grupos` : "Agendar"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "#555", fontSize: "13px" }}
-                >
+                <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSendNow(false); }} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "#555", fontSize: "13px" }}>
                   Cancelar
                 </button>
               </div>
