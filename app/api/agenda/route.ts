@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     title, description, client_id, starts_at, ends_at,
     notify_admin_whatsapp, notify_admin_email,
     notify_client_whatsapp, notify_client_email,
+    notify_instance, notify_admin_phone,
   } = body;
 
   if (!title || !starts_at) {
@@ -37,6 +38,8 @@ export async function POST(req: NextRequest) {
       notify_admin_email: notify_admin_email ?? false,
       notify_client_whatsapp: notify_client_whatsapp ?? false,
       notify_client_email: notify_client_email ?? false,
+      notify_instance: notify_instance ?? null,
+      notify_admin_phone: notify_admin_phone ?? null,
       status: "pending",
     })
     .select("*, clients(id, name, contact_phone, contact_email)")

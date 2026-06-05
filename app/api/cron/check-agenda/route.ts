@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
-import { evolutionSend } from "@/lib/evolution-api";
+import { evolutionSend, evolutionInstances } from "@/lib/evolution-api";
 import { sendEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +13,7 @@ export async function GET(req: NextRequest) {
 
   const supabase = createAdminClient();
   const now = new Date();
-  // janela: eventos que começam entre agora e 15 minutos atrás (não notificados ainda)
-  const windowStart = new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+  const windowStart = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
   const windowEnd = now.toISOString();
 
   const { data: events, error } = await supabase
@@ -27,16 +26,22 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!events?.length) return NextResponse.json({ ok: true, notified: 0 });
 
-  const adminPhone = process.env.ADMIN_PHONE;
+  // pega a primeira instância conectada como fallback
+  const allInstances = await evolutionInstances();
+  const connectedInstance = allInstances.find((i) => i.connectionStatus === "open");
+  const fallbackInstance = process.env.EVOLUTION_INSTANCE ?? connectedInstance?.name ?? "";
+
   const adminEmail = process.env.ADMIN_EMAIL;
   let notified = 0;
 
   for (const ev of events) {
+    const instance = ev.notify_instance || fallbackInstance;
+    const adminPhone = ev.notify_admin_phone || process.env.ADMIN_PHONE;
     const startsAt = new Date(ev.starts_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const adminMsg = `📅 *Lembrete de agenda*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}⏰ ${startsAt}${ev.clients?.name ? `\n👤 ${ev.clients.name}` : ""}`;
 
     if (ev.notify_admin_whatsapp && adminPhone) {
-      await evolutionSend(adminPhone, adminMsg);
+      await evolutionSend(adminPhone, adminMsg, instance);
     }
 
     if (ev.notify_admin_email && adminEmail) {
@@ -51,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     if (ev.notify_client_whatsapp && client?.contact_phone) {
       const clientMsg = `📅 *Lembrete*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}⏰ ${startsAt}`;
-      await evolutionSend(client.contact_phone, clientMsg);
+      await evolutionSend(client.contact_phone, clientMsg, instance);
     }
 
     if (ev.notify_client_email && client?.contact_email) {

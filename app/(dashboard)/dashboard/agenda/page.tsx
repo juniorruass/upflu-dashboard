@@ -8,6 +8,7 @@ const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
 
 type Client = { id: string; name: string; contact_phone?: string; contact_email?: string };
+type Instance = { name: string; connectionStatus: string };
 
 type AgendaEvent = {
   id: string;
@@ -49,6 +50,8 @@ const emptyForm = {
   notify_admin_email: false,
   notify_client_whatsapp: false,
   notify_client_email: false,
+  notify_instance: "",
+  notify_admin_phone: "",
 };
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
@@ -76,6 +79,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
 export default function AgendaPage() {
   const [events, setEvents] = useState<AgendaEvent[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [instances, setInstances] = useState<Instance[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -102,7 +106,15 @@ export default function AgendaPage() {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => { fetchEvents(); fetchClients(); }, [fetchEvents, fetchClients]);
+  const fetchInstances = useCallback(async () => {
+    try {
+      const res = await fetch("/api/evolution");
+      const data = await res.json();
+      setInstances((data.instances ?? []).filter((i: Instance) => i.connectionStatus === "open"));
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { fetchEvents(); fetchClients(); fetchInstances(); }, [fetchEvents, fetchClients, fetchInstances]);
 
   function openCreate() {
     setForm(emptyForm);
@@ -122,6 +134,8 @@ export default function AgendaPage() {
       notify_admin_email: ev.notify_admin_email,
       notify_client_whatsapp: ev.notify_client_whatsapp,
       notify_client_email: ev.notify_client_email,
+      notify_instance: (ev as AgendaEvent & { notify_instance?: string }).notify_instance ?? "",
+      notify_admin_phone: (ev as AgendaEvent & { notify_admin_phone?: string }).notify_admin_phone ?? "",
     });
     setEditingId(ev.id);
     setSaveError("");
@@ -137,8 +151,12 @@ export default function AgendaPage() {
     const payload = {
       ...form,
       client_id: form.client_id || null,
-      ends_at: form.ends_at || null,
+      // converte datetime-local (horário local) para ISO UTC
+      starts_at: new Date(form.starts_at).toISOString(),
+      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
       description: form.description || null,
+      notify_instance: form.notify_instance || null,
+      notify_admin_phone: form.notify_admin_phone || null,
     };
 
     try {
@@ -302,6 +320,26 @@ export default function AgendaPage() {
                 <div>
                   <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Fim (opcional)</label>
                   <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm((f) => ({ ...f, ends_at: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
+
+              {/* Instância e telefone do admin */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Instância WhatsApp</label>
+                  <select value={form.notify_instance} onChange={(e) => setForm((f) => ({ ...f, notify_instance: e.target.value }))} style={{ ...inputStyle }}>
+                    <option value="">Padrão do sistema</option>
+                    {instances.map((i) => <option key={i.name} value={i.name}>{i.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Seu número (notif.)</label>
+                  <input
+                    value={form.notify_admin_phone}
+                    onChange={(e) => setForm((f) => ({ ...f, notify_admin_phone: e.target.value }))}
+                    placeholder="5511999999999"
+                    style={inputStyle}
+                  />
                 </div>
               </div>
 
