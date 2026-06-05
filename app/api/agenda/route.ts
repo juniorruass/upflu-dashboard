@@ -78,10 +78,16 @@ export async function POST(req: NextRequest) {
     notifyLog.instance   = instance   || "(não encontrado)";
 
     if (adminPhone && instance) {
+      // normaliza: adiciona 55 se não tiver código do país
+      const digits = adminPhone.replace(/\D/g, "");
+      const normalizedPhone = digits.startsWith("55") ? digits : `55${digits}`;
+      notifyLog.normalizedPhone = normalizedPhone;
+
       const startsAt = new Date(starts_at as string).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
       const msg = `✅ *Evento agendado*\n\n*${title}*\n${description ? `${description}\n` : ""}🕐 ${startsAt}\n\nVocê receberá um lembrete 30 minutos antes.`;
-      const ok = await evolutionSend(adminPhone, msg, instance);
+      const ok = await evolutionSend(normalizedPhone, msg, instance);
       notifyLog.sent = ok;
+      if (!ok) notifyLog.reason = "Evolution API retornou erro — verifique se a instância está conectada";
     } else {
       notifyLog.sent = false;
       notifyLog.reason = !adminPhone ? "telefone não configurado" : "instância não encontrada";

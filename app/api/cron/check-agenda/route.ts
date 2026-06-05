@@ -42,7 +42,9 @@ export async function GET(req: NextRequest) {
     const adminMsg = `⏰ *Lembrete — começa em 30 minutos*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}🕐 ${startsAt}${ev.clients?.name ? `\n👤 ${ev.clients.name}` : ""}`;
 
     if (ev.notify_admin_whatsapp && adminPhone) {
-      await evolutionSend(adminPhone, adminMsg, instance);
+      const digits = adminPhone.replace(/\D/g, "");
+      const normalizedAdmin = digits.startsWith("55") ? digits : `55${digits}`;
+      await evolutionSend(normalizedAdmin, adminMsg, instance);
     }
 
     if (ev.notify_admin_email && adminEmail) {
@@ -56,8 +58,10 @@ export async function GET(req: NextRequest) {
     const client = ev.clients as { contact_phone?: string; contact_email?: string; name?: string } | null;
 
     if (ev.notify_client_whatsapp && client?.contact_phone) {
+      const clientDigits = client.contact_phone.replace(/\D/g, "");
+      const normalizedClient = clientDigits.startsWith("55") ? clientDigits : `55${clientDigits}`;
       const clientMsg = `📅 *Lembrete*\n\n*${ev.title}*\n${ev.description ? `${ev.description}\n` : ""}⏰ ${startsAt}`;
-      await evolutionSend(client.contact_phone, clientMsg, instance);
+      await evolutionSend(normalizedClient, clientMsg, instance);
     }
 
     if (ev.notify_client_email && client?.contact_email) {
