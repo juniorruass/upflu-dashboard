@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff, GitMerge, Repeat2, Headphones,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -18,12 +18,16 @@ const navItems = [
   { label: "Grupos",       href: "/dashboard/grupos",                             icon: UsersRound,    disabled: false, exact: false, sub: true },
   { label: "Instâncias",   href: "/dashboard/prospeccao/automatizar/instancias", icon: Wifi,          disabled: false, exact: false, sub: true },
   { label: "Blacklist",    href: "/dashboard/blacklist",                          icon: ShieldOff,     disabled: false, exact: false, sub: true },
+  { label: "Sequências",   href: "/dashboard/prospeccao/automatizar/sequencias",  icon: Repeat2,       disabled: false, exact: false, sub: true },
+  { label: "Inbox",        href: "/dashboard/inbox",          icon: MessageSquare,   disabled: false, exact: false },
+  { label: "Pipeline",     href: "/dashboard/pipeline",      icon: GitMerge,        disabled: false, exact: false },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
   { label: "Clientes",     href: "/dashboard/clientes",      icon: Users,           disabled: false, exact: false },
   { label: "Financeiro",   href: "/dashboard/financeiro",    icon: TrendingUp,      disabled: false, exact: false },
   { label: "Anúncios",     href: "/dashboard/anuncios",      icon: Megaphone,       disabled: false, exact: false },
   { label: "Agenda",       href: "/dashboard/agenda",        icon: CalendarDays,    disabled: false, exact: false },
+  { label: "Suporte",      href: "/dashboard/suporte",       icon: Headphones,      disabled: false, exact: false },
 ];
 
 export default function Sidebar() {

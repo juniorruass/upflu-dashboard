@@ -13,6 +13,7 @@ crontab -l 2>/dev/null | grep -v "upflu-dashboard" | crontab -
 # upflu-dashboard crons
 * * * * * curl -s -H "Authorization: Bearer $SECRET" $APP/api/cron/send-group-messages >> /var/log/upflu-cron.log 2>&1
 * * * * * curl -s -H "Authorization: Bearer $SECRET" $APP/api/cron/check-agenda >> /var/log/upflu-cron.log 2>&1
+0 10,16 * * 1-5 curl -s -H "Authorization: Bearer $SECRET" $APP/api/cron/followup-sequence >> /var/log/upflu-cron.log 2>&1
 EOF
 ) | crontab -
 
