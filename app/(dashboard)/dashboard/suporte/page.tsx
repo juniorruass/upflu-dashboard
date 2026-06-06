@@ -96,15 +96,15 @@ export default function SuportePage() {
           <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0 }}>Suporte</h2>
         </div>
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {(["all", ...Object.keys(STATUS)] as const).map((s) => (
+          {(["all", ...Object.keys(STATUS)]).map((s) => (
             <button key={s} onClick={() => setFilterStatus(s)} style={{
               background: filterStatus === s ? "rgba(0,207,255,0.08)" : "transparent",
               border: `1px solid ${filterStatus === s ? ACCENT : BORDER}`,
               borderRadius: "6px", padding: "6px 12px", cursor: "pointer",
               fontSize: "12px", color: filterStatus === s ? ACCENT : "#555",
             }}>
-              {s === "all" ? "Todos" : STATUS[s as keyof typeof STATUS].label}
-              {s !== "all" && counts[s] > 0 && <span style={{ marginLeft: "5px", background: "#222", padding: "1px 5px", borderRadius: "4px" }}>{counts[s]}</span>}
+              {s === "all" ? "Todos" : STATUS[s as keyof typeof STATUS]?.label ?? s}
+              {s !== "all" && (counts[s] ?? 0) > 0 && <span style={{ marginLeft: "5px", background: "#222", padding: "1px 5px", borderRadius: "4px" }}>{counts[s]}</span>}
             </button>
           ))}
           <button onClick={fetch_} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 10px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center" }}>

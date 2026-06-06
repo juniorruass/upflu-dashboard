@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { RefreshCw, Phone, MapPin, MessageSquare, ChevronRight, X, Check, Calendar } from "lucide-react";
-import { scoreLabel } from "@/lib/lead-scoring";
+import { calcScore, scoreLabel } from "@/lib/lead-scoring";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
@@ -28,7 +28,7 @@ const STATUS_STEPS = [
   { id: "followup",  label: "Follow-up",       color: "#FF9500" },
   { id: "respondeu", label: "Respondeu",        color: "#00CFFF" },
   { id: "reuniao",   label: "Reunião",          color: "#a064ff" },
-  { id: "proposta",  label: "Proposta enviada", color: "#3b82f6" },
+  { id: "proposta",  label: "Proposta",         color: "#3b82f6" },
   { id: "fechado",   label: "Fechado",          color: "#22c55e" },
 ];
 
@@ -37,6 +37,7 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Prospect | null>(null);
   const [editNota, setEditNota] = useState("");
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/pipeline");
@@ -116,27 +117,9 @@ export default function PipelinePage() {
                 <div className="pipe-cards">
                   {col.items.length === 0 ? (
                     <div style={{ padding: "12px", fontSize: "11px", color: "#333", textAlign: "center" }}>Vazio</div>
-                  ) : col.items.map((p) => {
-                    const sl = scoreLabel(p.score);
-                    return (
-                      <div key={p.id} className="pipe-card" onClick={() => { setSelected(p); setEditNota(p.anotacoes ?? ""); }}>
-                        <div style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8", marginBottom: "5px", lineHeight: 1.3 }}>{p.nome}</div>
-                        {p.cidade && (
-                          <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}>
-                            <MapPin size={10} color="#555" />
-                            <span style={{ fontSize: "11px", color: "#666" }}>{p.cidade.split(",")[0]}</span>
-                          </div>
-                        )}
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
-                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 7px", borderRadius: "4px", background: `${sl.color}18`, color: sl.color }}>
-                            {sl.label} {p.score}
-                          </span>
-                          {p.anotacoes && <MessageSquare size={10} color="#444" />}
-                          {p.telefone && <Phone size={10} color="#444" />}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  ) : col.items.map((p) => (
+                    <ProspectCard key={p.id} prospect={p} onSelect={() => { setSelected(p); setEditNota(p.anotacoes ?? ""); }} />
+                  ))}
                 </div>
               </div>
             ))}
@@ -158,76 +141,114 @@ export default function PipelinePage() {
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
-            {/* Score */}
-            {(() => { const sl = scoreLabel(selected.score); return (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", padding: "4px 10px", borderRadius: "6px", background: `${sl.color}18`, color: sl.color }}>
-                  {sl.label} — Score {selected.score}/100
-                </span>
-              </div>
-            ); })()}
-
-            {/* Info */}
-            {[
-              { icon: Phone, value: selected.telefone },
-              { icon: MapPin, value: selected.cidade },
-            ].map(({ icon: Icon, value }) => value ? (
-              <div key={value} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
-                <Icon size={13} color="#555" />
-                <span style={{ fontSize: "13px", color: "#ccc" }}>{value}</span>
-              </div>
-            ) : null)}
-
-            {/* Mover etapa */}
-            <div style={{ marginBottom: "18px" }}>
-              <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>Mover para</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                {STATUS_STEPS.filter((s) => s.id !== selected.status).map((s) => (
-                  <button key={s.id} onClick={() => updateStatus(selected.id, s.id)} style={{ background: `${s.color}12`, border: `1px solid ${s.color}40`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600", color: s.color }}>
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* WhatsApp rápido */}
-            {selected.telefone && (
-              <a href={`https://wa.me/${selected.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
-                style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "6px", padding: "9px 12px", textDecoration: "none", marginBottom: "18px" }}>
-                <Phone size={13} color="#22c55e" />
-                <span style={{ fontSize: "12px", color: "#22c55e", fontWeight: "600" }}>Abrir no WhatsApp</span>
-                <ChevronRight size={13} color="#22c55e" style={{ marginLeft: "auto" }} />
-              </a>
-            )}
-
-            {/* Anotações */}
-            <div>
-              <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Anotações</p>
-              <textarea
-                value={editNota}
-                onChange={(e) => setEditNota(e.target.value)}
-                rows={5}
-                placeholder="Registre o que conversaram, próximos passos..."
-                style={{ width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "7px", padding: "10px", fontSize: "13px", color: "#ccc", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }}
-              />
-              <button onClick={() => saveNota(selected.id)} style={{ marginTop: "6px", width: "100%", background: ACCENT, border: "none", borderRadius: "6px", padding: "9px", fontSize: "12px", fontWeight: "600", color: "#000", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                <Check size={13} /> Salvar
-              </button>
-            </div>
-
-            {/* Data contato */}
-            {selected.whatsapp_enviado_at && (
-              <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: `1px solid ${BORDER}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#444" }}>
-                  <Calendar size={11} />
-                  Contatado em {new Date(selected.whatsapp_enviado_at).toLocaleDateString("pt-BR")}
-                </div>
-              </div>
-            )}
-          </div>
+          <ProspectDetail
+            prospect={selected}
+            editNota={editNota}
+            setEditNota={setEditNota}
+            onUpdateStatus={updateStatus}
+            onSaveNota={saveNota}
+          />
         </div>
       )}
     </>
+  );
+}
+
+function ProspectCard({ prospect, onSelect }: { prospect: Prospect; onSelect: () => void }) {
+  const sl = scoreLabel(prospect.score);
+  return (
+    <div className="pipe-card" onClick={onSelect}>
+      <div style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8", marginBottom: "5px", lineHeight: 1.3 }}>{prospect.nome}</div>
+      {prospect.cidade && (
+        <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}>
+          <MapPin size={10} color="#555" />
+          <span style={{ fontSize: "11px", color: "#666" }}>{prospect.cidade.split(",")[0]}</span>
+        </div>
+      )}
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
+        <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 7px", borderRadius: "4px", background: `${sl.color}18`, color: sl.color }}>
+          {sl.label} {prospect.score}
+        </span>
+        {prospect.anotacoes && <MessageSquare size={10} color="#444" />}
+        {prospect.telefone && <Phone size={10} color="#444" />}
+      </div>
+    </div>
+  );
+}
+
+function ProspectDetail({ prospect, editNota, setEditNota, onUpdateStatus, onSaveNota }: {
+  prospect: Prospect;
+  editNota: string;
+  setEditNota: (v: string) => void;
+  onUpdateStatus: (id: string, status: string) => void;
+  onSaveNota: (id: string) => void;
+}) {
+  const sl = scoreLabel(prospect.score);
+  const BORDER_INNER = "rgba(255,255,255,0.07)";
+
+  return (
+    <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+        <span style={{ fontSize: "11px", fontWeight: "700", padding: "4px 10px", borderRadius: "6px", background: `${sl.color}18`, color: sl.color }}>
+          {sl.label} — Score {prospect.score}/100
+        </span>
+      </div>
+
+      {prospect.telefone && (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+          <Phone size={13} color="#555" />
+          <span style={{ fontSize: "13px", color: "#ccc" }}>{prospect.telefone}</span>
+        </div>
+      )}
+      {prospect.cidade && (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+          <MapPin size={13} color="#555" />
+          <span style={{ fontSize: "13px", color: "#ccc" }}>{prospect.cidade}</span>
+        </div>
+      )}
+
+      <div style={{ marginBottom: "18px" }}>
+        <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>Mover para</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+          {STATUS_STEPS.filter((s) => s.id !== prospect.status).map((s) => (
+            <button key={s.id} onClick={() => onUpdateStatus(prospect.id, s.id)} style={{ background: `${s.color}12`, border: `1px solid ${s.color}40`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600", color: s.color }}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {prospect.telefone && (
+        <a href={`https://wa.me/${prospect.telefone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
+          style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: "6px", padding: "9px 12px", textDecoration: "none", marginBottom: "18px" }}>
+          <Phone size={13} color="#22c55e" />
+          <span style={{ fontSize: "12px", color: "#22c55e", fontWeight: "600" }}>Abrir no WhatsApp</span>
+          <ChevronRight size={13} color="#22c55e" style={{ marginLeft: "auto" }} />
+        </a>
+      )}
+
+      <div>
+        <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Anotações</p>
+        <textarea
+          value={editNota}
+          onChange={(e) => setEditNota(e.target.value)}
+          rows={5}
+          placeholder="Registre o que conversaram, próximos passos..."
+          style={{ width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER_INNER}`, borderRadius: "7px", padding: "10px", fontSize: "13px", color: "#ccc", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }}
+        />
+        <button onClick={() => onSaveNota(prospect.id)} style={{ marginTop: "6px", width: "100%", background: ACCENT, border: "none", borderRadius: "6px", padding: "9px", fontSize: "12px", fontWeight: "600", color: "#000", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+          <Check size={13} /> Salvar
+        </button>
+      </div>
+
+      {prospect.whatsapp_enviado_at && (
+        <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: `1px solid ${BORDER_INNER}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#444" }}>
+            <Calendar size={11} />
+            Contatado em {new Date(prospect.whatsapp_enviado_at).toLocaleDateString("pt-BR")}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
