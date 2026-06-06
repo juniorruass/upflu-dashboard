@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   // Prospects que receberam o contato inicial e não completaram a sequência
   const { data: candidates } = await supabase
     .from("prospects")
-    .select("id, nome, telefone, cidade, tipo, whatsapp_enviado_at")
+    .select("id, nome, telefone, cidade, tipo, whatsapp_enviado_at, created_at")
     .eq("whatsapp_enviado", true)
     .eq("status", "followup")
     .not("telefone", "is", null)

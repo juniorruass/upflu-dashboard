@@ -47,7 +47,7 @@ export default function SequenciasPage() {
     setSteps((prev) => prev.filter((s) => s.id !== id));
   }
 
-  const sequences = [...new Set(steps.map((s) => s.sequence_name))];
+  const sequences = steps.map((s) => s.sequence_name).filter((v, i, a) => a.indexOf(v) === i);
 
   const inputStyle = {
     width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER}`,

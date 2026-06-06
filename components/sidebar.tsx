@@ -19,7 +19,6 @@ const navItems = [
   { label: "Instâncias",   href: "/dashboard/prospeccao/automatizar/instancias", icon: Wifi,          disabled: false, exact: false, sub: true },
   { label: "Blacklist",    href: "/dashboard/blacklist",                          icon: ShieldOff,     disabled: false, exact: false, sub: true },
   { label: "Sequências",   href: "/dashboard/prospeccao/automatizar/sequencias",  icon: List,          disabled: false, exact: false, sub: true },
-  { label: "Inbox",        href: "/dashboard/inbox",          icon: MessageSquare,   disabled: false, exact: false },
   { label: "Pipeline",     href: "/dashboard/pipeline",      icon: BarChart2,       disabled: false, exact: false },
   { label: "CRM",          href: "/dashboard/crm",           icon: BookUser,        disabled: false, exact: false },
   { label: "Kanban",       href: "/dashboard/kanban",        icon: Kanban,          disabled: false, exact: false },
