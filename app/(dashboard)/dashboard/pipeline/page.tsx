@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { RefreshCw, Phone, MapPin, MessageSquare, ChevronRight, X, Check, Calendar } from "lucide-react";
-import { calcScore, scoreLabel } from "@/lib/lead-scoring";
+import { scoreLabel } from "@/lib/lead-scoring";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
