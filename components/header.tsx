@@ -33,8 +33,12 @@ export default function Header({ title }: { title: string }) {
   return (
     <>
       <style>{`
+        .header-menu-btn { display: none; }
         .header-user-name { display: block; }
         .header-pending { display: inline-flex; }
+        @media (max-width: 768px) {
+          .header-menu-btn { display: flex; align-items: center; justify-content: center; }
+        }
         @media (max-width: 480px) {
           .header-user-name { display: none; }
         }
@@ -49,7 +53,7 @@ export default function Header({ title }: { title: string }) {
           <button
             className="header-menu-btn"
             onClick={toggle}
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#9A9288", display: "none", padding: "4px", alignItems: "center", justifyContent: "center" }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#9A9288", padding: "4px" }}
           >
             <Menu size={20} />
           </button>
@@ -82,11 +86,6 @@ export default function Header({ title }: { title: string }) {
         </div>
       </header>
 
-      <style>{`
-        @media (max-width: 768px) {
-          .header-menu-btn { display: flex !important; }
-        }
-      `}</style>
     </>
   );
 }
