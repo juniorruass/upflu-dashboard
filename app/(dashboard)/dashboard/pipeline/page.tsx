@@ -37,8 +37,6 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Prospect | null>(null);
   const [editNota, setEditNota] = useState("");
-  const [filter, setFilter] = useState("all");
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/pipeline");
@@ -68,8 +66,6 @@ export default function PipelinePage() {
     setProspects((prev) => prev.map((p) => p.id === id ? { ...p, anotacoes: editNota } : p));
     setSelected((s) => s ? { ...s, anotacoes: editNota } : null);
   }
-
-  const filtered = filter === "all" ? prospects : prospects.filter((p) => p.status === filter);
 
   const byStatus = STATUS_STEPS.map((s) => ({
     ...s,

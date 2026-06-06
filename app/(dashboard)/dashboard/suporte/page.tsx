@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
-import { RefreshCw, Plus, X, Trash2, ChevronDown } from "lucide-react";
+import { RefreshCw, X, Trash2 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
 const BORDER = "rgba(255,255,255,0.07)";
