@@ -49,46 +49,13 @@ function tipoBadgeStyle(tipo: string) {
   return { bg: "rgba(255,255,255,0.05)", color: "var(--up-text-muted)", bd: "rgba(255,255,255,0.1)" };
 }
 
-const ABERTURAS_MSG: Record<string, string[]> = {
-  estetica: [
-    "Vi que a {nome} atua no mercado de estética em {cidade} e queria trazer algo que pode fazer diferença.",
-    "Pesquisando clínicas de estética em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
-    "A {nome} está em {cidade} — queria compartilhar algo concreto sobre presença digital nesse segmento.",
-    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as maiores oportunidades de crescimento.",
-  ],
-  odonto: [
-    "Vi que a {nome} atende pacientes em {cidade} e queria compartilhar algo concreto sobre captação digital.",
-    "Pesquisando clínicas odontológicas em {cidade}, encontrei a {nome} e identifiquei pontos que podem gerar mais pacientes.",
-    "A {nome} está em {cidade} — queria trazer algo sobre como pacientes estão buscando dentistas na região.",
-    "Vi que a {nome} está em {cidade} e queria mostrar o que pode estar limitando a captação de novos pacientes.",
-  ],
-  geral: [
-    "Vi que a {nome} atua em {cidade} e queria trazer algo que pode fazer diferença no crescimento digital.",
-    "Pesquisando {tipo} em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
-    "A {nome} está presente em {cidade} — queria compartilhar algo concreto sobre presença digital nesse mercado.",
-    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as oportunidades de crescimento.",
-  ],
-};
-
-const FECHAMENTOS_MSG = [
-  "Temos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?",
-  "A Upflu faz um diagnóstico digital gratuito e sem compromisso. Posso enviar o link?",
-  "Posso mostrar em 2 minutos o que está travando o crescimento digital da {nome}. Faz sentido?",
-  "Identificamos pontos específicos de melhoria para esse segmento em {cidade}. Posso compartilhar?",
-];
+const SAUDACOES_MSG = ["Oii", "Olá", "Opa,"];
 
 function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function generateProspectMsg(p: { nome: string; cidade: string; tipo: string }): string {
-  const cidade = p.cidade.split(",")[0].trim();
-  const key = p.tipo.includes("estét") || p.tipo.includes("nutri") || p.tipo.includes("fisio") ? "estetica"
-    : p.tipo.includes("odonto") || p.tipo.includes("dentista") ? "odonto"
-    : "geral";
-  const abertura = pickRandom(ABERTURAS_MSG[key])
-    .replace(/{nome}/g, p.nome).replace(/{cidade}/g, cidade).replace(/{tipo}/g, tipoLabel(p.tipo));
-  const fechamento = pickRandom(FECHAMENTOS_MSG)
-    .replace(/{nome}/g, p.nome).replace(/{cidade}/g, cidade);
-  return `Olá! ${abertura}\n\n${fechamento}\n\nUpflu | upflu.digital`;
+function generateProspectMsg(_p: { nome: string; cidade: string; tipo: string }): string {
+  const saudacao = pickRandom(SAUDACOES_MSG);
+  return `${saudacao} Tudo bem? 👋\n\nPercebi algo na sua clínica que pode estar afastando pacientes sem que você perceba.\n\nPosso te contar o que é? 👀\n\n*OBS: Não é sobre o marketing!*`;
 }
 
 function waLink(phone: string, msg: string) {
