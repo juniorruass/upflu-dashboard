@@ -1,26 +1,17 @@
 {
   "crons": [
-    { "path": "/api/cron/daily-summary",  "schedule": "0 12 * * *"   },
-    { "path": "/api/cron/weekly-summary", "schedule": "0 20 * * 5"   },
-    { "path": "/api/cron/check-payments", "schedule": "0 12 * * *"   },
-    { "path": "/api/cron/check-campaigns",  "schedule": "0 12 * * *"   },
-    { "path": "/api/cron/check-ad-accounts","schedule": "0 9 * * *"    },
-    { "path": "/api/carousels/generate",  "schedule": "0 12 * * *"   },
-    { "path": "/api/cron/instagram-snapshot",      "schedule": "0 10 * * *"  },
-    { "path": "/api/cron/prospecting",              "schedule": "0 12 * * 1-5" },
-    { "path": "/api/cron/prospecting-followup",     "schedule": "0 13 * * 1-5" },
-    { "path": "/api/cron/prospecting-google",       "schedule": "0 12 * * 1-5" }
-  ],
-  "functions": {
-    "app/api/proposals/[id]/send/route.ts":  { "maxDuration": 60 },
-    "app/api/prospeccao/buscar/route.ts":    { "maxDuration": 60 },
-    "app/api/cron/daily-summary/route.ts":   { "maxDuration": 60 },
-    "app/api/cron/weekly-summary/route.ts":  { "maxDuration": 60 },
-    "app/api/cron/check-campaigns/route.ts": { "maxDuration": 60 },
-    "app/api/cron/instagram-snapshot/route.ts":      { "maxDuration": 60 },
-    "app/api/cron/prospecting/route.ts":             { "maxDuration": 60 },
-    "app/api/cron/prospecting-followup/route.ts":    { "maxDuration": 60 },
-    "app/api/cron/prospecting-google/route.ts":      { "maxDuration": 60 },
-    "app/api/carousels/generate/route.ts":   { "maxDuration": 60 }
-  }
+    { "path": "/api/cron/send-group-messages", "schedule": "* * * * *" },
+    { "path": "/api/cron/check-agenda", "schedule": "* * * * *" },
+    { "path": "/api/cron/check-payments", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/check-campaigns", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/daily-summary", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/check-ad-accounts", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/instagram-snapshot", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/check-renewals", "schedule": "0 11 * * *" },
+    { "path": "/api/cron/prospecting", "schedule": "0 12 * * 1-5" },
+    { "path": "/api/cron/prospecting-google", "schedule": "0 12 * * 1-5" },
+    { "path": "/api/cron/prospecting-followup", "schedule": "0 13 * * 1-5" },
+    { "path": "/api/cron/followup-sequence", "schedule": "0 13,19 * * 1-5" },
+    { "path": "/api/cron/weekly-summary", "schedule": "0 20 * * 5" }
+  ]
 }

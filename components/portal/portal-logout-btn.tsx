@@ -1,9 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 
 const MUTED = "#777068";
-const BORDER = "rgba(255,255,255,0.07)";
 
 export function PortalLogoutBtn({ slug }: { slug: string }) {
   const router = useRouter();
@@ -20,7 +19,7 @@ export function PortalLogoutBtn({ slug }: { slug: string }) {
   return (
     <button
       onClick={logout}
-      style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "7px 16px", fontSize: "11px", fontWeight: "500", color: MUTED, cursor: "pointer", letterSpacing: "0.04em", transition: "all .2s" }}
+      style={{ background: "none", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "7px 16px", fontSize: "11px", fontWeight: "500", color: MUTED, cursor: "pointer", letterSpacing: "0.04em", transition: "all .2s" }}
       onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.color = "#F0EDE8"; }}
       onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.color = MUTED; }}
     >

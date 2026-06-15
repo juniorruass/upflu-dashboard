@@ -7,27 +7,20 @@ import Header from "@/components/header";
 async function getClient(id: string): Promise<Client | null> {
   const supabase = createAdminClient();
 
-  // Full query with all joins
-  const { data, error } = await supabase
-    .from("clients")
-    .select(`*, services:client_services(*), metrics:client_metrics(*), notes:client_notes(*)`)
-    .eq("id", id)
-    .order("month", { referencedTable: "client_metrics", ascending: true })
-    .order("created_at", { referencedTable: "client_notes", ascending: false })
-    .single();
+  const [
+    { data: client, error: clientErr },
+    { data: services },
+    { data: metrics },
+    { data: notes },
+  ] = await Promise.all([
+    supabase.from("clients").select("*").eq("id", id).single(),
+    supabase.from("client_services").select("*").eq("client_id", id),
+    supabase.from("client_metrics").select("*").eq("client_id", id).order("month", { ascending: true }),
+    supabase.from("client_notes").select("*").eq("client_id", id).order("created_at", { ascending: false }),
+  ]);
 
-  if (!error && data) return data as Client;
-
-  // Fallback: query without joins if FK relationships not configured
-  console.error("[getClient] join error, falling back:", error?.message);
-  const { data: data2, error: error2 } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error2 || !data2) return null;
-  return { ...data2, services: [], metrics: [], notes: [] } as Client;
+  if (clientErr || !client) return null;
+  return { ...client, services: services ?? [], metrics: metrics ?? [], notes: notes ?? [] } as Client;
 }
 
 export default async function ClientDetailPage({ params }: { params: Promise<{ id: string }> }) {

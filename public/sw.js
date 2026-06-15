@@ -1,4 +1,4 @@
-const CACHE = "upflu-v2";
+const CACHE = "upflu-v3";
 const PRECACHE = ["/offline", "/upflu-logo.png", "/favicon.ico"];
 
 self.addEventListener("install", (e) => {
@@ -19,6 +19,10 @@ self.addEventListener("fetch", (e) => {
   const { request } = e;
   const url = new URL(request.url);
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  // Navegação (HTML pages) — nunca servir do cache, sempre rede
+  if (request.mode === "navigate") return;
+
   if (url.pathname.startsWith("/api/")) {
     e.respondWith(
       fetch(request).catch(() => new Response(JSON.stringify({ error: "offline" }), {
@@ -31,22 +35,27 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       caches.match(request).then(
         (cached) => cached ?? fetch(request).then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, clone));
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(request, clone));
+          }
           return res;
         })
       )
     );
     return;
   }
+  // Outros assets estáticos (imagens, fonts etc) — cache-first
   e.respondWith(
-    fetch(request)
-      .then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, clone));
+    caches.match(request).then(
+      (cached) => cached ?? fetch(request).then((res) => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, clone));
+        }
         return res;
-      })
-      .catch(() => caches.match(request).then((cached) => cached ?? caches.match("/offline")))
+      }).catch(() => caches.match("/offline"))
+    )
   );
 });
 

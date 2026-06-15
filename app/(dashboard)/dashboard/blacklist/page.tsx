@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { Plus, Trash2, RefreshCw, ShieldOff, X } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 type BlacklistEntry = { id: string; phone: string; reason: string | null; created_at: string };
 
@@ -46,8 +45,8 @@ export default function BlacklistPage() {
   }
 
   const inputStyle = {
-    width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER}`,
-    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "#F0EDE8",
+    width: "100%", background: "var(--up-bg)", border: `1px solid var(--up-border)`,
+    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "var(--up-text)",
     outline: "none", boxSizing: "border-box" as const,
   };
 
@@ -57,7 +56,7 @@ export default function BlacklistPage() {
 
       <style>{`
         .bl-wrap { padding: 24px 32px 32px; flex: 1; }
-        .bl-row { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .bl-row { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
         input:focus { border-color: ${ACCENT} !important; }
         @media (max-width: 768px) { .bl-wrap { padding: 16px; } }
       `}</style>
@@ -66,11 +65,11 @@ export default function BlacklistPage() {
         <div style={{ marginBottom: "28px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <p style={{ fontSize: "11px", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 4px" }}>Prospecção</p>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>Blacklist</h2>
-            <p style={{ fontSize: "13px", color: "#555", margin: "6px 0 0" }}>{list.length} número{list.length !== 1 ? "s" : ""} bloqueado{list.length !== 1 ? "s" : ""}</p>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>Blacklist</h2>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "6px 0 0" }}>{list.length} número{list.length !== 1 ? "s" : ""} bloqueado{list.length !== 1 ? "s" : ""}</p>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={fetch_} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <button onClick={fetch_} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "var(--up-text-dim)", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
               <RefreshCw size={13} /> Atualizar
             </button>
             <button onClick={() => setShowForm(true)} style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "8px 16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}>
@@ -81,28 +80,28 @@ export default function BlacklistPage() {
 
         {/* Form inline */}
         {showForm && (
-          <form onSubmit={add} style={{ background: "#0d0d0d", border: `1px solid ${ACCENT}`, borderRadius: "10px", padding: "16px 20px", marginBottom: "16px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
+          <form onSubmit={add} style={{ background: "var(--up-bg)", border: `1px solid ${ACCENT}`, borderRadius: "10px", padding: "16px 20px", marginBottom: "16px", display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "flex-end" }}>
             <div style={{ flex: "1 1 180px" }}>
-              <label style={{ fontSize: "11px", color: "#555", display: "block", marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Telefone *</label>
+              <label style={{ fontSize: "11px", color: "var(--up-text-dim)", display: "block", marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Telefone *</label>
               <input autoFocus value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="5511999999999" required style={inputStyle} />
             </div>
             <div style={{ flex: "2 1 220px" }}>
-              <label style={{ fontSize: "11px", color: "#555", display: "block", marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Motivo</label>
+              <label style={{ fontSize: "11px", color: "var(--up-text-dim)", display: "block", marginBottom: "5px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Motivo</label>
               <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex: pediu para não contatar" style={inputStyle} />
             </div>
             <button type="submit" disabled={adding} style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "10px 18px", fontSize: "13px", fontWeight: "600", color: "#000", cursor: "pointer" }}>
               {adding ? "Adicionando..." : "Adicionar"}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "10px", cursor: "pointer", color: "#555" }}>
+            <button type="button" onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "10px", cursor: "pointer", color: "var(--up-text-dim)" }}>
               <X size={14} />
             </button>
           </form>
         )}
 
         {loading ? (
-          <div style={{ color: "#555", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
+          <div style={{ color: "var(--up-text-dim)", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
         ) : list.length === 0 ? (
-          <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "40px", textAlign: "center" }}>
+          <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "40px", textAlign: "center" }}>
             <ShieldOff size={28} color="#333" style={{ marginBottom: "12px" }} />
             <p style={{ color: "#444", fontSize: "13px", margin: 0 }}>Nenhum número bloqueado</p>
           </div>
@@ -111,10 +110,10 @@ export default function BlacklistPage() {
             <div key={entry.id} className="bl-row">
               <ShieldOff size={16} color="#ef4444" style={{ flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8" }}>
+                <div style={{ fontSize: "14px", fontWeight: "600", color: "var(--up-text)" }}>
                   {entry.phone.replace(/^55(\d{2})(\d{5})(\d{4})$/, "+55 ($1) $2-$3")}
                 </div>
-                {entry.reason && <div style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>{entry.reason}</div>}
+                {entry.reason && <div style={{ fontSize: "12px", color: "var(--up-text-dim)", marginTop: "2px" }}>{entry.reason}</div>}
               </div>
               <div style={{ fontSize: "11px", color: "#444", flexShrink: 0 }}>
                 {new Date(entry.created_at).toLocaleDateString("pt-BR")}

@@ -7,7 +7,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
-  :root {
+  :root, html.dark {
+    /* Upflu UI tokens — dark */
+    --up-bg: #080808;
+    --up-canvas: #05060a;
+    --up-sidebar: #080808;
+    --up-surface: #111111;
+    --up-card: #1A1A1A;
+    --up-text: #F0EDE8;
+    --up-text-muted: #9A9288;
+    --up-text-dim: #666666;
+    --up-text-label: #777068;
+    --up-border: rgba(255, 255, 255, 0.07);
+    --up-nav-hover: rgba(255, 255, 255, 0.03);
+    --up-nav-active: rgba(0, 207, 255, 0.07);
+    --up-accent: #00CFFF;
+
+    /* Shadcn tokens — dark */
     --background: #111111;
     --foreground: #F5F5F5;
     --card: #1A1A1A;
@@ -33,20 +49,67 @@
     --sidebar-border: #2A2A2A;
   }
 
+  html.light {
+    /* Upflu UI tokens — light */
+    --up-bg: #F2F1ED;
+    --up-canvas: #E8E7E2;
+    --up-sidebar: #FFFFFF;
+    --up-surface: #F2F1ED;
+    --up-card: #FFFFFF;
+    --up-text: #1A1A1A;
+    --up-text-muted: #6B6B6B;
+    --up-text-dim: #999999;
+    --up-text-label: #888888;
+    --up-border: rgba(0, 0, 0, 0.08);
+    --up-nav-hover: rgba(0, 0, 0, 0.04);
+    --up-nav-active: rgba(0, 207, 255, 0.09);
+    --up-accent: #00CFFF;
+
+    /* Shadcn tokens — light */
+    --background: #F2F1ED;
+    --foreground: #1A1A1A;
+    --card: #FFFFFF;
+    --card-foreground: #1A1A1A;
+    --popover: #FFFFFF;
+    --popover-foreground: #1A1A1A;
+    --primary: #00C896;
+    --primary-foreground: #0D0D0D;
+    --secondary: #EDECEA;
+    --secondary-foreground: #1A1A1A;
+    --muted: #EDECEA;
+    --muted-foreground: #6B6B6B;
+    --accent: #00C896;
+    --accent-foreground: #0D0D0D;
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: #E2E0DA;
+    --input: #EDECEA;
+    --ring: #00C896;
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #1A1A1A;
+    --sidebar-border: #E2E0DA;
+  }
+
   * {
     @apply border-border;
     box-sizing: border-box;
   }
 
   body {
-    background-color: #080808;
-    color: #F0EDE8;
+    background-color: var(--up-bg);
+    color: var(--up-text);
     font-family: var(--font-outfit), 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s, color 0.2s;
   }
 
   html {
     font-family: 'Inter', sans-serif;
+  }
+
+  /* Hide space background in light mode */
+  html.light .constellation-bg {
+    display: none;
   }
 }
 
@@ -81,7 +144,7 @@
 
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #2A2A2A #111111;
+    scrollbar-color: var(--up-card) var(--up-surface);
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -89,11 +152,11 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    background: #111111;
+    background: var(--up-surface);
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #2A2A2A;
+    background-color: var(--up-card);
     border-radius: 2px;
   }
 }

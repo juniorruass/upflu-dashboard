@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
 import { Plus, Search, Users } from "lucide-react";
@@ -7,7 +7,6 @@ import ClientCard from "./client-card";
 import ClientFormModal from "./client-form-modal";
 
 const GOLD = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 const STATUS_LABELS: Record<ClientStatus, string> = {
   apresentacao: "Apresentação",
@@ -23,7 +22,7 @@ const STATUS_COLORS: Record<ClientStatus, { color: string; bg: string }> = {
   captado:      { color: "#A78BFA", bg: "rgba(167,139,250,0.08)" },
   active:       { color: "#4ADE80", bg: "rgba(74,222,128,0.08)" },
   onboarding:   { color: GOLD,      bg: "rgba(0,207,255,0.08)" },
-  paused:       { color: "#9A9288", bg: "rgba(154,146,136,0.08)" },
+  paused:       { color: "var(--up-text-muted)", bg: "rgba(154,146,136,0.08)" },
   ended:        { color: "#EF4444", bg: "rgba(239,68,68,0.08)" },
 };
 
@@ -95,11 +94,11 @@ export default function ClientsView({ initialClients }: Props) {
           { label: "Em onboarding", value: stats.onboarding, unit: "" },
         ].map((s, i) => (
           <div key={i} style={{
-            background: "#111111", border: `1px solid ${BORDER}`,
+            background: "var(--up-card)", border: `1px solid var(--up-border)`,
             borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden",
           }}>
             {i === 2 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${GOLD},transparent)` }} />}
-            <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{s.label}</p>
+            <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{s.label}</p>
             <p style={{ fontSize: s.isText ? "26px" : "36px", fontWeight: "700", color: i === 2 ? GOLD : "#F0EDE8", margin: 0, letterSpacing: "-0.03em", lineHeight: 1 }}>
               {s.isText ? s.value : s.value}
             </p>
@@ -117,9 +116,9 @@ export default function ClientsView({ initialClients }: Props) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              width: "100%", background: "#111111", border: `1px solid ${BORDER}`,
+              width: "100%", background: "var(--up-card)", border: `1px solid var(--up-border)`,
               borderRadius: "8px", padding: "10px 14px 10px 36px",
-              fontSize: "13px", color: "#F0EDE8", outline: "none", boxSizing: "border-box",
+              fontSize: "13px", color: "var(--up-text)", outline: "none", boxSizing: "border-box",
               fontFamily: "var(--font-outfit),sans-serif",
             }}
           />
@@ -131,7 +130,7 @@ export default function ClientsView({ initialClients }: Props) {
               key={s}
               onClick={() => setFilterStatus(s)}
               style={{
-                padding: "8px 14px", borderRadius: "6px", border: `1px solid ${filterStatus === s ? "rgba(0,207,255,0.4)" : BORDER}`,
+                padding: "8px 14px", borderRadius: "6px", border: `1px solid ${filterStatus === s ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`,
                 background: filterStatus === s ? "rgba(0,207,255,0.08)" : "transparent",
                 color: filterStatus === s ? GOLD : "#9A9288",
                 fontSize: "12px", fontWeight: "500", cursor: "pointer",
@@ -159,12 +158,12 @@ export default function ClientsView({ initialClients }: Props) {
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "80px 0", color: "#777068" }}>
+        <div style={{ textAlign: "center", padding: "80px 0", color: "var(--up-text-label)" }}>
           <Users size={36} color="#1A1A1A" style={{ margin: "0 auto 16px", display: "block" }} />
-          <p style={{ fontSize: "15px", fontWeight: "500", color: "#9A9288", margin: "0 0 6px" }}>
+          <p style={{ fontSize: "15px", fontWeight: "500", color: "var(--up-text-muted)", margin: "0 0 6px" }}>
             {clients.length === 0 ? "Nenhum cliente cadastrado ainda." : "Nenhum resultado para esta busca."}
           </p>
-          <p style={{ fontSize: "13px", color: "#777068", margin: 0 }}>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: 0 }}>
             {clients.length === 0 ? "Clique em Novo cliente para começar." : "Tente outro nome ou filtro."}
           </p>
         </div>

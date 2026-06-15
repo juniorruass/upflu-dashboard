@@ -10,23 +10,20 @@ async function getClients(): Promise<Client[]> {
   try {
     const supabase = createAdminClient();
 
-    // Try with services join (requires FK relationship in Supabase)
-    const { data, error } = await supabase
-      .from("clients")
-      .select("*, services:client_services(*)")
-      .order("created_at", { ascending: false });
+    const [{ data: clients, error }, { data: services }] = await Promise.all([
+      supabase.from("clients").select("*").order("created_at", { ascending: false }),
+      supabase.from("client_services").select("*"),
+    ]);
 
-    if (!error) return (data ?? []) as Client[];
+    if (error) { console.error("[getClients] error:", error.message); return []; }
 
-    // Fallback: query without join if FK relationship not configured
-    console.error("[getClients] join error, falling back:", error.message);
-    const { data: data2, error: error2 } = await supabase
-      .from("clients")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const svcMap: Record<string, Client["services"]> = {};
+    (services ?? []).forEach((s) => {
+      if (!svcMap[s.client_id]) svcMap[s.client_id] = [];
+      svcMap[s.client_id]!.push(s);
+    });
 
-    if (error2) console.error("[getClients] fallback error:", error2.message);
-    return (data2 ?? []) as Client[];
+    return (clients ?? []).map((c) => ({ ...c, services: svcMap[c.id] ?? [] })) as Client[];
   } catch (e) {
     console.error("[getClients] exception:", e);
     return [];

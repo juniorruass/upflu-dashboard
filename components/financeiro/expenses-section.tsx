@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Plus, Check, Trash2, AlertCircle, Clock, CheckCircle2, X, Receipt, Landmark } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const BG_CARD = "#111111";
 
 type Expense = {
@@ -108,7 +107,7 @@ export default function ExpensesSection() {
 
   return (
     <div style={{ marginTop: "14px" }}>
-      <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
+      <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "28px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
@@ -146,13 +145,13 @@ export default function ExpensesSection() {
 
         {/* Summary strip */}
         {filtered.length > 0 && (
-          <div style={{ display: "flex", gap: "24px", marginBottom: "16px", paddingBottom: "16px", borderBottom: `1px solid ${BORDER}` }}>
+          <div style={{ display: "flex", gap: "24px", marginBottom: "16px", paddingBottom: "16px", borderBottom: `1px solid var(--up-border)` }}>
             <div>
-              <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>A pagar</p>
+              <p style={{ fontSize: "10px", color: "var(--up-text-label)", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>A pagar</p>
               <p style={{ fontSize: "17px", fontWeight: "700", color: "#FF6B6B", margin: 0, letterSpacing: "-0.02em" }}>{currency(totalPending)}</p>
             </div>
             <div>
-              <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Pago</p>
+              <p style={{ fontSize: "10px", color: "var(--up-text-label)", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Pago</p>
               <p style={{ fontSize: "17px", fontWeight: "700", color: "#4CAF50", margin: 0, letterSpacing: "-0.02em" }}>{currency(totalPaid)}</p>
             </div>
           </div>
@@ -160,9 +159,9 @@ export default function ExpensesSection() {
 
         {/* Table */}
         {loading ? (
-          <p style={{ fontSize: "13px", color: "#777068", margin: "32px 0", textAlign: "center" }}>Carregando...</p>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: "32px 0", textAlign: "center" }}>Carregando...</p>
         ) : filtered.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "#777068", margin: "32px 0", textAlign: "center" }}>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: "32px 0", textAlign: "center" }}>
             Nenhum lançamento ainda.
           </p>
         ) : (
@@ -171,7 +170,7 @@ export default function ExpensesSection() {
               <thead>
                 <tr>
                   {["Descrição", "Categoria", "Valor", "Vencimento", "Status", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "10px", fontWeight: "500", color: "#777068", letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${BORDER}` }}>
+                    <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid var(--up-border)` }}>
                       {h}
                     </th>
                   ))}
@@ -183,18 +182,18 @@ export default function ExpensesSection() {
                   const cfg = STATUS_CFG[s];
                   const overdue = s === "late" ? daysOverdue(e.due_date) : 0;
                   return (
-                    <tr key={e.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td style={{ padding: "12px", color: "#F0EDE8", fontWeight: "500" }}>
+                    <tr key={e.id} style={{ borderBottom: `1px solid var(--up-border)` }}>
+                      <td style={{ padding: "12px", color: "var(--up-text)", fontWeight: "500" }}>
                         {e.title}
-                        {e.notes && <span style={{ display: "block", fontSize: "11px", color: "#777068", fontWeight: "300" }}>{e.notes}</span>}
+                        {e.notes && <span style={{ display: "block", fontSize: "11px", color: "var(--up-text-label)", fontWeight: "300" }}>{e.notes}</span>}
                       </td>
-                      <td style={{ padding: "12px", color: "#777068", fontSize: "12px" }}>
+                      <td style={{ padding: "12px", color: "var(--up-text-label)", fontSize: "12px" }}>
                         {e.category ?? "—"}
                       </td>
                       <td style={{ padding: "12px", color: s === "late" ? "#FF6B6B" : "#F0EDE8", fontWeight: "600" }}>
                         {currency(e.amount)}
                       </td>
-                      <td style={{ padding: "12px", color: "#9A9288" }}>
+                      <td style={{ padding: "12px", color: "var(--up-text-muted)" }}>
                         {formatDate(e.due_date)}
                         {s === "late" && <span style={{ display: "block", fontSize: "10px", color: "#FF6B6B" }}>{overdue}d em atraso</span>}
                         {s === "paid" && e.paid_date && <span style={{ display: "block", fontSize: "10px", color: "#4CAF50" }}>pago em {formatDate(e.paid_date)}</span>}
@@ -213,7 +212,7 @@ export default function ExpensesSection() {
                             </button>
                           )}
                           <button onClick={() => del(e.id)}
-                            style={{ display: "flex", alignItems: "center", padding: "5px 8px", borderRadius: "5px", border: `1px solid ${BORDER}`, background: "transparent", color: "#777068", cursor: "pointer" }}>
+                            style={{ display: "flex", alignItems: "center", padding: "5px 8px", borderRadius: "5px", border: `1px solid var(--up-border)`, background: "transparent", color: "var(--up-text-label)", cursor: "pointer" }}>
                             <Trash2 size={12} strokeWidth={1.5} />
                           </button>
                         </div>
@@ -230,49 +229,49 @@ export default function ExpensesSection() {
       {/* Modal */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ background: "#111111", border: `1px solid rgba(255,255,255,0.12)`, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "440px" }}>
+          <div style={{ background: "var(--up-card)", border: `1px solid rgba(255,255,255,0.12)`, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "440px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#F0EDE8" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "var(--up-text)" }}>
                 {tab === "tax" ? "Registrar Imposto" : "Registrar Conta"}
               </h3>
-              <button onClick={() => setShowModal(false)} style={{ background: "transparent", border: "none", color: "#777068", cursor: "pointer", padding: "4px" }}>
+              <button onClick={() => setShowModal(false)} style={{ background: "transparent", border: "none", color: "var(--up-text-label)", cursor: "pointer", padding: "4px" }}>
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
-                <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Descrição *</label>
+                <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Descrição *</label>
                 <input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={tab === "tax" ? "Ex: DAS Maio 2025" : "Ex: Conta de internet"}
-                  style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                  style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Valor (R$) *</label>
+                  <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Valor (R$) *</label>
                   <input required type="number" step="0.01" min="0" placeholder="0,00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                    style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Vencimento *</label>
+                  <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Vencimento *</label>
                   <input required type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-                    style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", colorScheme: "dark" }} />
+                    style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", colorScheme: "dark" }} />
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Categoria</label>
+                <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Categoria</label>
                 <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-                  style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: form.category ? "#F0EDE8" : "#777068", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}>
+                  style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: form.category ? "#F0EDE8" : "#777068", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}>
                   <option value="">Selecionar</option>
                   {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Observação</label>
+                <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Observação</label>
                 <input type="text" placeholder="Opcional" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                  style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
                 <button type="button" onClick={() => setShowModal(false)}
-                  style={{ flex: 1, padding: "11px", borderRadius: "7px", border: `1px solid ${BORDER}`, background: "transparent", color: "#9A9288", fontSize: "13px", fontFamily: "inherit", cursor: "pointer" }}>Cancelar</button>
+                  style={{ flex: 1, padding: "11px", borderRadius: "7px", border: `1px solid var(--up-border)`, background: "transparent", color: "var(--up-text-muted)", fontSize: "13px", fontFamily: "inherit", cursor: "pointer" }}>Cancelar</button>
                 <button type="submit" disabled={submitting}
                   style={{ flex: 1, padding: "11px", borderRadius: "7px", border: "none", background: ACCENT, color: "#080808", fontSize: "13px", fontWeight: "700", fontFamily: "inherit", cursor: submitting ? "not-allowed" : "pointer", opacity: submitting ? 0.7 : 1 }}>
                   {submitting ? "Salvando..." : "Registrar"}

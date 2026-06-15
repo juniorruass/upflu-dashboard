@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -42,7 +42,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#080808",
+      background: "var(--up-bg)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -69,28 +69,28 @@ export default function LoginPage() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "48px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "44px", width: "auto", objectFit: "contain" }} />
-          <p style={{ fontSize: "11px", color: "#777068", marginTop: "14px", letterSpacing: "0.22em", textTransform: "uppercase" }}>
+          <p style={{ fontSize: "11px", color: "var(--up-text-label)", marginTop: "14px", letterSpacing: "0.22em", textTransform: "uppercase" }}>
             Acesso Restrito
           </p>
         </div>
 
         {/* Card */}
         <div style={{
-          background: "#111111",
+          background: "var(--up-card)",
           border: "1px solid rgba(255,255,255,0.07)",
           borderRadius: "12px",
           padding: "40px",
         }}>
-          <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
             Entrar
           </h2>
-          <p style={{ fontSize: "13px", color: "#777068", margin: "0 0 32px", fontWeight: "300" }}>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: "0 0 32px", fontWeight: "300" }}>
             Credenciais de administrador
           </p>
 
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "#9A9288", marginBottom: "8px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "var(--up-text-muted)", marginBottom: "8px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 Email
               </label>
               <input
@@ -103,13 +103,13 @@ export default function LoginPage() {
                 onBlur={() => setFocusField(null)}
                 style={{
                   width: "100%",
-                  background: "#080808",
-                  border: `1px solid ${focusField === "email" ? "rgba(0,207,255,0.5)" : "rgba(255,255,255,0.07)"}`,
+                  background: "var(--up-bg)",
+                  border: `1px solid ${focusField === "email" ? "rgba(0,207,255,0.5)" : "var(--up-border)"}`,
                   borderRadius: "8px",
                   padding: "13px 16px",
                   fontSize: "14px",
                   fontWeight: "300",
-                  color: "#F0EDE8",
+                  color: "var(--up-text)",
                   outline: "none",
                   boxSizing: "border-box",
                   fontFamily: "var(--font-outfit), sans-serif",
@@ -119,7 +119,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "#9A9288", marginBottom: "8px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "var(--up-text-muted)", marginBottom: "8px", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 Senha
               </label>
               <input
@@ -132,13 +132,13 @@ export default function LoginPage() {
                 onBlur={() => setFocusField(null)}
                 style={{
                   width: "100%",
-                  background: "#080808",
-                  border: `1px solid ${focusField === "password" ? "rgba(0,207,255,0.5)" : "rgba(255,255,255,0.07)"}`,
+                  background: "var(--up-bg)",
+                  border: `1px solid ${focusField === "password" ? "rgba(0,207,255,0.5)" : "var(--up-border)"}`,
                   borderRadius: "8px",
                   padding: "13px 16px",
                   fontSize: "14px",
                   fontWeight: "300",
-                  color: "#F0EDE8",
+                  color: "var(--up-text)",
                   outline: "none",
                   boxSizing: "border-box",
                   fontFamily: "var(--font-outfit), sans-serif",
@@ -195,7 +195,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p style={{ textAlign: "center", fontSize: "11px", color: "#777068", marginTop: "28px", letterSpacing: "0.06em" }}>
+        <p style={{ textAlign: "center", fontSize: "11px", color: "var(--up-text-label)", marginTop: "28px", letterSpacing: "0.06em" }}>
           UPFLU · {new Date().getFullYear()}
         </p>
       </div>

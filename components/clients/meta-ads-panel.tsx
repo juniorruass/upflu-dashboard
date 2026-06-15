@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { RefreshCw, Loader2, AlertCircle, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const CARD   = "#111111";
 const MUTED  = "#777068";
 const TEXT   = "#F0EDE8";
@@ -162,7 +161,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
   const pill = (active: boolean, onClick: () => void, label: string) => (
     <button onClick={onClick} key={label} style={{
       padding: "5px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "500",
-      border: `1px solid ${active ? "rgba(0,207,255,0.4)" : BORDER}`,
+      border: `1px solid ${active ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`,
       background: active ? "rgba(0,207,255,0.09)" : "transparent",
       color: active ? ACCENT : MUTED, cursor: "pointer",
       fontFamily: "var(--font-outfit),sans-serif", transition: "all 0.15s",
@@ -179,7 +178,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Filter bar ── */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "18px 22px" }}>
+      <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "18px 22px" }}>
 
         {/* Período */}
         <div style={{ marginBottom: "14px" }}>
@@ -189,10 +188,10 @@ export default function MetaAdsPanel({ clientId }: Props) {
             {datePreset === "custom" && (
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <input type="date" value={since} onChange={(e) => setSince(e.target.value)}
-                  style={{ background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
+                  style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "5px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
                 <span style={{ fontSize: "12px", color: MUTED }}>até</span>
                 <input type="date" value={until} onChange={(e) => setUntil(e.target.value)}
-                  style={{ background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
+                  style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "5px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
               </div>
             )}
           </div>
@@ -207,20 +206,20 @@ export default function MetaAdsPanel({ clientId }: Props) {
         </div>
 
         {/* Bottom bar */}
-        <div style={{ paddingTop: "12px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ paddingTop: "12px", borderTop: `1px solid var(--up-border)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontSize: "11px", color: MUTED }}>
             {loading ? "Buscando dados..." : lastRefresh ? `Atualizado às ${lastRefresh.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : ""}
           </span>
-          <button onClick={refresh} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "7px", padding: "6px 14px", color: MUTED, fontSize: "12px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif", opacity: loading ? 0.5 : 1 }}>
+          <button onClick={refresh} disabled={loading} style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "7px", padding: "6px 14px", color: MUTED, fontSize: "12px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif", opacity: loading ? 0.5 : 1 }}>
             <RefreshCw size={12} style={loading ? { animation: "spin 1s linear infinite" } : undefined} /> Atualizar
           </button>
         </div>
       </div>
 
       {/* ── Results ── */}
-      <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
+      <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", overflow: "hidden" }}>
 
-        <div style={{ padding: "20px 24px", borderBottom: (insights || loading) ? `1px solid ${BORDER}` : "none" }}>
+        <div style={{ padding: "20px 24px", borderBottom: (insights || loading) ? `1px solid var(--up-border)` : "none" }}>
 
           {/* Loading */}
           {loading && !insights && (
@@ -237,7 +236,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
                 <AlertCircle size={14} color="#EF4444" style={{ flexShrink: 0, marginTop: "2px" }} />
                 <div>
                   <p style={{ fontSize: "13px", color: "#EF4444", margin: "0 0 4px", fontWeight: "500" }}>{error}</p>
-                  <p style={{ fontSize: "11px", color: "#9A9288", margin: 0 }}>
+                  <p style={{ fontSize: "11px", color: "var(--up-text-muted)", margin: 0 }}>
                     Verifique se o usuário do sistema tem acesso à conta de anúncios e se o token possui permissão <code style={{ color: ACCENT }}>ads_read</code>.
                     <a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noreferrer"
                       style={{ color: ACCENT, textDecoration: "none", marginLeft: "6px", display: "inline-flex", alignItems: "center", gap: "3px" }}>
@@ -262,7 +261,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
                       const label = (m.key === "cost_per_result" && firstResult)
                         ? `Custo / ${firstResult.label}` : m.label;
                       return (
-                        <div key={m.key} style={{ background: "#080808", borderRadius: "8px", padding: "12px 14px", border: `1px solid ${hi ? "rgba(0,207,255,0.2)" : BORDER}`, position: "relative", overflow: "hidden" }}>
+                        <div key={m.key} style={{ background: "var(--up-bg)", borderRadius: "8px", padding: "12px 14px", border: `1px solid ${hi ? "rgba(0,207,255,0.2)" : "var(--up-border)"}`, position: "relative", overflow: "hidden" }}>
                           {hi && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${ACCENT},transparent)` }} />}
                           <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 5px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</p>
                           <p style={{ fontSize: "16px", fontWeight: "700", color: hi ? ACCENT : TEXT, margin: 0, letterSpacing: "-0.02em" }}>{fmtMetric(m.key, val)}</p>
@@ -274,14 +273,14 @@ export default function MetaAdsPanel({ clientId }: Props) {
 
                 {/* All results breakdown */}
                 {hasAllResults && (
-                  <div style={{ background: "#080808", borderRadius: "8px", border: `1px solid ${BORDER}`, overflow: "hidden" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", borderBottom: `1px solid ${BORDER}` }}>
+                  <div style={{ background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)`, overflow: "hidden" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", borderBottom: `1px solid var(--up-border)` }}>
                       {["Tipo de resultado", "Qtd.", "Custo unit."].map((h, i) => (
                         <p key={h} style={{ fontSize: "10px", color: MUTED, margin: 0, letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 14px 8px", textAlign: i === 0 ? "left" : "right", minWidth: i === 2 ? "110px" : undefined }}>{h}</p>
                       ))}
                     </div>
                     {insights.all_results.map((r, i) => (
-                      <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "10px 14px", borderBottom: i < insights.all_results.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                      <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "10px 14px", borderBottom: i < insights.all_results.length - 1 ? `1px solid var(--up-border)` : "none" }}>
                         <span style={{ fontSize: "13px", color: TEXT, fontWeight: "500" }}>{r.label}</span>
                         <span style={{ fontSize: "14px", fontWeight: "700", color: TEXT, padding: "0 14px", textAlign: "right" }}>{r.value.toLocaleString("pt-BR")}</span>
                         <span style={{ fontSize: "13px", color: r.cost != null ? ACCENT : MUTED, minWidth: "110px", textAlign: "right", fontWeight: r.cost != null ? "600" : "400" }}>
@@ -314,10 +313,10 @@ export default function MetaAdsPanel({ clientId }: Props) {
             </button>
 
             {expanded && camps.length > 0 && (
-              <div className="r-scroll" style={{ borderTop: `1px solid ${BORDER}` }}>
+              <div className="r-scroll" style={{ borderTop: `1px solid var(--up-border)` }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <tr style={{ borderBottom: `1px solid var(--up-border)` }}>
                       {["Campanha", "Status", "Investimento", camps.find((c) => c.insights?.result_label)?.insights?.result_label ?? "Resultados", "Custo/Result.", "Leads", "CPL", "Clicks", "CTR"].map((h) => (
                         <th key={h} style={{ padding: "10px 16px", textAlign: h === "Campanha" ? "left" : "right", fontSize: "10px", fontWeight: "600", color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                       ))}
@@ -330,7 +329,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
                       const num   = (v: number | null) => v != null ? v.toLocaleString("pt-BR") : "—";
                       const pct   = (v: number | null) => v != null ? v.toFixed(2) + "%" : "—";
                       return (
-                        <tr key={camp.id} style={{ borderBottom: i < camps.length - 1 ? `1px solid ${BORDER}` : "none", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                        <tr key={camp.id} style={{ borderBottom: i < camps.length - 1 ? `1px solid var(--up-border)` : "none", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                           <td style={{ padding: "12px 16px", color: TEXT, maxWidth: "240px" }}>
                             <p style={{ margin: 0, fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{camp.name}</p>
                             <p style={{ margin: 0, fontSize: "10px", color: MUTED }}>{camp.objective?.replace(/_/g, " ")}</p>
@@ -356,7 +355,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
             )}
 
             {expanded && !loadingCampaigns && camps.length === 0 && (
-              <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}` }}>
+              <div style={{ padding: "16px 24px", borderTop: `1px solid var(--up-border)` }}>
                 <p style={{ fontSize: "12px", color: MUTED, margin: 0 }}>Nenhuma campanha ativa encontrada.</p>
               </div>
             )}

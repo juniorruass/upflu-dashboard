@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { Client, ClientStatus, ServiceType } from "@/types";
 
 const GOLD = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const PINK = "#E1306C";
 
 const SERVICES: { key: ServiceType; label: string }[] = [
@@ -130,10 +129,10 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
   }
 
   const inputStyle = (field: string) => ({
-    width: "100%", background: "#080808",
-    border: `1px solid ${focusField === field ? "rgba(0,207,255,0.5)" : BORDER}`,
+    width: "100%", background: "var(--up-bg)",
+    border: `1px solid ${focusField === field ? "rgba(0,207,255,0.5)" : "var(--up-border)"}`,
     borderRadius: "8px", padding: "11px 14px",
-    fontSize: "13px", color: "#F0EDE8", outline: "none",
+    fontSize: "13px", color: "var(--up-text)", outline: "none",
     boxSizing: "border-box" as const,
     fontFamily: "var(--font-outfit),sans-serif",
     transition: "border-color 0.15s",
@@ -141,7 +140,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
 
   const labelStyle = {
     display: "block" as const, fontSize: "11px", fontWeight: "500" as const,
-    color: "#9A9288", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" as const,
+    color: "var(--up-text-muted)", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" as const,
   };
 
   const STATUS_OPTIONS: { value: ClientStatus; label: string }[] = [
@@ -155,16 +154,16 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "24px" }}>
-      <div style={{ background: "#111111", border: `1px solid ${BORDER}`, borderRadius: "14px", width: "100%", maxWidth: "580px", maxHeight: "90vh", overflow: "auto" }}>
+      <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "14px", width: "100%", maxWidth: "580px", maxHeight: "90vh", overflow: "auto" }}>
         {/* Header */}
-        <div style={{ padding: "24px 28px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "24px 28px", borderBottom: `1px solid var(--up-border)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <h2 style={{ fontSize: "17px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 2px", letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontSize: "17px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 2px", letterSpacing: "-0.02em" }}>
               {editing ? "Editar cliente" : "Novo cadastro"}
             </h2>
-            <p style={{ fontSize: "12px", color: "#777068", margin: 0 }}>Preencha as informacoes do cliente</p>
+            <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: 0 }}>Preencha as informacoes do cliente</p>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#777068", display: "flex", padding: "4px" }}>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-label)", display: "flex", padding: "4px" }}>
             <X size={18} />
           </button>
         </div>
@@ -250,7 +249,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                     return (
                       <button key={key} type="button" onClick={() => toggleChannel(key)} style={{
                         padding: "8px 18px", borderRadius: "6px", cursor: "pointer",
-                        border: `1px solid ${active ? "rgba(0,207,255,0.45)" : BORDER}`,
+                        border: `1px solid ${active ? "rgba(0,207,255,0.45)" : "var(--up-border)"}`,
                         background: active ? "rgba(0,207,255,0.10)" : "transparent",
                         color: active ? GOLD : "#9A9288",
                         fontSize: "13px", fontWeight: "500",
@@ -270,7 +269,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
               <div>
                 <label style={labelStyle}>Slug do portal</label>
                 <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "#777068", pointerEvents: "none" }}>adm.upflu.digital/</span>
+                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", fontSize: "12px", color: "var(--up-text-label)", pointerEvents: "none" }}>adm.upflu.digital/</span>
                   <input
                     value={form.slug}
                     onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
@@ -280,12 +279,12 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                     style={{ ...inputStyle("slug"), paddingLeft: "130px" }}
                   />
                 </div>
-                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>URL pública do cliente. Só letras, números e hífen.</p>
+                <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: "5px 0 0" }}>URL pública do cliente. Só letras, números e hífen.</p>
               </div>
               <div>
                 <label style={labelStyle}>ID Conta Meta Ads</label>
                 <input value={form.meta_account_id} onChange={(e) => setForm({ ...form, meta_account_id: e.target.value })} placeholder="Ex: 123456789012345" onFocus={() => setFocusField("meta")} onBlur={() => setFocusField(null)} style={inputStyle("meta")} />
-                <p style={{ fontSize: "11px", color: "#777068", margin: "5px 0 0" }}>Meta Business → Gerenciador → Configurações</p>
+                <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: "5px 0 0" }}>Meta Business → Gerenciador → Configurações</p>
               </div>
               <div style={{ position: "relative" }}>
                 <label style={labelStyle}>Instagram Business Account</label>
@@ -308,19 +307,19 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                   </button>
                 </div>
                 {igOpen && igAccounts.length > 0 && (
-                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "#161616", border: `1px solid ${BORDER}`, borderRadius: "10px", marginTop: "4px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                  <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50, background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", marginTop: "4px", overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
                     {igAccounts.map((acc) => (
                       <button
                         key={acc.id}
                         type="button"
                         onClick={() => { setForm({ ...form, instagram_business_account_id: acc.id }); setIgOpen(false); }}
-                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "transparent", border: "none", borderBottom: `1px solid ${BORDER}`, cursor: "pointer", textAlign: "left", gap: "8px" }}
+                        style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "transparent", border: "none", borderBottom: `1px solid var(--up-border)`, cursor: "pointer", textAlign: "left", gap: "8px" }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(225,48,108,0.07)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <div>
-                          <p style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>@{acc.username || acc.name}</p>
-                          <p style={{ fontSize: "10px", color: "#777068", margin: "2px 0 0" }}>{acc.id}</p>
+                          <p style={{ fontSize: "13px", fontWeight: "600", color: "var(--up-text)", margin: 0 }}>@{acc.username || acc.name}</p>
+                          <p style={{ fontSize: "10px", color: "var(--up-text-label)", margin: "2px 0 0" }}>{acc.id}</p>
                         </div>
                         {acc.followers_count > 0 && (
                           <span style={{ fontSize: "11px", color: PINK, fontWeight: "600", flexShrink: 0 }}>{acc.followers_count.toLocaleString("pt-BR")} seg.</span>
@@ -340,8 +339,8 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
               <p style={{ fontSize: "11px", fontWeight: "600", color: GOLD, margin: "0 0 14px", letterSpacing: "0.1em", textTransform: "uppercase" }}>
                 Acesso ao portal do cliente
               </p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: "0 0 14px" }}>
-                Email de login: <strong style={{ color: "#9A9288" }}>{form.contact_email || "—"}</strong>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: "0 0 14px" }}>
+                Email de login: <strong style={{ color: "var(--up-text-muted)" }}>{form.contact_email || "—"}</strong>
               </p>
               <div>
                 <label style={labelStyle}>Senha de acesso</label>
@@ -372,7 +371,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
                   return (
                     <button key={key} type="button" onClick={() => toggleService(key)} style={{
                       padding: "7px 14px", borderRadius: "6px", cursor: "pointer",
-                      border: `1px solid ${active ? "rgba(0,207,255,0.45)" : BORDER}`,
+                      border: `1px solid ${active ? "rgba(0,207,255,0.45)" : "var(--up-border)"}`,
                       background: active ? "rgba(0,207,255,0.10)" : "transparent",
                       color: active ? GOLD : "#9A9288",
                       fontSize: "12px", fontWeight: "500",
@@ -393,7 +392,7 @@ export default function ClientFormModal({ client, onClose, onSaved }: Props) {
             )}
 
             <div style={{ display: "flex", gap: "10px", paddingTop: "4px" }}>
-              <button type="button" onClick={onClose} style={{ flex: 1, padding: "12px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#9A9288", fontSize: "13px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
+              <button type="button" onClick={onClose} style={{ flex: 1, padding: "12px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "var(--up-text-muted)", fontSize: "13px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
                 Cancelar
               </button>
               <button type="submit" disabled={loading} style={{ flex: 2, padding: "12px", background: GOLD, border: "none", borderRadius: "8px", color: "#080808", fontSize: "13px", fontWeight: "600", cursor: loading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontFamily: "var(--font-outfit),sans-serif", opacity: loading ? 0.7 : 1 }}>

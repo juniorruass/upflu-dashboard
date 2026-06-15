@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { X, Loader2, MapPin, Building2 } from "lucide-react";
 
@@ -17,6 +17,20 @@ const CNAE_LISTA = [
 
 const UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
+export interface QualFilters {
+  minRating: number;
+  minReviews: number;
+  requirePhone: boolean;
+  requireWebsite: boolean;
+  noWebsite: boolean;
+  requireEmail: boolean;
+}
+
+export const QUAL_FILTERS_DEFAULT: QualFilters = {
+  minRating: 0, minReviews: 0,
+  requirePhone: false, requireWebsite: false, noWebsite: false, requireEmail: false,
+};
+
 export interface Step1Data {
   source: "google" | "cnae";
   searchTerm: string;
@@ -26,8 +40,8 @@ export interface Step1Data {
   municipio: string;
   uf: string;
   dailyLimit: number;
+  filters: QualFilters;
 }
-
 
 type SimStats = { empresas: number; telefones: number; emails: number; municipios: number } | null;
 
@@ -162,6 +176,76 @@ export default function Step1Alvo({ value, onChange }: {
             {simLoading ? <Loader2 size={14} className="animate-spin" /> : null}
             {simLoading ? "Simulando..." : "Simular busca"}
           </button>
+        </div>
+      </div>
+
+      {/* Filtros de qualificação */}
+      <div className="rounded-xl border border-white/[0.06] bg-[#111] p-5 flex flex-col gap-4">
+        <p className="text-[11px] font-semibold text-[#777068] tracking-[0.12em] uppercase">Filtros de qualificação</p>
+
+        {value.source === "google" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] text-[#555] mb-2">Avaliação mínima</label>
+              <select className={field + " cursor-pointer"}
+                value={value.filters.minRating}
+                onChange={(e) => upd({ filters: { ...value.filters, minRating: Number(e.target.value) } })}>
+                <option value={0}>Qualquer</option>
+                <option value={3}>≥ 3.0 ★</option>
+                <option value={3.5}>≥ 3.5 ★</option>
+                <option value={4}>≥ 4.0 ★</option>
+                <option value={4.5}>≥ 4.5 ★</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[11px] text-[#555] mb-2">Mín. de avaliações</label>
+              <select className={field + " cursor-pointer"}
+                value={value.filters.minReviews}
+                onChange={(e) => upd({ filters: { ...value.filters, minReviews: Number(e.target.value) } })}>
+                <option value={0}>Qualquer</option>
+                <option value={5}>≥ 5</option>
+                <option value={10}>≥ 10</option>
+                <option value={20}>≥ 20</option>
+                <option value={50}>≥ 50</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          {(["requirePhone", "requireWebsite", "noWebsite", "requireEmail"] as const)
+            .filter((k) => {
+              if (k === "requireWebsite" || k === "noWebsite") return value.source === "google";
+              if (k === "requireEmail") return value.source === "cnae";
+              return true;
+            })
+            .map((k) => {
+              const labels: Record<string, string> = {
+                requirePhone:   "Exigir telefone",
+                requireWebsite: "Com website",
+                noWebsite:      "Sem website",
+                requireEmail:   "Exigir e-mail",
+              };
+              const on = value.filters[k];
+              return (
+                <button key={k} type="button"
+                  onClick={() => {
+                    const next = { ...value.filters, [k]: !on };
+                    if (k === "requireWebsite" && !on) next.noWebsite = false;
+                    if (k === "noWebsite" && !on) next.requireWebsite = false;
+                    upd({ filters: next });
+                  }}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[12px] font-semibold transition-all text-left
+                    ${on
+                      ? "bg-[#00CFFF]/08 border-[#00CFFF]/35 text-[#00CFFF]"
+                      : "bg-transparent border-white/[0.06] text-[#555] hover:border-white/20 hover:text-[#888]"}`}>
+                  <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 transition-all ${on ? "bg-[#00CFFF] border-[#00CFFF]" : "border-white/20"}`}>
+                    {on && <svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5L3.5 6L8 1" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </span>
+                  {labels[k]}
+                </button>
+              );
+            })}
         </div>
       </div>
 

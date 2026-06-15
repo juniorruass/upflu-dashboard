@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -6,7 +6,6 @@ import Header from "@/components/header";
 import { RefreshCw, Trash2, Mail, Phone, Globe, MessageSquare, X, Search, MessageCircle, Calendar, FileText } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   potencial:     { label: "Potencial",     color: "#FF9500" },
@@ -15,7 +14,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   followup:      { label: "Follow-up",     color: "#a78bfa" },
   respondeu:     { label: "Respondeu",     color: "#4ADE80" },
   fechado:       { label: "Fechado",       color: "#22c55e" },
-  sem_interesse: { label: "Sem interesse", color: "#666"    },
+  sem_interesse: { label: "Sem interesse", color: "var(--up-text-dim)"    },
 };
 
 const ALL_STATUS = ["todos", "novo", "contatado", "followup", "respondeu", "fechado", "sem_interesse", "potencial"];
@@ -47,7 +46,7 @@ function tipoBadgeStyle(tipo: string) {
   if (tipo.includes("psicólog") || tipo.includes("psiquiat")) return { bg: "rgba(255,183,77,0.1)", color: "#FFB74D", bd: "rgba(255,183,77,0.2)" };
   if (tipo.includes("fisioter")) return { bg: "rgba(76,175,80,0.1)",    color: "#4CAF50", bd: "rgba(76,175,80,0.2)"  };
   if (tipo.includes("nutri"))    return { bg: "rgba(255,138,101,0.1)",  color: "#FF8A65", bd: "rgba(255,138,101,0.2)" };
-  return { bg: "rgba(255,255,255,0.05)", color: "#9A9288", bd: "rgba(255,255,255,0.1)" };
+  return { bg: "rgba(255,255,255,0.05)", color: "var(--up-text-muted)", bd: "rgba(255,255,255,0.1)" };
 }
 
 const WA_MESSAGES = [
@@ -152,15 +151,17 @@ function CRMPageInner() {
 
   const fetchProspects = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (filterStatus !== "todos") params.set("status", filterStatus);
-    if (filterCidade !== "todas") params.set("cidade", filterCidade);
-    if (filterTipo !== "todos")   params.set("tipo", filterTipo);
-    if (buscaDebounced)           params.set("busca", buscaDebounced);
-    if (aba === "cnae")           params.set("fonte", "cnae");
-    const res = await fetch(`/api/crm/prospects?${params}`);
-    const data = await res.json();
-    setProspects(data.prospects || []);
+    try {
+      const params = new URLSearchParams();
+      if (filterStatus !== "todos") params.set("status", filterStatus);
+      if (filterCidade !== "todas") params.set("cidade", filterCidade);
+      if (filterTipo !== "todos")   params.set("tipo", filterTipo);
+      if (buscaDebounced)           params.set("busca", buscaDebounced);
+      if (aba === "cnae")           params.set("fonte", "cnae");
+      const res = await fetch(`/api/crm/prospects?${params}`);
+      const data = await res.json();
+      setProspects(data.prospects || []);
+    } catch { setProspects([]); }
     setLoading(false);
   }, [filterStatus, filterCidade, filterTipo, buscaDebounced, aba]);
 
@@ -212,23 +213,23 @@ function CRMPageInner() {
       <style>{`
         .crm-pad { padding: 40px; }
         .crm-table { width: 100%; border-collapse: collapse; }
-        .crm-table th { font-size: 10px; font-weight: 600; color: #555; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid ${BORDER}; white-space: nowrap; }
-        .crm-table td { font-size: 13px; color: #ccc; padding: 12px 16px; border-bottom: 1px solid ${BORDER}; vertical-align: middle; }
+        .crm-table th { font-size: 10px; font-weight: 600; color: #555; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--up-border); white-space: nowrap; }
+        .crm-table td { font-size: 13px; color: #ccc; padding: 12px 16px; border-bottom: 1px solid var(--up-border); vertical-align: middle; }
         .crm-table tr:last-child td { border-bottom: none; }
         .crm-table tr:hover td { background: rgba(255,255,255,0.02); cursor: pointer; }
-        .filter-btn { background: transparent; border: 1px solid ${BORDER}; border-radius: 6px; padding: 7px 14px; font-size: 12px; color: #888; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+        .filter-btn { background: transparent; border: 1px solid var(--up-border); border-radius: 6px; padding: 7px 14px; font-size: 12px; color: #888; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
         .filter-btn:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
         .filter-btn.active { border-color: ${ACCENT}; color: ${ACCENT}; background: rgba(0,207,255,0.06); }
-        .crm-select { background: #1a1a1a; border: 1px solid ${BORDER}; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #ccc; cursor: pointer; outline: none; }
-        .detail-panel { position: fixed; top: 0; right: 0; width: 440px; height: 100vh; background: #111; border-left: 1px solid ${BORDER}; z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
+        .crm-select { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 6px; padding: 6px 10px; font-size: 12px; color: #ccc; cursor: pointer; outline: none; }
+        .detail-panel { position: fixed; top: 0; right: 0; width: 440px; height: 100vh; background: var(--up-card); border-left: 1px solid var(--up-border); z-index: 100; display: flex; flex-direction: column; overflow: hidden; }
         .search-wrap { position: relative; }
         .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
-        .search-input { background: #111; border: 1px solid ${BORDER}; border-radius: 6px; padding: 7px 12px 7px 34px; font-size: 12px; color: #ccc; outline: none; width: 220px; transition: border-color 0.15s; }
+        .search-input { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 6px; padding: 7px 12px 7px 34px; font-size: 12px; color: #ccc; outline: none; width: 220px; transition: border-color 0.15s; }
         .search-input:focus { border-color: rgba(0,207,255,0.4); }
         .search-input::placeholder { color: #444; }
-        .note-textarea { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 12px; font-size: 13px; color: #aaa; line-height: 1.6; resize: vertical; width: 100%; min-height: 90px; outline: none; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
+        .note-textarea { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 8px; padding: 12px; font-size: 13px; color: #aaa; line-height: 1.6; resize: vertical; width: 100%; min-height: 90px; outline: none; font-family: inherit; transition: border-color 0.15s; box-sizing: border-box; }
         .note-textarea:focus { border-color: rgba(0,207,255,0.3); }
-        .date-input { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 6px; padding: 8px 10px; font-size: 12px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; color-scheme: dark; }
+        .date-input { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; color-scheme: dark; }
         .date-input:focus { border-color: rgba(0,207,255,0.3); }
         .detail-label { font-size: 11px; color: #555; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
         @media (max-width: 900px) {
@@ -245,13 +246,13 @@ function CRMPageInner() {
           <p style={{ fontSize: "11px", fontWeight: "500", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 8px" }}>
             Gestão de relacionamento
           </p>
-          <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>
+          <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>
             CRM de Prospecção
           </h2>
         </div>
 
         {/* Abas */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, marginBottom: "24px" }}>
+        <div style={{ display: "flex", borderBottom: `1px solid var(--up-border)`, marginBottom: "24px" }}>
           <button
             onClick={() => { setAba("todos"); setSelected(null); }}
             style={{ background: "transparent", border: "none", borderBottom: `2px solid ${aba === "todos" ? ACCENT : "transparent"}`, padding: "8px 18px", fontSize: "13px", color: aba === "todos" ? ACCENT : "#666", cursor: "pointer", fontWeight: aba === "todos" ? "600" : "400", transition: "all 0.15s" }}
@@ -269,8 +270,8 @@ function CRMPageInner() {
         {/* Cards de status */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "28px", flexWrap: "wrap" }}>
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-            <div key={key} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px 20px", minWidth: "110px" }}>
-              <p style={{ fontSize: "10px", color: "#555", margin: "0 0 6px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{cfg.label}</p>
+            <div key={key} style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "14px 20px", minWidth: "110px" }}>
+              <p style={{ fontSize: "10px", color: "var(--up-text-dim)", margin: "0 0 6px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{cfg.label}</p>
               <p style={{ fontSize: "28px", fontWeight: "700", color: cfg.color, margin: 0, lineHeight: 1, letterSpacing: "-0.03em" }}>{counts[key] || 0}</p>
             </div>
           ))}
@@ -288,7 +289,7 @@ function CRMPageInner() {
             />
           </div>
 
-          <div style={{ width: "1px", height: "20px", background: BORDER, margin: "0 4px" }} />
+          <div style={{ width: "1px", height: "20px", background: "var(--up-border)", margin: "0 4px" }} />
 
           <select className="crm-select" value={filterCidade} onChange={(e) => setFilterCidade(e.target.value)}>
             {cidades.map((c) => <option key={c} value={c}>{c === "todas" ? "Todas as cidades" : c}</option>)}
@@ -298,14 +299,14 @@ function CRMPageInner() {
             {TIPO_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
 
-          <button onClick={fetchProspects} style={{ marginLeft: "auto", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "7px 12px", color: "#666", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+          <button onClick={fetchProspects} style={{ marginLeft: "auto", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "7px 12px", color: "var(--up-text-dim)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
             <RefreshCw size={13} /> Atualizar
           </button>
         </div>
 
         {/* Filtros — linha 2: status */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
-          <span style={{ fontSize: "11px", color: "#555", marginRight: "4px" }}>STATUS</span>
+          <span style={{ fontSize: "11px", color: "var(--up-text-dim)", marginRight: "4px" }}>STATUS</span>
           {ALL_STATUS.map((s) => (
             <button key={s} className={`filter-btn${filterStatus === s ? " active" : ""}`} onClick={() => setFilterStatus(s)}>
               {s === "todos" ? "Todos" : STATUS_CONFIG[s]?.label}
@@ -314,11 +315,11 @@ function CRMPageInner() {
         </div>
 
         {/* Tabela */}
-        <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", overflow: "hidden" }}>
+        <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", overflow: "hidden" }}>
           {loading ? (
-            <div style={{ padding: "60px", textAlign: "center", color: "#555", fontSize: "13px" }}>Carregando...</div>
+            <div style={{ padding: "60px", textAlign: "center", color: "var(--up-text-dim)", fontSize: "13px" }}>Carregando...</div>
           ) : prospects.length === 0 ? (
-            <div style={{ padding: "60px", textAlign: "center", color: "#555", fontSize: "13px" }}>
+            <div style={{ padding: "60px", textAlign: "center", color: "var(--up-text-dim)", fontSize: "13px" }}>
               Nenhum prospect encontrado. {!busca && "Vá em Prospecção para buscar novos."}
             </div>
           ) : (
@@ -344,18 +345,18 @@ function CRMPageInner() {
                     return (
                       <tr key={p.id} onClick={() => setSelected(p)}>
                         <td>
-                          <div style={{ fontWeight: "500", color: "#F0EDE8" }}>{p.nome}</div>
+                          <div style={{ fontWeight: "500", color: "var(--up-text)" }}>{p.nome}</div>
                           <div style={{ display: "flex", gap: "8px", marginTop: "2px" }}>
-                            {p.avaliacao ? <span style={{ fontSize: "11px", color: "#555" }}>★ {p.avaliacao} ({p.total_avaliacoes})</span> : null}
-                            {p.anotacoes ? <span style={{ fontSize: "11px", color: "#555" }}>· nota</span> : null}
+                            {p.avaliacao ? <span style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>★ {p.avaliacao} ({p.total_avaliacoes})</span> : null}
+                            {p.anotacoes ? <span style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>· nota</span> : null}
                           </div>
                         </td>
                         {aba === "cnae" && (
-                          <td style={{ fontFamily: "monospace", fontSize: "11px", color: "#666", whiteSpace: "nowrap" }}>
+                          <td style={{ fontFamily: "monospace", fontSize: "11px", color: "var(--up-text-dim)", whiteSpace: "nowrap" }}>
                             {p.cnpj ? p.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : "—"}
                           </td>
                         )}
-                        <td style={{ whiteSpace: "nowrap", color: "#888" }}>{p.cidade}</td>
+                        <td style={{ whiteSpace: "nowrap", color: "var(--up-text-muted)" }}>{p.cidade}</td>
                         <td>
                           <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.06em", background: badge.bg, color: badge.color, border: `1px solid ${badge.bd}` }}>
                             {tipoLabel(p.tipo)}
@@ -410,12 +411,12 @@ function CRMPageInner() {
       {/* Painel de detalhes */}
       {selected && (
         <div className="detail-panel">
-          <div style={{ padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "20px 24px", borderBottom: `1px solid var(--up-border)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: "11px", color: "#555", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Detalhes</p>
-              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "#F0EDE8", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selected.nome}</h3>
+              <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Detalhes</p>
+              <h3 style={{ fontSize: "15px", fontWeight: "600", color: "var(--up-text)", margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{selected.nome}</h3>
             </div>
-            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555", padding: "4px", flexShrink: 0 }}>
+            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)", padding: "4px", flexShrink: 0 }}>
               <X size={18} />
             </button>
           </div>
@@ -473,10 +474,10 @@ function CRMPageInner() {
 
             {/* CNAE — só aparece quando preenchido (fase 2) */}
             {selected.cnae && (
-              <div style={{ marginBottom: "20px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
+              <div style={{ marginBottom: "20px", padding: "12px", background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)` }}>
                 <p className="detail-label">CNAE</p>
                 <p style={{ fontSize: "13px", color: "#ccc", margin: 0, fontFamily: "monospace" }}>{selected.cnae}</p>
-                {selected.cnae_descricao && <p style={{ fontSize: "12px", color: "#666", margin: "4px 0 0" }}>{selected.cnae_descricao}</p>}
+                {selected.cnae_descricao && <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: "4px 0 0" }}>{selected.cnae_descricao}</p>}
               </div>
             )}
 
@@ -497,12 +498,12 @@ function CRMPageInner() {
             {/* Mensagem gerada */}
             <div style={{ marginBottom: "20px" }}>
               <p className="detail-label"><MessageSquare size={11} /> Mensagem gerada</p>
-              <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px", fontSize: "13px", color: "#aaa", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+              <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "14px", fontSize: "13px", color: "#aaa", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
                 {selected.mensagem}
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(selected.mensagem)}
-                style={{ marginTop: "8px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 12px", fontSize: "12px", color: "#666", cursor: "pointer", width: "100%" }}
+                style={{ marginTop: "8px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "6px 12px", fontSize: "12px", color: "var(--up-text-dim)", cursor: "pointer", width: "100%" }}
               >
                 Copiar mensagem
               </button>
@@ -523,7 +524,7 @@ function CRMPageInner() {
                 style={{
                   marginTop: "8px",
                   background: noteDraft !== (selected.anotacoes || "") ? ACCENT : "transparent",
-                  border: `1px solid ${noteDraft !== (selected.anotacoes || "") ? ACCENT : BORDER}`,
+                  border: `1px solid ${noteDraft !== (selected.anotacoes || "") ? ACCENT : "var(--up-border)"}`,
                   borderRadius: "6px", padding: "6px 12px", fontSize: "12px",
                   color: noteDraft !== (selected.anotacoes || "") ? "#000" : "#555",
                   cursor: "pointer", width: "100%", fontWeight: "500",
@@ -535,9 +536,9 @@ function CRMPageInner() {
             </div>
 
             {/* Rodapé */}
-            <div style={{ padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
-              <p style={{ fontSize: "11px", color: "#555", margin: "0 0 2px" }}>Adicionado em</p>
-              <p style={{ fontSize: "12px", color: "#888", margin: 0 }}>
+            <div style={{ padding: "12px", background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)` }}>
+              <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 2px" }}>Adicionado em</p>
+              <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>
                 {new Date(selected.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
               </p>
             </div>

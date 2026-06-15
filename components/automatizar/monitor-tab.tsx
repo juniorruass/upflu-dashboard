@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Loader2, Clock, Send, MessageSquare, CheckCircle2 } from "lucide-react";
 
@@ -22,14 +22,14 @@ const STATUS_BADGE: Record<string, { label: string; color: string; bg: string }>
   followup:      { label: "Follow-up",     color: "#a78bfa", bg: "rgba(167,139,250,0.1)" },
   respondeu:     { label: "Respondeu",     color: "#4ADE80", bg: "rgba(74,222,128,0.1)"  },
   fechado:       { label: "Fechado",       color: "#22c55e", bg: "rgba(34,197,94,0.1)"   },
-  sem_interesse: { label: "Sem interesse", color: "#666",    bg: "rgba(255,255,255,0.04)"},
+  sem_interesse: { label: "Sem interesse", color: "var(--up-text-dim)",    bg: "rgba(255,255,255,0.04)"},
   potencial:     { label: "Potencial",     color: "#FF9500", bg: "rgba(255,149,0,0.1)"   },
 };
 
 const DIAS_LABEL: Record<number, string> = { 0:"Dom", 1:"Seg", 2:"Ter", 3:"Qua", 4:"Qui", 5:"Sex", 6:"Sáb" };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_BADGE[status] ?? { label: status, color: "#555", bg: "rgba(255,255,255,0.04)" };
+  const cfg = STATUS_BADGE[status] ?? { label: status, color: "var(--up-text-dim)", bg: "rgba(255,255,255,0.04)" };
   return (
     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md border"
       style={{ color: cfg.color, background: cfg.bg, borderColor: `${cfg.color}33` }}>

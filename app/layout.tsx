@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
-import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { DynamicToaster } from "@/components/dynamic-toaster";
 import { SWRegister } from "@/components/sw-register";
 import "./globals.css";
 
@@ -34,22 +35,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={outfit.variable}>
-      <body style={{ margin: 0, background: "#080808", color: "#F0EDE8", fontFamily: "var(--font-outfit), sans-serif" }}>
-        {children}
-        <SWRegister />
-        <Toaster
-          theme="dark"
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: "#111111",
-              border: "1px solid rgba(255,255,255,0.07)",
-              color: "#F0EDE8",
-              fontFamily: "var(--font-outfit), sans-serif",
-            },
-          }}
-        />
+    <html lang="pt-BR" className={outfit.variable} suppressHydrationWarning>
+      <body style={{ margin: 0, fontFamily: "var(--font-outfit), sans-serif" }}>
+        <ThemeProvider>
+          {children}
+          <SWRegister />
+          <DynamicToaster />
+        </ThemeProvider>
       </body>
     </html>
   );

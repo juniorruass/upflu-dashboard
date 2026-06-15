@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 
 const PINK   = "#E1306C";
 const CARD   = "#0E0E0E";
-const BORDER = "rgba(255,255,255,0.06)";
 const TEXT   = "#F0EDE8";
 const MUTED  = "#666060";
 const GREEN  = "#4ADE80";
@@ -131,13 +130,13 @@ export function PortalInstagramSection({ clientId }: { clientId: string }) {
   }, [clientId]);
 
   if (loading) return (
-    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "32px", textAlign: "center" }}>
+    <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "18px", padding: "32px", textAlign: "center" }}>
       <p style={{ fontSize: "13px", color: MUTED, margin: 0 }}>Carregando Instagram...</p>
     </div>
   );
 
   if (error || !data) return (
-    <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "24px" }}>
+    <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "18px", padding: "24px" }}>
       <p style={{ fontSize: "12px", color: MUTED, margin: "0 0 6px" }}>Instagram em configuração.</p>
       {error && <p style={{ fontSize: "11px", color: "#FF6B6B", margin: 0, wordBreak: "break-word" }}>{error}</p>}
     </div>
@@ -193,9 +192,9 @@ export function PortalInstagramSection({ clientId }: { clientId: string }) {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", paddingTop: "16px" }}>
-        <div style={{ width: "16px", height: "1px", background: BORDER }} />
+        <div style={{ width: "16px", height: "1px", background: "var(--up-border)" }} />
         <span style={{ fontSize: "9px", color: `${MUTED}80`, letterSpacing: "0.1em", textTransform: "uppercase" }}>Instagram</span>
-        <div style={{ width: "16px", height: "1px", background: BORDER }} />
+        <div style={{ width: "16px", height: "1px", background: "var(--up-border)" }} />
       </div>
     </div>
   );

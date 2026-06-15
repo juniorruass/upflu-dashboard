@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { RefreshCw, Loader2, AlertCircle, Search, ChevronDown, ChevronUp } from "lucide-react";
 import Header from "@/components/header";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const CARD = "#111111";
 const MUTED = "#777068";
 const TEXT = "#F0EDE8";
@@ -255,7 +254,7 @@ export default function AnunciosPage() {
   const pill = (active: boolean, onClick: () => void, label: string) => (
     <button onClick={onClick} style={{
       padding: "6px 13px", borderRadius: "6px", fontSize: "12px", fontWeight: "500",
-      border: `1px solid ${active ? "rgba(0,207,255,0.4)" : BORDER}`,
+      border: `1px solid ${active ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`,
       background: active ? "rgba(0,207,255,0.09)" : "transparent",
       color: active ? ACCENT : MUTED, cursor: "pointer",
       fontFamily: "var(--font-outfit),sans-serif", transition: "all 0.15s",
@@ -268,7 +267,7 @@ export default function AnunciosPage() {
       <div className="page-wrap">
 
         {/* ── Filter panel ── */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "20px 24px", marginBottom: "24px" }}>
+        <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "20px 24px", marginBottom: "24px" }}>
 
           {/* Date */}
           <div style={{ marginBottom: "18px" }}>
@@ -278,10 +277,10 @@ export default function AnunciosPage() {
               {datePreset === "custom" && (
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                   <input type="date" value={since} onChange={(e) => setSince(e.target.value)}
-                    style={{ background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
+                    style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
                   <span style={{ fontSize: "12px", color: MUTED }}>até</span>
                   <input type="date" value={until} onChange={(e) => setUntil(e.target.value)}
-                    style={{ background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
+                    style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: TEXT, outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }} />
                 </div>
               )}
             </div>
@@ -307,7 +306,7 @@ export default function AnunciosPage() {
                 <div style={{ position: "relative", marginBottom: "10px", maxWidth: "260px" }}>
                   <Search size={13} color={MUTED} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)" }} />
                   <input value={searchQ} onChange={(e) => setSearchQ(e.target.value)} placeholder="Buscar..."
-                    style={{ width: "100%", background: "#080808", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "7px 10px 7px 30px", fontSize: "12px", color: TEXT, outline: "none", boxSizing: "border-box", fontFamily: "var(--font-outfit),sans-serif" }} />
+                    style={{ width: "100%", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "7px 10px 7px 30px", fontSize: "12px", color: TEXT, outline: "none", boxSizing: "border-box", fontFamily: "var(--font-outfit),sans-serif" }} />
                 </div>
                 <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   {filteredClients.map((c) => {
@@ -316,7 +315,7 @@ export default function AnunciosPage() {
                     return (
                       <button key={c.id} onClick={() => toggleClient(c.id)} style={{
                         padding: "7px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "500",
-                        border: `1px solid ${active ? "rgba(0,207,255,0.4)" : BORDER}`,
+                        border: `1px solid ${active ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`,
                         background: active ? "rgba(0,207,255,0.09)" : "transparent",
                         color: active ? ACCENT : MUTED, cursor: "pointer",
                         fontFamily: "var(--font-outfit),sans-serif", transition: "all 0.15s",
@@ -333,12 +332,12 @@ export default function AnunciosPage() {
           </div>
 
           {/* Bottom bar */}
-          <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: `1px solid var(--up-border)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "11px", color: MUTED }}>
               {lastRefresh ? `Atualizado às ${lastRefresh.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "Selecione um cliente para ver os dados"}
             </span>
             {selectedClients.size > 0 && (
-              <button onClick={refresh} style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "7px", padding: "7px 14px", color: MUTED, fontSize: "12px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
+              <button onClick={refresh} style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "7px", padding: "7px 14px", color: MUTED, fontSize: "12px", fontWeight: "500", cursor: "pointer", fontFamily: "var(--font-outfit),sans-serif" }}>
                 <RefreshCw size={12} /> Atualizar
               </button>
             )}
@@ -347,7 +346,7 @@ export default function AnunciosPage() {
 
         {/* ── Results ── */}
         {activeClients.length === 0 ? (
-          <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "48px", textAlign: "center" }}>
+          <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "48px", textAlign: "center" }}>
             <p style={{ fontSize: "14px", color: MUTED, margin: 0 }}>Selecione um cliente acima para ver as métricas.</p>
           </div>
         ) : (
@@ -357,10 +356,10 @@ export default function AnunciosPage() {
               const camps = st?.campaigns ?? [];
 
               return (
-                <div key={c.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
+                <div key={c.id} style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", overflow: "hidden" }}>
 
                   {/* Client header */}
-                  <div style={{ padding: "20px 24px", borderBottom: st?.insights || st?.loading ? `1px solid ${BORDER}` : "none" }}>
+                  <div style={{ padding: "20px 24px", borderBottom: st?.insights || st?.loading ? `1px solid var(--up-border)` : "none" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: (st?.insights && activeMetrics.length > 0) ? "16px" : "0" }}>
                       <div>
                         <p style={{ fontSize: "15px", fontWeight: "600", color: TEXT, margin: "0 0 2px" }}>{c.name}</p>
@@ -392,7 +391,7 @@ export default function AnunciosPage() {
                                   ? `Custo / ${firstResult.label}`
                                   : m.label;
                                 return (
-                                  <div key={m.key} style={{ background: "#080808", borderRadius: "8px", padding: "12px 14px", border: `1px solid ${hi ? "rgba(0,207,255,0.2)" : BORDER}`, position: "relative", overflow: "hidden" }}>
+                                  <div key={m.key} style={{ background: "var(--up-bg)", borderRadius: "8px", padding: "12px 14px", border: `1px solid ${hi ? "rgba(0,207,255,0.2)" : "var(--up-border)"}`, position: "relative", overflow: "hidden" }}>
                                     {hi && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${ACCENT},transparent)` }} />}
                                     <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 5px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</p>
                                     <p style={{ fontSize: "16px", fontWeight: "700", color: hi ? ACCENT : TEXT, margin: 0, letterSpacing: "-0.02em" }}>{fmtMetric(m.key, val)}</p>
@@ -403,14 +402,14 @@ export default function AnunciosPage() {
                           )}
                           {/* All results breakdown */}
                           {hasAllResults && (
-                            <div style={{ background: "#080808", borderRadius: "8px", border: `1px solid ${BORDER}`, overflow: "hidden" }}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "0", borderBottom: `1px solid ${BORDER}` }}>
+                            <div style={{ background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)`, overflow: "hidden" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: "0", borderBottom: `1px solid var(--up-border)` }}>
                                 <p style={{ fontSize: "10px", color: MUTED, margin: 0, letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 14px 8px" }}>Tipo de resultado</p>
                                 <p style={{ fontSize: "10px", color: MUTED, margin: 0, letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 14px 8px", textAlign: "right" }}>Qtd.</p>
                                 <p style={{ fontSize: "10px", color: MUTED, margin: 0, letterSpacing: "0.14em", textTransform: "uppercase", padding: "10px 14px 8px", textAlign: "right", minWidth: "100px" }}>Custo unit.</p>
                               </div>
                               {st.insights!.all_results.map((r, i) => (
-                                <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "10px 14px", borderBottom: i < st.insights!.all_results.length - 1 ? `1px solid ${BORDER}` : "none" }}>
+                                <div key={r.label} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", padding: "10px 14px", borderBottom: i < st.insights!.all_results.length - 1 ? `1px solid var(--up-border)` : "none" }}>
                                   <span style={{ fontSize: "13px", color: TEXT, fontWeight: "500" }}>{r.label}</span>
                                   <span style={{ fontSize: "14px", fontWeight: "700", color: TEXT, padding: "0 14px", textAlign: "right" }}>{r.value.toLocaleString("pt-BR")}</span>
                                   <span style={{ fontSize: "13px", color: r.cost != null ? ACCENT : MUTED, minWidth: "100px", textAlign: "right", fontWeight: r.cost != null ? "600" : "400" }}>
@@ -443,10 +442,10 @@ export default function AnunciosPage() {
                       </button>
 
                       {st.expanded && camps.length > 0 && (
-                        <div className="r-scroll" style={{ borderTop: `1px solid ${BORDER}` }}>
+                        <div className="r-scroll" style={{ borderTop: `1px solid var(--up-border)` }}>
                           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                             <thead>
-                              <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                              <tr style={{ borderBottom: `1px solid var(--up-border)` }}>
                                 {["Campanha", "Status", "Investimento", camps.find(c => c.insights?.result_label)?.insights?.result_label ?? "Resultados", "Custo/Result.", "Leads", "CPL", "Clicks", "CTR"].map((h) => (
                                   <th key={h} style={{ padding: "10px 16px", textAlign: h === "Campanha" ? "left" : "right", fontSize: "10px", fontWeight: "600", color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                                 ))}
@@ -459,7 +458,7 @@ export default function AnunciosPage() {
                                 const num = (v: number | null) => v != null ? v.toLocaleString("pt-BR") : "—";
                                 const pct = (v: number | null) => v != null ? v.toFixed(2) + "%" : "—";
                                 return (
-                                  <tr key={camp.id} style={{ borderBottom: i < camps.length - 1 ? `1px solid ${BORDER}` : "none", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
+                                  <tr key={camp.id} style={{ borderBottom: i < camps.length - 1 ? `1px solid var(--up-border)` : "none", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)" }}>
                                     <td style={{ padding: "12px 16px", color: TEXT, maxWidth: "220px" }}>
                                       <p style={{ margin: 0, fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{camp.name}</p>
                                       <p style={{ margin: 0, fontSize: "10px", color: MUTED }}>{camp.objective?.replace(/_/g, " ")}</p>
@@ -485,7 +484,7 @@ export default function AnunciosPage() {
                       )}
 
                       {st.expanded && !st.loadingCampaigns && camps.length === 0 && (
-                        <div style={{ padding: "16px 24px", borderTop: `1px solid ${BORDER}` }}>
+                        <div style={{ padding: "16px 24px", borderTop: `1px solid var(--up-border)` }}>
                           <p style={{ fontSize: "12px", color: MUTED, margin: 0 }}>Nenhuma campanha ativa ou pausada encontrada.</p>
                         </div>
                       )}

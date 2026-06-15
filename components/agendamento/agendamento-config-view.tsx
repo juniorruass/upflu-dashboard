@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Save, Plus, Trash2, GripVertical, Link2, Zap, Clock, Calendar, Building2 } from "lucide-react";
@@ -6,7 +6,6 @@ import type { AgendamentoConfig, QuizPergunta, AgendamentoSlot } from "@/types";
 import { diaSemanaParaNome } from "@/lib/agendamento";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.08)";
 type Tab = "clinica" | "quiz" | "horarios" | "webhook";
 
 const DIAS_SEMANA = [0, 1, 2, 3, 4, 5, 6];
@@ -127,7 +126,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
   return (
     <div style={{ padding: "24px", flex: 1 }}>
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", marginBottom: "28px", borderBottom: `1px solid ${BORDER}`, paddingBottom: "0" }}>
+      <div style={{ display: "flex", gap: "4px", marginBottom: "28px", borderBottom: `1px solid var(--up-border)`, paddingBottom: "0" }}>
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             style={{ padding: "10px 18px", background: "transparent", border: "none", borderBottom: `2px solid ${tab === t.key ? ACCENT : "transparent"}`, color: tab === t.key ? ACCENT : "#9A9288", cursor: "pointer", fontSize: "13px", fontWeight: tab === t.key ? "600" : "400", display: "flex", alignItems: "center", gap: "6px", marginBottom: "-1px" }}>
@@ -149,7 +148,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
             <Field label="Descrição (aparece na página de agendamento)">
               <textarea value={clinicaForm.descricao} onChange={(e) => setClinicaForm({ ...clinicaForm, descricao: e.target.value })}
                 rows={3} placeholder="Ex: Agende sua consulta em segundos."
-                style={{ width: "100%", padding: "12px 14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#fff", fontSize: "13px", resize: "none", outline: "none", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "12px 14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "#fff", fontSize: "13px", resize: "none", outline: "none", boxSizing: "border-box" }} />
             </Field>
           </Section>
 
@@ -175,7 +174,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
       {tab === "quiz" && (
         <div style={{ maxWidth: "600px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <p style={{ fontSize: "13px", color: "#9A9288" }}>{perguntas.length} pergunta{perguntas.length !== 1 ? "s" : ""} configurada{perguntas.length !== 1 ? "s" : ""}</p>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)" }}>{perguntas.length} pergunta{perguntas.length !== 1 ? "s" : ""} configurada{perguntas.length !== 1 ? "s" : ""}</p>
             <button onClick={addPergunta}
               style={{ padding: "8px 14px", background: "rgba(0,207,255,0.08)", border: `1px solid rgba(0,207,255,0.2)`, borderRadius: "8px", color: ACCENT, cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "6px" }}>
               <Plus size={14} /> Nova pergunta
@@ -183,17 +182,17 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
           </div>
 
           {perguntas.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#777068" }}>
+            <div style={{ textAlign: "center", padding: "40px", color: "var(--up-text-label)" }}>
               <Zap size={32} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
               <p>Nenhuma pergunta ainda. Adicione para qualificar os pacientes.</p>
             </div>
           )}
 
           {perguntas.map((p, i) => (
-            <div key={i} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "16px", marginBottom: "10px" }}>
+            <div key={i} style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "16px", marginBottom: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                 <GripVertical size={14} color="#444" />
-                <span style={{ fontSize: "11px", color: "#777068" }}>Pergunta {i + 1}</span>
+                <span style={{ fontSize: "11px", color: "var(--up-text-label)" }}>Pergunta {i + 1}</span>
                 <div style={{ flex: 1 }} />
                 <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: p.ativo ? ACCENT : "#777068" }}>
                   <input type="checkbox" checked={p.ativo ?? true} onChange={(e) => updatePergunta(i, "ativo", e.target.checked)} style={{ accentColor: ACCENT }} />
@@ -211,7 +210,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
 
               <Field label="Tipo">
                 <select value={p.tipo ?? "single_choice"} onChange={(e) => updatePergunta(i, "tipo", e.target.value)}
-                  style={{ width: "100%", padding: "10px 14px", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#fff", fontSize: "13px", outline: "none" }}>
+                  style={{ width: "100%", padding: "10px 14px", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "#fff", fontSize: "13px", outline: "none" }}>
                   <option value="single_choice">Múltipla escolha</option>
                   <option value="text">Texto livre</option>
                   <option value="boolean">Sim / Não</option>
@@ -224,11 +223,11 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
                     value={(p.opcoes ?? []).join("\n")}
                     onChange={(e) => updatePergunta(i, "opcoes", e.target.value.split("\n").filter(Boolean))}
                     rows={4} placeholder={"Consulta de rotina\nRetorno\nProcedimento estético"}
-                    style={{ width: "100%", padding: "12px 14px", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#fff", fontSize: "13px", resize: "none", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", padding: "12px 14px", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "#fff", fontSize: "13px", resize: "none", outline: "none", boxSizing: "border-box" }} />
                 </Field>
               )}
 
-              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: "#9A9288" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "12px", color: "var(--up-text-muted)" }}>
                 <input type="checkbox" checked={p.obrigatoria ?? true} onChange={(e) => updatePergunta(i, "obrigatoria", e.target.checked)} style={{ accentColor: ACCENT }} />
                 Resposta obrigatória
               </label>
@@ -242,13 +241,13 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
       {/* ── HORÁRIOS ── */}
       {tab === "horarios" && (
         <div style={{ maxWidth: "540px" }}>
-          <p style={{ fontSize: "13px", color: "#9A9288", marginBottom: "20px" }}>
+          <p style={{ fontSize: "13px", color: "var(--up-text-muted)", marginBottom: "20px" }}>
             Configure os dias e horários de atendimento. Os slots serão gerados automaticamente com base na duração da consulta.
           </p>
           {DIAS_SEMANA.map((dia) => {
             const s = slots.find((sl) => sl.dia_semana === dia) ?? { dia_semana: dia, hora_inicio: "09:00", hora_fim: "18:00", ativo: false };
             return (
-              <div key={dia} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 16px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", marginBottom: "8px" }}>
+              <div key={dia} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "14px 16px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", marginBottom: "8px" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", minWidth: "110px" }}>
                   <input type="checkbox" checked={s.ativo ?? false} onChange={(e) => updateSlot(dia, "ativo", e.target.checked)} style={{ accentColor: ACCENT, width: "14px", height: "14px" }} />
                   <span style={{ fontSize: "13px", fontWeight: "500", color: s.ativo ? "#fff" : "#555" }}>{diaSemanaParaNome(dia)}</span>
@@ -257,11 +256,11 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
                   <Calendar size={12} color="#555" />
                   <input type="time" value={s.hora_inicio ?? "09:00"} disabled={!s.ativo}
                     onChange={(e) => updateSlot(dia, "hora_inicio", e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "6px", color: "#fff", fontSize: "13px", outline: "none" }} />
-                  <span style={{ color: "#555", fontSize: "12px" }}>até</span>
+                    style={{ padding: "6px 10px", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", color: "#fff", fontSize: "13px", outline: "none" }} />
+                  <span style={{ color: "var(--up-text-dim)", fontSize: "12px" }}>até</span>
                   <input type="time" value={s.hora_fim ?? "18:00"} disabled={!s.ativo}
                     onChange={(e) => updateSlot(dia, "hora_fim", e.target.value)}
-                    style={{ padding: "6px 10px", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "6px", color: "#fff", fontSize: "13px", outline: "none" }} />
+                    style={{ padding: "6px 10px", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", color: "#fff", fontSize: "13px", outline: "none" }} />
                 </div>
               </div>
             );
@@ -275,7 +274,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
         <div style={{ maxWidth: "540px" }}>
           <div style={{ background: "rgba(0,207,255,0.04)", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "10px", padding: "16px", marginBottom: "24px" }}>
             <p style={{ fontSize: "13px", color: ACCENT, fontWeight: "600", marginBottom: "6px" }}>Como funciona</p>
-            <p style={{ fontSize: "13px", color: "#9A9288", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)", lineHeight: 1.6 }}>
               Quando um novo agendamento for criado, o sistema registra um evento na tabela <code style={{ color: ACCENT }}>agendamento_webhook_events</code>.
               Configure o n8n para escutar o endpoint <code style={{ color: ACCENT }}>GET /api/agendamento/webhook</code> e disparar WhatsApp automático.
             </p>
@@ -303,7 +302,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
                 <div style={{ width: "8px", height: "8px", background: ACCENT, borderRadius: "50%", marginTop: "5px", flexShrink: 0 }} />
                 <div>
                   <code style={{ fontSize: "12px", color: ACCENT }}>{tipo}</code>
-                  <p style={{ fontSize: "12px", color: "#777068", marginTop: "2px" }}>{desc}</p>
+                  <p style={{ fontSize: "12px", color: "var(--up-text-label)", marginTop: "2px" }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -321,7 +320,7 @@ export default function AgendamentoConfigView({ config, perguntas: initPerguntas
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: "28px" }}>
-      <p style={{ fontSize: "11px", fontWeight: "600", color: "#777068", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "14px" }}>{title}</p>
+      <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-label)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "14px" }}>{title}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>{children}</div>
     </div>
   );
@@ -330,7 +329,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ fontSize: "12px", color: "#777068", display: "block", marginBottom: "6px" }}>{label}</label>
+      <label style={{ fontSize: "12px", color: "var(--up-text-label)", display: "block", marginBottom: "6px" }}>{label}</label>
       {children}
     </div>
   );
@@ -339,7 +338,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function Input({ value, onChange, placeholder, type = "text" }: { value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return (
     <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-      style={{ width: "100%", padding: "10px 14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#fff", fontSize: "13px", outline: "none", boxSizing: "border-box" }} />
+      style={{ width: "100%", padding: "10px 14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "#fff", fontSize: "13px", outline: "none", boxSizing: "border-box" }} />
   );
 }
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@/lib/supabase";
@@ -56,7 +56,7 @@ export default function SettingsForm({ userEmail }: Props) {
   }
 
   const cardStyle: React.CSSProperties = {
-    background: "#1A1A1A",
+    background: "var(--up-card)",
     border: "1px solid #2A2A2A",
     borderRadius: "12px",
     padding: "24px",
@@ -67,7 +67,7 @@ export default function SettingsForm({ userEmail }: Props) {
   const labelStyle: React.CSSProperties = {
     fontSize: "13px",
     fontWeight: "600",
-    color: "#888888",
+    color: "var(--up-text-muted)",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
     display: "block",
@@ -95,10 +95,10 @@ export default function SettingsForm({ userEmail }: Props) {
         {/* Toggle */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
           <div>
-            <p style={{ fontSize: "14px", fontWeight: "500", color: "#F5F5F5", margin: "0 0 4px" }}>
+            <p style={{ fontSize: "14px", fontWeight: "500", color: "var(--up-text)", margin: "0 0 4px" }}>
               Gerar carrossel diariamente
             </p>
-            <p style={{ fontSize: "12px", color: "#888888", margin: 0 }}>
+            <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>
               Quando ativo, um carrossel é gerado automaticamente no horário configurado.
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function SettingsForm({ userEmail }: Props) {
               gap: "6px",
               fontSize: "13px",
               fontWeight: "500",
-              color: "#F5F5F5",
+              color: "var(--up-text)",
               marginBottom: "8px",
             }}
           >
@@ -154,18 +154,18 @@ export default function SettingsForm({ userEmail }: Props) {
             value={cronTime}
             onChange={(e) => setCronTime(e.target.value)}
             style={{
-              background: "#252525",
+              background: "var(--up-surface)",
               border: "1px solid #2A2A2A",
               borderRadius: "8px",
               padding: "10px 14px",
               fontSize: "14px",
-              color: "#F5F5F5",
+              color: "var(--up-text)",
               outline: "none",
               width: "160px",
               colorScheme: "dark",
             }}
           />
-          <p style={{ fontSize: "11px", color: "#888888", marginTop: "6px" }}>
+          <p style={{ fontSize: "11px", color: "var(--up-text-muted)", marginTop: "6px" }}>
             Padrão: 09:00. A mudança entra em vigor na próxima execução.
           </p>
         </div>
@@ -178,7 +178,7 @@ export default function SettingsForm({ userEmail }: Props) {
             border: "1px solid rgba(0,200,150,0.12)",
             borderRadius: "8px",
             fontSize: "12px",
-            color: "#888888",
+            color: "var(--up-text-muted)",
             lineHeight: 1.5,
           }}
         >
@@ -203,7 +203,7 @@ export default function SettingsForm({ userEmail }: Props) {
             alignItems: "center",
             gap: "12px",
             padding: "12px 16px",
-            background: "#252525",
+            background: "var(--up-surface)",
             borderRadius: "8px",
             marginBottom: "20px",
           }}
@@ -226,10 +226,10 @@ export default function SettingsForm({ userEmail }: Props) {
             JR
           </div>
           <div>
-            <p style={{ fontSize: "14px", fontWeight: "600", color: "#F5F5F5", margin: "0 0 2px" }}>
+            <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 2px" }}>
               Junior
             </p>
-            <p style={{ fontSize: "12px", color: "#888888", margin: 0 }}>{userEmail}</p>
+            <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>{userEmail}</p>
           </div>
         </div>
 

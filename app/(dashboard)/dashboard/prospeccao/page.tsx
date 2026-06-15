@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 const ALL_CITIES = [
   "Teixeira de Freitas, BA",
@@ -83,6 +82,17 @@ export default function ProspeccaoPage() {
   const [statusCNAE, setStatusCNAE]   = useState("");
   const [adicionando, setAdicionando] = useState<string | null>(null);
 
+  // Maps qualification filters
+  const [minRating, setMinRating]       = useState(0);
+  const [minReviews, setMinReviews]     = useState(0);
+  const [filterPhone, setFilterPhone]   = useState(false);
+  const [filterSite, setFilterSite]     = useState(false);
+  const [filterNoSite, setFilterNoSite] = useState(false);
+
+  // CNAE qualification filters
+  const [cnaeFilterPhone, setCnaeFilterPhone] = useState(false);
+  const [cnaeFilterEmail, setCnaeFilterEmail] = useState(false);
+
   // ── Maps ──
   async function buscar() {
     if (!cities.length || !types.length) return;
@@ -108,7 +118,7 @@ export default function ProspeccaoPage() {
   }
 
   async function enviarEmails() {
-    const comEmail = clinics.filter((c) => c.email && !c.emailEnviado);
+    const comEmail = filteredClinics.filter((c) => c.email && !c.emailEnviado);
     if (!comEmail.length) return;
     setSending(true);
     setStatus(`Enviando emails para ${comEmail.length} clínicas...`);
@@ -131,9 +141,9 @@ export default function ProspeccaoPage() {
   }
 
   function exportarCSV() {
-    if (!clinics.length) return;
+    if (!filteredClinics.length) return;
     const headers = ["Nome","Tipo","Cidade","Telefone","Email","Website","Endereço","Avaliação","Mensagem","Email Enviado"];
-    const rows = clinics.map((c) => [
+    const rows = filteredClinics.map((c) => [
       c.nome, c.tipo, c.cidade, c.telefone, c.email, c.website, c.endereco,
       String(c.avaliacao),
       `"${c.mensagem.replace(/"/g, '""').replace(/\n/g, " ")}"`,
@@ -192,13 +202,28 @@ export default function ProspeccaoPage() {
   }
 
   async function adicionarTodas() {
-    for (const empresa of empresas.filter((e) => !e.adicionado)) {
+    for (const empresa of filteredEmpresas.filter((e) => !e.adicionado)) {
       await adicionarAoCRM(empresa);
     }
   }
 
-  const comEmail   = clinics.filter((c) => c.email).length;
-  const enviados   = clinics.filter((c) => c.emailEnviado).length;
+  const filteredClinics = clinics.filter((c) => {
+    if (filterPhone   && !c.telefone) return false;
+    if (filterSite    && !c.website)  return false;
+    if (filterNoSite  && c.website)   return false;
+    if (minRating  > 0 && Number(c.avaliacao) < minRating)  return false;
+    if (minReviews > 0 && c.totalAvaliacoes    < minReviews) return false;
+    return true;
+  });
+
+  const filteredEmpresas = empresas.filter((e) => {
+    if (cnaeFilterPhone && !e.telefone) return false;
+    if (cnaeFilterEmail && !e.email)    return false;
+    return true;
+  });
+
+  const comEmail    = filteredClinics.filter((c) => c.email).length;
+  const enviados    = filteredClinics.filter((c) => c.emailEnviado).length;
   const adicionadas = empresas.filter((e) => e.adicionado).length;
 
   return (
@@ -209,8 +234,8 @@ export default function ProspeccaoPage() {
         .prosp-pad { padding: 40px; }
         .prosp-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
         .prosp-table { width: 100%; border-collapse: collapse; }
-        .prosp-table th { font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid ${BORDER}; }
-        .prosp-table td { font-size: 13px; color: #ccc; padding: 12px 16px; border-bottom: 1px solid ${BORDER}; vertical-align: top; }
+        .prosp-table th { font-size: 10px; font-weight: 600; color: #666; letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 16px; text-align: left; border-bottom: 1px solid var(--up-border); }
+        .prosp-table td { font-size: 13px; color: #ccc; padding: 12px 16px; border-bottom: 1px solid var(--up-border); vertical-align: top; }
         .prosp-table tr:last-child td { border-bottom: none; }
         .prosp-table tr:hover td { background: rgba(255,255,255,0.02); }
         .badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -226,17 +251,17 @@ export default function ProspeccaoPage() {
         .btn-primary { background: ${ACCENT}; color: #000; border: none; border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity 0.15s; }
         .btn-primary:hover { opacity: 0.85; }
         .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-ghost { background: transparent; color: #ccc; border: 1px solid ${BORDER}; border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: border-color 0.15s; }
+        .btn-ghost { background: transparent; color: #ccc; border: 1px solid var(--up-border); border-radius: 8px; padding: 10px 16px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: border-color 0.15s; }
         .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
         .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn-sm { background: rgba(0,207,255,0.1); color: ${ACCENT}; border: 1px solid rgba(0,207,255,0.2); border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; transition: all 0.15s; }
         .btn-sm:hover { background: rgba(0,207,255,0.2); }
         .btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn-sm.done { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.2); cursor: default; }
-        .prosp-input { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 6px; padding: 9px 12px; font-size: 13px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; transition: border-color 0.15s; }
+        .prosp-input { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 6px; padding: 9px 12px; font-size: 13px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; transition: border-color 0.15s; }
         .prosp-input:focus { border-color: rgba(0,207,255,0.4); }
         .prosp-input::placeholder { color: #444; }
-        .prosp-select { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 6px; padding: 9px 12px; font-size: 13px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; cursor: pointer; }
+        .prosp-select { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 6px; padding: 9px 12px; font-size: 13px; color: #ccc; outline: none; width: 100%; box-sizing: border-box; cursor: pointer; }
         .tab-btn { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 8px 18px; font-size: 13px; color: #666; cursor: pointer; font-weight: 500; transition: all 0.15s; }
         .tab-btn.active { color: ${ACCENT}; border-bottom-color: ${ACCENT}; }
         .tab-btn:hover:not(.active) { color: #aaa; }
@@ -254,10 +279,10 @@ export default function ProspeccaoPage() {
             <p style={{ fontSize: "11px", fontWeight: "500", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 8px" }}>
               Captação inteligente
             </p>
-            <h2 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
+            <h2 style={{ fontSize: "28px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 6px", letterSpacing: "-0.02em" }}>
               Prospecção
             </h2>
-            <p style={{ fontSize: "13px", color: "#666", margin: 0 }}>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: 0 }}>
               Busca via Google Maps ou diretamente na Receita Federal por CNAE — só empresas ativas.
             </p>
           </div>
@@ -268,7 +293,7 @@ export default function ProspeccaoPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: `1px solid ${BORDER}`, marginBottom: "28px" }}>
+        <div style={{ display: "flex", borderBottom: `1px solid var(--up-border)`, marginBottom: "28px" }}>
           <button className={`tab-btn${modo === "maps" ? " active" : ""}`} onClick={() => setModo("maps")}>
             Google Maps
           </button>
@@ -280,23 +305,59 @@ export default function ProspeccaoPage() {
         {/* ─── MODO MAPS ─── */}
         {modo === "maps" && (
           <div className="prosp-grid">
-            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px", position: "sticky", top: "20px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Cidades</p>
+            <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px", position: "sticky", top: "20px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Cidades</p>
               {ALL_CITIES.map((c) => (
                 <label key={c} className="check-item" style={{ userSelect: "none" }}>
                   <input type="checkbox" checked={cities.includes(c)} onChange={() => setCities((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
                   <span style={{ fontSize: "13px", color: cities.includes(c) ? "#F0EDE8" : "#666" }}>{c}</span>
                 </label>
               ))}
-              <div style={{ height: "1px", background: BORDER, margin: "20px 0" }} />
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Tipo de negócio</p>
+              <div style={{ height: "1px", background: "var(--up-border)", margin: "20px 0" }} />
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Tipo de negócio</p>
               {ALL_TYPES.map((t) => (
                 <label key={t} className="check-item" style={{ userSelect: "none" }}>
                   <input type="checkbox" checked={types.includes(t)} onChange={() => setTypes((prev) => prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t])} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
                   <span style={{ fontSize: "13px", color: types.includes(t) ? "#F0EDE8" : "#666", textTransform: "capitalize" }}>{t}</span>
                 </label>
               ))}
-              <div style={{ height: "1px", background: BORDER, margin: "20px 0" }} />
+              <div style={{ height: "1px", background: "var(--up-border)", margin: "20px 0" }} />
+
+              {/* Filtros de qualificação – Maps */}
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 10px" }}>Filtros</p>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontSize: "11px", color: "#555", display: "block", marginBottom: "5px" }}>Avaliação mínima</label>
+                <select className="prosp-select" value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
+                  <option value={0}>Qualquer</option>
+                  <option value={3}>≥ 3.0 ★</option>
+                  <option value={3.5}>≥ 3.5 ★</option>
+                  <option value={4}>≥ 4.0 ★</option>
+                  <option value={4.5}>≥ 4.5 ★</option>
+                </select>
+              </div>
+              <div style={{ marginBottom: "10px" }}>
+                <label style={{ fontSize: "11px", color: "#555", display: "block", marginBottom: "5px" }}>Mín. de avaliações</label>
+                <select className="prosp-select" value={minReviews} onChange={(e) => setMinReviews(Number(e.target.value))}>
+                  <option value={0}>Qualquer</option>
+                  <option value={5}>≥ 5</option>
+                  <option value={10}>≥ 10</option>
+                  <option value={20}>≥ 20</option>
+                  <option value={50}>≥ 50</option>
+                </select>
+              </div>
+              <label className="check-item" style={{ userSelect: "none" }}>
+                <input type="checkbox" checked={filterPhone} onChange={(e) => setFilterPhone(e.target.checked)} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                <span style={{ fontSize: "13px", color: filterPhone ? "#F0EDE8" : "#666" }}>Só com telefone</span>
+              </label>
+              <label className="check-item" style={{ userSelect: "none" }}>
+                <input type="checkbox" checked={filterSite} onChange={(e) => { setFilterSite(e.target.checked); if (e.target.checked) setFilterNoSite(false); }} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                <span style={{ fontSize: "13px", color: filterSite ? "#F0EDE8" : "#666" }}>Só com website</span>
+              </label>
+              <label className="check-item" style={{ userSelect: "none", marginBottom: "20px" }}>
+                <input type="checkbox" checked={filterNoSite} onChange={(e) => { setFilterNoSite(e.target.checked); if (e.target.checked) setFilterSite(false); }} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                <span style={{ fontSize: "13px", color: filterNoSite ? "#F0EDE8" : "#666" }}>Sem site</span>
+              </label>
+
               <button className="btn-primary" onClick={buscar} disabled={loading || !cities.length || !types.length} style={{ width: "100%", justifyContent: "center" }}>
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />}
                 {loading ? "Buscando..." : "Buscar no Maps"}
@@ -315,33 +376,45 @@ export default function ProspeccaoPage() {
             </div>
 
             <div>
-              {status && <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", fontSize: "13px", color: "#aaa" }}>{status}</div>}
+              {status && <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", fontSize: "13px", color: "#aaa" }}>{status}</div>}
               {clinics.length === 0 && !loading && (
-                <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "60px 40px", textAlign: "center" }}>
+                <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "60px 40px", textAlign: "center" }}>
                   <Search size={32} color="#333" style={{ margin: "0 auto 16px" }} />
-                  <p style={{ fontSize: "14px", color: "#555", margin: 0 }}>Selecione cidades e tipos e clique em Buscar.</p>
+                  <p style={{ fontSize: "14px", color: "var(--up-text-dim)", margin: 0 }}>Selecione cidades e tipos e clique em Buscar.</p>
                 </div>
               )}
-              {clinics.length > 0 && (
+              {clinics.length > 0 && filteredClinics.length === 0 && (
+                <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "40px", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", color: "var(--up-text-dim)", margin: "0 0 4px" }}>Nenhum resultado com os filtros aplicados.</p>
+                  <p style={{ fontSize: "12px", color: "#444", margin: 0 }}>Total encontrado: {clinics.length} — ajuste os filtros para ver os resultados.</p>
+                </div>
+              )}
+
+              {clinics.length > 0 && filteredClinics.length > 0 && (
                 <>
-                  <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-                    {[{ label: "Encontradas", value: clinics.length, color: "#F0EDE8" }, { label: "Com email", value: comEmail, color: ACCENT }, { label: "Enviados", value: enviados, color: "#22c55e" }].map((s) => (
-                      <div key={s.label} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "12px 20px" }}>
-                        <p style={{ fontSize: "10px", color: "#555", margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
+                  <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+                    {[
+                      { label: "Total",      value: clinics.length,          color: "var(--up-text)" },
+                      ...(filteredClinics.length < clinics.length ? [{ label: "Filtradas", value: filteredClinics.length, color: ACCENT }] : []),
+                      { label: "Com email",  value: comEmail,                color: ACCENT },
+                      { label: "Enviados",   value: enviados,                color: "#22c55e" },
+                    ].map((s) => (
+                      <div key={s.label} style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "12px 20px" }}>
+                        <p style={{ fontSize: "10px", color: "var(--up-text-dim)", margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
                         <p style={{ fontSize: "24px", fontWeight: "700", color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
                       </div>
                     ))}
                   </div>
-                  <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", overflow: "hidden" }}>
+                  <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", overflow: "hidden" }}>
                     <div style={{ overflowX: "auto" }}>
                       <table className="prosp-table">
                         <thead><tr><th>Clínica</th><th>Cidade</th><th>Tipo</th><th>Telefone</th><th>Email</th><th>Status</th></tr></thead>
                         <tbody>
-                          {clinics.map((c) => (
+                          {filteredClinics.map((c) => (
                             <tr key={c.id}>
                               <td>
-                                <div style={{ fontWeight: "500", color: "#F0EDE8" }}>{c.nome}</div>
-                                {c.avaliacao && <div style={{ fontSize: "11px", color: "#555" }}>★ {c.avaliacao} ({c.totalAvaliacoes})</div>}
+                                <div style={{ fontWeight: "500", color: "var(--up-text)" }}>{c.nome}</div>
+                                {c.avaliacao && <div style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>★ {c.avaliacao} ({c.totalAvaliacoes})</div>}
                               </td>
                               <td style={{ whiteSpace: "nowrap" }}>{c.cidade}</td>
                               <td>
@@ -353,7 +426,7 @@ export default function ProspeccaoPage() {
                               <td style={{ fontSize: "12px", color: c.email ? ACCENT : "#444" }}>{c.email || "—"}</td>
                               <td>
                                 {c.emailEnviado ? <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#22c55e", fontSize: "12px" }}><CheckCircle2 size={13} /> Enviado</span>
-                                  : c.email ? <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "#555", fontSize: "12px" }}><XCircle size={13} /> Pendente</span>
+                                  : c.email ? <span style={{ display: "flex", alignItems: "center", gap: "4px", color: "var(--up-text-dim)", fontSize: "12px" }}><XCircle size={13} /> Pendente</span>
                                   : <span style={{ fontSize: "12px", color: "#333" }}>Sem email</span>}
                               </td>
                             </tr>
@@ -371,17 +444,17 @@ export default function ProspeccaoPage() {
         {/* ─── MODO CNAE ─── */}
         {modo === "cnae" && (
           <div className="prosp-grid">
-            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px", position: "sticky", top: "20px" }}>
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Segmento / CNAE</p>
+            <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px", position: "sticky", top: "20px" }}>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Segmento / CNAE</p>
               <select className="prosp-select" value={cnaeSel} onChange={(e) => setCnaeSel(e.target.value)} style={{ marginBottom: "16px" }}>
                 {CNAE_LISTA.map((c) => (
                   <option key={c.codigo} value={c.codigo}>{c.label} · {c.codigo}</option>
                 ))}
               </select>
 
-              <div style={{ height: "1px", background: BORDER, margin: "4px 0 16px" }} />
+              <div style={{ height: "1px", background: "var(--up-border)", margin: "4px 0 16px" }} />
 
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Cidade</p>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Cidade</p>
               <input
                 className="prosp-input"
                 placeholder="Ex: Vitória, Vila Velha..."
@@ -391,66 +464,88 @@ export default function ProspeccaoPage() {
                 style={{ marginBottom: "12px" }}
               />
 
-              <p style={{ fontSize: "11px", fontWeight: "600", color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Estado (UF)</p>
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 8px" }}>Estado (UF)</p>
               <select className="prosp-select" value={uf} onChange={(e) => setUf(e.target.value)} style={{ marginBottom: "20px" }}>
                 {UF_LIST.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
+
+              {/* Filtros de qualificação – CNAE */}
+              <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 10px" }}>Filtros</p>
+              <label className="check-item" style={{ userSelect: "none" }}>
+                <input type="checkbox" checked={cnaeFilterPhone} onChange={(e) => setCnaeFilterPhone(e.target.checked)} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                <span style={{ fontSize: "13px", color: cnaeFilterPhone ? "#F0EDE8" : "#666" }}>Só com telefone</span>
+              </label>
+              <label className="check-item" style={{ userSelect: "none", marginBottom: "20px" }}>
+                <input type="checkbox" checked={cnaeFilterEmail} onChange={(e) => setCnaeFilterEmail(e.target.checked)} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                <span style={{ fontSize: "13px", color: cnaeFilterEmail ? "#F0EDE8" : "#666" }}>Só com e-mail</span>
+              </label>
 
               <button className="btn-primary" onClick={buscarCNAE} disabled={loadingCNAE || !municipio.trim()} style={{ width: "100%", justifyContent: "center" }}>
                 {loadingCNAE ? <Loader2 size={15} className="animate-spin" /> : <Building2 size={15} />}
                 {loadingCNAE ? "Buscando..." : "Buscar empresas ativas"}
               </button>
 
-              {empresas.length > 0 && (
-                <button className="btn-ghost" onClick={adicionarTodas} disabled={adicionadas === empresas.length} style={{ width: "100%", justifyContent: "center", marginTop: "10px" }}>
+              {filteredEmpresas.length > 0 && (
+                <button className="btn-ghost" onClick={adicionarTodas} disabled={filteredEmpresas.every((e) => e.adicionado)} style={{ width: "100%", justifyContent: "center", marginTop: "10px" }}>
                   <Plus size={14} />
-                  {adicionadas === empresas.length ? "Todas no CRM" : "Adicionar todas ao CRM"}
+                  {filteredEmpresas.every((e) => e.adicionado) ? "Todas no CRM" : "Adicionar todas ao CRM"}
                 </button>
               )}
 
-              <div style={{ marginTop: "20px", padding: "12px", background: "#0d0d0d", borderRadius: "8px", border: `1px solid ${BORDER}` }}>
-                <p style={{ fontSize: "11px", color: "#555", margin: "0 0 4px" }}>Fonte dos dados</p>
-                <p style={{ fontSize: "12px", color: "#888", margin: 0 }}>Receita Federal via Brasil.io</p>
+              <div style={{ marginTop: "20px", padding: "12px", background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)` }}>
+                <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 4px" }}>Fonte dos dados</p>
+                <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>Receita Federal via Brasil.io</p>
                 <p style={{ fontSize: "11px", color: "#444", margin: "4px 0 0" }}>Retorna apenas empresas com situação ATIVA</p>
               </div>
             </div>
 
             <div>
-              {statusCNAE && <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", fontSize: "13px", color: "#aaa" }}>{statusCNAE}</div>}
+              {statusCNAE && <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "12px 16px", marginBottom: "16px", fontSize: "13px", color: "#aaa" }}>{statusCNAE}</div>}
 
               {empresas.length === 0 && !loadingCNAE && (
-                <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "60px 40px", textAlign: "center" }}>
+                <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "60px 40px", textAlign: "center" }}>
                   <Building2 size={32} color="#333" style={{ margin: "0 auto 16px" }} />
-                  <p style={{ fontSize: "14px", color: "#555", margin: "0 0 8px" }}>Selecione o segmento e a cidade.</p>
+                  <p style={{ fontSize: "14px", color: "var(--up-text-dim)", margin: "0 0 8px" }}>Selecione o segmento e a cidade.</p>
                   <p style={{ fontSize: "12px", color: "#444", margin: 0 }}>Retorna apenas empresas com situação ATIVA na Receita Federal.</p>
                 </div>
               )}
 
-              {empresas.length > 0 && (
+              {empresas.length > 0 && filteredEmpresas.length === 0 && (
+                <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "40px", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", color: "var(--up-text-dim)", margin: "0 0 4px" }}>Nenhum resultado com os filtros aplicados.</p>
+                  <p style={{ fontSize: "12px", color: "#444", margin: 0 }}>Total encontrado: {empresas.length} — ajuste os filtros para ver os resultados.</p>
+                </div>
+              )}
+
+              {filteredEmpresas.length > 0 && (
                 <>
                   <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
-                    {[{ label: "Encontradas", value: empresas.length, color: "#F0EDE8" }, { label: "Adicionadas ao CRM", value: adicionadas, color: "#22c55e" }].map((s) => (
-                      <div key={s.label} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "12px 20px" }}>
-                        <p style={{ fontSize: "10px", color: "#555", margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
+                    {[
+                      { label: "Total",             value: empresas.length,          color: "var(--up-text)" },
+                      ...(filteredEmpresas.length < empresas.length ? [{ label: "Filtradas", value: filteredEmpresas.length, color: ACCENT }] : []),
+                      { label: "Adicionadas ao CRM", value: adicionadas,             color: "#22c55e" },
+                    ].map((s) => (
+                      <div key={s.label} style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "12px 20px" }}>
+                        <p style={{ fontSize: "10px", color: "var(--up-text-dim)", margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
                         <p style={{ fontSize: "24px", fontWeight: "700", color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
                       </div>
                     ))}
                   </div>
-                  <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", overflow: "hidden" }}>
+                  <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", overflow: "hidden" }}>
                     <div style={{ overflowX: "auto" }}>
                       <table className="prosp-table">
                         <thead>
                           <tr><th>Empresa</th><th>CNPJ</th><th>Cidade / UF</th><th>Telefone</th><th>Situação</th><th>CRM</th></tr>
                         </thead>
                         <tbody>
-                          {empresas.map((e) => (
+                          {filteredEmpresas.map((e) => (
                             <tr key={e.cnpj}>
                               <td>
-                                <div style={{ fontWeight: "500", color: "#F0EDE8" }}>{e.nome}</div>
-                                {e.razao_social !== e.nome && <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>{e.razao_social}</div>}
+                                <div style={{ fontWeight: "500", color: "var(--up-text)" }}>{e.nome}</div>
+                                {e.razao_social !== e.nome && <div style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "2px" }}>{e.razao_social}</div>}
                               </td>
-                              <td style={{ fontFamily: "monospace", fontSize: "12px", whiteSpace: "nowrap", color: "#888" }}>{e.cnpj_formatado}</td>
-                              <td style={{ whiteSpace: "nowrap", color: "#888" }}>{e.cidade}</td>
+                              <td style={{ fontFamily: "monospace", fontSize: "12px", whiteSpace: "nowrap", color: "var(--up-text-muted)" }}>{e.cnpj_formatado}</td>
+                              <td style={{ whiteSpace: "nowrap", color: "var(--up-text-muted)" }}>{e.cidade}</td>
                               <td style={{ whiteSpace: "nowrap" }}>{e.telefone || "—"}</td>
                               <td><span className="badge badge-ativa">ATIVA</span></td>
                               <td>

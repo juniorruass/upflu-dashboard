@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase";
+﻿import { createServerClient } from "@/lib/supabase";
 import Header from "@/components/header";
 import Link from "next/link";
 import { Megaphone, ArrowRight } from "lucide-react";
@@ -7,7 +7,6 @@ import ClientesChart   from "@/components/charts/clientes-chart";
 import FinanceiroChart from "@/components/charts/financeiro-chart";
 
 const ACCENT  = "#00CFFF";
-const BORDER  = "rgba(255,255,255,0.07)";
 
 async function getDashboardData() {
   const supabase = await createServerClient();
@@ -106,8 +105,8 @@ export default async function DashboardPage() {
       <style>{`
         .dash-pad { padding: 40px 40px 60px; }
         .dash-grid-3 { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; margin-bottom: 24px; }
-        .chart-card { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 24px; }
-        .chart-title { font-size: 11px; font-weight: 600; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 20px; }
+        .chart-card { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 12px; padding: 24px; transition: background 0.2s, border-color 0.2s; }
+        .chart-title { font-size: 11px; font-weight: 600; color: var(--up-text-muted); letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 20px; }
         .anuncios-link > div { transition: border-color 0.2s; }
         .anuncios-link:hover > div { border-color: rgba(0,207,255,0.35) !important; }
         @media (max-width: 768px) {
@@ -123,10 +122,10 @@ export default async function DashboardPage() {
           <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 10px" }}>
             Painel de gestão
           </p>
-          <h2 style={{ fontSize: "32px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 6px", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
+          <h2 style={{ fontSize: "32px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 6px", letterSpacing: "-0.03em", lineHeight: 1.1 }}>
             Bem-vindo, Junior.
           </h2>
-          <p style={{ fontSize: "14px", color: "#777068", margin: 0, fontWeight: "300", maxWidth: "480px", lineHeight: 1.6 }}>
+          <p style={{ fontSize: "14px", color: "var(--up-text-label)", margin: 0, fontWeight: "300", maxWidth: "480px", lineHeight: 1.6 }}>
             Central de operações UPFLU — IA, automação e tráfego pago em um só lugar.
           </p>
         </div>
@@ -140,11 +139,11 @@ export default async function DashboardPage() {
             { label: "Em onboarding",     value: String(d.leads), sub: "clientes em implantação", accent: false, warn: false },
             { label: "Renovações (30d)",  value: String(d.renewalsSoon), sub: d.renewalsSoon > 0 ? "⚠️ contratos vencendo em breve" : "nenhuma renovação pendente", accent: false, warn: d.renewalsSoon > 0 },
           ].map((card) => (
-            <div key={card.label} style={{ background: "#111", border: `1px solid ${card.warn ? "rgba(255,149,0,0.3)" : BORDER}`, borderRadius: "12px", padding: "24px", position: "relative", overflow: "hidden" }}>
+            <div key={card.label} style={{ background: "var(--up-card)", border: `1px solid ${card.warn ? "rgba(255,149,0,0.3)" : "var(--up-border)"}`, borderRadius: "12px", padding: "24px", position: "relative", overflow: "hidden", transition: "background 0.2s, border-color 0.2s" }}>
               {(card.accent || card.warn) && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: card.warn ? "linear-gradient(90deg,transparent,#FF9500,transparent)" : `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
-              <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{card.label}</p>
-              <p style={{ fontSize: "36px", fontWeight: "700", color: card.warn ? "#FF9500" : card.accent ? ACCENT : "#F0EDE8", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{card.sub}</p>
+              <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{card.label}</p>
+              <p style={{ fontSize: "36px", fontWeight: "700", color: card.warn ? "#FF9500" : card.accent ? ACCENT : "var(--up-text)", margin: "0 0 4px", lineHeight: 1, letterSpacing: "-0.04em" }}>{card.value}</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>{card.sub}</p>
             </div>
           ))}
         </div>
@@ -188,15 +187,15 @@ export default async function DashboardPage() {
 
         {/* ── ATALHO ANÚNCIOS ── */}
         <Link href="/dashboard/anuncios" style={{ textDecoration: "none", display: "block" }} className="anuncios-link">
-          <div style={{ background: "#111", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "12px", padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", position: "relative", overflow: "hidden" }}>
+          <div style={{ background: "var(--up-card)", border: `1px solid rgba(0,207,255,0.15)`, borderRadius: "12px", padding: "20px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", position: "relative", overflow: "hidden", transition: "background 0.2s" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <div style={{ width: "44px", height: "44px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Megaphone size={20} color={ACCENT} strokeWidth={1.5} />
               </div>
               <div>
-                <p style={{ fontSize: "15px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 3px" }}>Anúncios</p>
-                <p style={{ fontSize: "12px", color: "#777068", margin: 0, fontWeight: "300" }}>Visualize e gerencie suas campanhas de tráfego pago</p>
+                <p style={{ fontSize: "15px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 3px" }}>Anúncios</p>
+                <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>Visualize e gerencie suas campanhas de tráfego pago</p>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", color: ACCENT, fontSize: "12px", fontWeight: "600", flexShrink: 0 }}>

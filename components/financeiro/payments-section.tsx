@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Plus, Check, Trash2, AlertCircle, Clock, CheckCircle2, X } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const BG_CARD = "#111111";
 
 type Payment = {
@@ -45,7 +44,7 @@ function daysOverdue(due_date: string) {
 
 const STATUS_CONFIG = {
   paid:    { label: "Pago",      color: "#4CAF50", bg: "rgba(76,175,80,0.1)",   border: "rgba(76,175,80,0.2)",   icon: CheckCircle2 },
-  pending: { label: "Pendente",  color: "#F0EDE8", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", icon: Clock },
+  pending: { label: "Pendente",  color: "var(--up-text)", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", icon: Clock },
   late:    { label: "Atrasado",  color: "#FF6B6B", bg: "rgba(255,107,107,0.1)", border: "rgba(255,107,107,0.2)", icon: AlertCircle },
 };
 
@@ -148,12 +147,12 @@ export default function PaymentsSection() {
   return (
     <div style={{ marginTop: "14px" }}>
       <style>{`@media (max-width: 640px) { .ps-card { padding: 16px !important; } }`}</style>
-      <div className="ps-card" style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
+      <div className="ps-card" style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "28px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: 0, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+            <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: 0, letterSpacing: "0.14em", textTransform: "uppercase" }}>
               Pagamentos
             </p>
             {lateCount > 0 && (
@@ -167,7 +166,7 @@ export default function PaymentsSection() {
             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
               {FILTER_OPTIONS.map(f => (
                 <button key={f} onClick={() => setFilter(f)}
-                  style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "5px", border: "1px solid", cursor: "pointer", fontFamily: "inherit", fontWeight: filter === f ? "600" : "400", background: filter === f ? "rgba(0,207,255,0.1)" : "transparent", color: filter === f ? ACCENT : "#777068", borderColor: filter === f ? "rgba(0,207,255,0.3)" : BORDER }}>
+                  style={{ fontSize: "11px", padding: "5px 10px", borderRadius: "5px", border: "1px solid", cursor: "pointer", fontFamily: "inherit", fontWeight: filter === f ? "600" : "400", background: filter === f ? "rgba(0,207,255,0.1)" : "transparent", color: filter === f ? ACCENT : "#777068", borderColor: filter === f ? "rgba(0,207,255,0.3)" : "var(--up-border)" }}>
                   {f}
                 </button>
               ))}
@@ -182,16 +181,16 @@ export default function PaymentsSection() {
 
         {/* Table */}
         {loading ? (
-          <p style={{ fontSize: "13px", color: "#777068", margin: "32px 0", textAlign: "center" }}>Carregando...</p>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: "32px 0", textAlign: "center" }}>Carregando...</p>
         ) : filtered.length === 0 ? (
-          <p style={{ fontSize: "13px", color: "#777068", margin: "32px 0", textAlign: "center" }}>Nenhum pagamento encontrado.</p>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: "32px 0", textAlign: "center" }}>Nenhum pagamento encontrado.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
               <thead>
                 <tr>
                   {["Cliente", "Valor", "Vencimento", "Status", ""].map(h => (
-                    <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "10px", fontWeight: "500", color: "#777068", letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid ${BORDER}` }}>
+                    <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", letterSpacing: "0.1em", textTransform: "uppercase", borderBottom: `1px solid var(--up-border)` }}>
                       {h}
                     </th>
                   ))}
@@ -205,15 +204,15 @@ export default function PaymentsSection() {
                   const overdue = s === "late" ? daysOverdue(p.due_date) : 0;
 
                   return (
-                    <tr key={p.id} style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <td style={{ padding: "12px", color: "#F0EDE8", fontWeight: "500" }}>
+                    <tr key={p.id} style={{ borderBottom: `1px solid var(--up-border)` }}>
+                      <td style={{ padding: "12px", color: "var(--up-text)", fontWeight: "500" }}>
                         {p.client?.name ?? "—"}
-                        {p.notes && <span style={{ display: "block", fontSize: "11px", color: "#777068", fontWeight: "300" }}>{p.notes}</span>}
+                        {p.notes && <span style={{ display: "block", fontSize: "11px", color: "var(--up-text-label)", fontWeight: "300" }}>{p.notes}</span>}
                       </td>
                       <td style={{ padding: "12px", color: s === "late" ? "#FF6B6B" : "#F0EDE8", fontWeight: "600" }}>
                         {currency(p.amount)}
                       </td>
-                      <td style={{ padding: "12px", color: "#9A9288" }}>
+                      <td style={{ padding: "12px", color: "var(--up-text-muted)" }}>
                         {formatDate(p.due_date)}
                         {s === "late" && (
                           <span style={{ display: "block", fontSize: "10px", color: "#FF6B6B" }}>{overdue}d em atraso</span>
@@ -238,7 +237,7 @@ export default function PaymentsSection() {
                             </button>
                           )}
                           <button onClick={() => deletePayment(p.id)} title="Excluir"
-                            style={{ display: "flex", alignItems: "center", padding: "5px 8px", borderRadius: "5px", border: `1px solid ${BORDER}`, background: "transparent", color: "#777068", cursor: "pointer" }}>
+                            style={{ display: "flex", alignItems: "center", padding: "5px 8px", borderRadius: "5px", border: `1px solid var(--up-border)`, background: "transparent", color: "var(--up-text-label)", cursor: "pointer" }}>
                             <Trash2 size={12} strokeWidth={1.5} />
                           </button>
                         </div>
@@ -255,21 +254,21 @@ export default function PaymentsSection() {
       {/* Modal */}
       {showModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ background: "#111111", border: `1px solid rgba(255,255,255,0.12)`, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "440px" }}>
+          <div style={{ background: "var(--up-card)", border: `1px solid rgba(255,255,255,0.12)`, borderRadius: "12px", padding: "32px", width: "100%", maxWidth: "440px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#F0EDE8" }}>Registrar Pagamento</h3>
-              <button onClick={() => { setShowModal(false); setFormError(null); }} style={{ background: "transparent", border: "none", color: "#777068", cursor: "pointer", padding: "4px" }}>
+              <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "var(--up-text)" }}>Registrar Pagamento</h3>
+              <button onClick={() => { setShowModal(false); setFormError(null); }} style={{ background: "transparent", border: "none", color: "var(--up-text-label)", cursor: "pointer", padding: "4px" }}>
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={submitPayment} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
-                <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                   Cliente *
                 </label>
                 <select required value={form.client_id} onChange={e => setForm(f => ({ ...f, client_id: e.target.value }))}
-                  style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: form.client_id ? "#F0EDE8" : "#777068", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}>
+                  style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: form.client_id ? "#F0EDE8" : "#777068", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}>
                   <option value="">Selecionar cliente</option>
                   {clients.map(c => (
                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -279,30 +278,30 @@ export default function PaymentsSection() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                     Valor (R$) *
                   </label>
                   <input required type="number" step="0.01" min="0" placeholder="0,00"
                     value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                    style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                  <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                     Vencimento *
                   </label>
                   <input required type="date"
                     value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-                    style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", colorScheme: "dark" }} />
+                    style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", colorScheme: "dark" }} />
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", fontWeight: "500", color: "#9A9288", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>
                   Observação
                 </label>
                 <input type="text" placeholder="Ex: mensalidade maio, parcela 2..."
                   value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  style={{ width: "100%", background: "#080808", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "#F0EDE8", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+                  style={{ width: "100%", background: "var(--up-bg)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: "6px", padding: "10px 12px", color: "var(--up-text)", fontSize: "13px", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
               </div>
 
               {formError && (
@@ -313,7 +312,7 @@ export default function PaymentsSection() {
 
               <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
                 <button type="button" onClick={() => { setShowModal(false); setFormError(null); }}
-                  style={{ flex: 1, padding: "11px", borderRadius: "7px", border: `1px solid ${BORDER}`, background: "transparent", color: "#9A9288", fontSize: "13px", fontFamily: "inherit", cursor: "pointer" }}>
+                  style={{ flex: 1, padding: "11px", borderRadius: "7px", border: `1px solid var(--up-border)`, background: "transparent", color: "var(--up-text-muted)", fontSize: "13px", fontFamily: "inherit", cursor: "pointer" }}>
                   Cancelar
                 </button>
                 <button type="submit" disabled={submitting}

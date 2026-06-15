@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 export default function OfflinePage() {
   return (
     <div style={{
-      minHeight: "100vh", background: "#080808", color: "#F0EDE8",
+      minHeight: "100vh", background: "var(--up-bg)", color: "var(--up-text)",
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", fontFamily: "var(--font-outfit, sans-serif)",
       gap: "16px", textAlign: "center", padding: "24px",
@@ -11,7 +11,7 @@ export default function OfflinePage() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "32px", opacity: 0.6 }} />
       <h1 style={{ fontSize: "20px", fontWeight: "700", margin: 0 }}>Sem conexão</h1>
-      <p style={{ fontSize: "14px", color: "#777068", margin: 0, maxWidth: "280px" }}>
+      <p style={{ fontSize: "14px", color: "var(--up-text-label)", margin: 0, maxWidth: "280px" }}>
         Você está offline. Conecte à internet e tente novamente.
       </p>
       <button

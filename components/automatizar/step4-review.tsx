@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { CheckCircle2, MapPin, Building2, MessageSquare, Clock, Save, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Step1Data } from "./step1-alvo";
@@ -45,6 +45,18 @@ export default function Step4Review({ step1, automacaoName, messages, schedule, 
             </>
           )}
           <Row label="Limite diário" value={`${step1.dailyLimit} contatos`} />
+          {(() => {
+            const f = step1.filters;
+            const active: string[] = [];
+            if (f.minRating > 0)    active.push(`≥ ${f.minRating}★`);
+            if (f.minReviews > 0)   active.push(`≥ ${f.minReviews} avaliações`);
+            if (f.requirePhone)     active.push("com telefone");
+            if (f.requireWebsite)   active.push("com website");
+            if (f.noWebsite)        active.push("sem website");
+            if (f.requireEmail)     active.push("com e-mail");
+            if (!active.length) return null;
+            return <Row label="Filtros" value={active.join(" · ")} />;
+          })()}
         </Block>
 
         {/* Mensagem */}

@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 
 const ACCENT  = "#00CFFF";
 const CARD    = "#0E0E0E";
 const CARD2   = "#131313";
-const BORDER  = "rgba(255,255,255,0.06)";
 const TEXT    = "#F0EDE8";
 const MUTED   = "#666060";
 const GREEN   = "#4ADE80";
@@ -116,7 +115,7 @@ function MetricCard({ label, value, accent, color, icon }: { label: string; valu
   return (
     <div style={{
       background: accent ? `linear-gradient(135deg, rgba(0,207,255,0.06) 0%, rgba(0,207,255,0.02) 100%)` : CARD2,
-      border: `1px solid ${accent ? "rgba(0,207,255,0.18)" : BORDER}`,
+      border: `1px solid ${accent ? "rgba(0,207,255,0.18)" : "var(--up-border)"}`,
       borderRadius: "14px", padding: "18px 16px", position: "relative", overflow: "hidden",
     }}>
       {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: `linear-gradient(90deg,transparent,${ACCENT}88,transparent)` }} />}
@@ -248,7 +247,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
 
       {/* ── Controls ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-        <div style={{ display: "flex", gap: "3px", background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "4px" }}>
+        <div style={{ display: "flex", gap: "3px", background: "var(--up-border)", border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "4px" }}>
           {PRESETS.map((p) => (
             <button key={p.key} onClick={() => changePreset(p.key)} style={{
               background: preset === p.key ? ACCENT : "transparent",
@@ -267,7 +266,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
           </div>
           {lastUpdate && (
             <button onClick={() => load(preset)} disabled={loading} style={{
-              background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`,
+              background: "var(--up-border)", border: `1px solid var(--up-border)`,
               borderRadius: "8px", padding: "5px 12px", fontSize: "10px",
               color: MUTED, cursor: loading ? "default" : "pointer", opacity: loading ? 0.5 : 1,
               letterSpacing: "0.04em", transition: "opacity .15s",
@@ -280,8 +279,8 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
 
       {/* ── Loading ── */}
       {loading && !data && (
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "48px", textAlign: "center" }}>
-          <div style={{ width: "28px", height: "28px", border: `2px solid ${BORDER}`, borderTopColor: ACCENT, borderRadius: "50%", animation: "portalSpin 1s linear infinite", margin: "0 auto 14px" }} />
+        <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "18px", padding: "48px", textAlign: "center" }}>
+          <div style={{ width: "28px", height: "28px", border: `2px solid var(--up-border)`, borderTopColor: ACCENT, borderRadius: "50%", animation: "portalSpin 1s linear infinite", margin: "0 auto 14px" }} />
           <p style={{ fontSize: "13px", color: MUTED, margin: 0 }}>Carregando dados da Meta...</p>
         </div>
       )}
@@ -300,7 +299,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
 
           {/* Leads Chart */}
           {show("leads_chart") && daily.length > 0 && (
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "18px", padding: "22px 24px", position: "relative", overflow: "hidden" }}>
+            <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "18px", padding: "22px 24px", position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: `radial-gradient(circle, ${ACCENT}08 0%, transparent 70%)`, pointerEvents: "none" }} />
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "8px" }}>
                 <div>
@@ -310,7 +309,7 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
                     {totalLeads > 0 && <span style={{ fontSize: "12px", color: `${ACCENT}80`, fontWeight: "600" }}>leads</span>}
                   </div>
                 </div>
-                <span style={{ fontSize: "10px", color: MUTED, background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "4px 10px" }}>
+                <span style={{ fontSize: "10px", color: MUTED, background: "var(--up-border)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "4px 10px" }}>
                   {PRESETS.find((p) => p.key === preset)?.label}
                 </span>
               </div>
@@ -368,9 +367,9 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
 
           {/* Rodapé */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", paddingTop: "4px" }}>
-            <div style={{ width: "16px", height: "1px", background: BORDER }} />
+            <div style={{ width: "16px", height: "1px", background: "var(--up-border)" }} />
             <span style={{ fontSize: "9px", color: `${MUTED}80`, letterSpacing: "0.1em", textTransform: "uppercase" }}>powered by Meta Ads</span>
-            <div style={{ width: "16px", height: "1px", background: BORDER }} />
+            <div style={{ width: "16px", height: "1px", background: "var(--up-border)" }} />
           </div>
 
         </div>

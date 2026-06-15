@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
@@ -7,7 +7,6 @@ import { useSidebar } from "./sidebar-context";
 import { PushSubscribe } from "./push-subscribe";
 
 const GOLD = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 export default function Header({ title }: { title: string }) {
   const [pendingCount, setPendingCount] = useState(0);
@@ -44,20 +43,21 @@ export default function Header({ title }: { title: string }) {
         }
       `}</style>
       <header style={{
-        height: "60px", background: "#080808", borderBottom: `1px solid ${BORDER}`,
+        height: "60px", background: "var(--up-sidebar)", borderBottom: "1px solid var(--up-border)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 20px", position: "sticky", top: 0, zIndex: 30,
+        transition: "background 0.2s, border-color 0.2s",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* Hamburger — mobile only */}
           <button
             className="header-menu-btn"
             onClick={toggle}
-            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#9A9288", padding: "4px" }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-muted)", padding: "4px" }}
           >
             <Menu size={20} />
           </button>
-          <h1 style={{ fontSize: "15px", fontWeight: "500", color: "#F0EDE8", margin: 0, letterSpacing: "0.01em" }}>
+          <h1 style={{ fontSize: "15px", fontWeight: "500", color: "var(--up-text)", margin: 0, letterSpacing: "0.01em" }}>
             {title}
           </h1>
           {pendingCount > 0 && (
@@ -73,14 +73,14 @@ export default function Header({ title }: { title: string }) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <PushSubscribe />
-          <div style={{ width: "1px", height: "20px", background: BORDER }} />
+          <div style={{ width: "1px", height: "20px", background: "var(--up-border)" }} />
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <div style={{ width: "32px", height: "32px", background: "rgba(0,207,255,0.10)", border: `1px solid rgba(0,207,255,0.20)`, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "600", color: GOLD, flexShrink: 0 }}>
               JR
             </div>
             <div className="header-user-name">
-              <p style={{ fontSize: "13px", fontWeight: "500", color: "#F0EDE8", margin: 0, lineHeight: 1.2 }}>Junior</p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, lineHeight: 1.2 }}>Admin</p>
+              <p style={{ fontSize: "13px", fontWeight: "500", color: "var(--up-text)", margin: 0, lineHeight: 1.2 }}>Junior</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, lineHeight: 1.2 }}>Admin</p>
             </div>
           </div>
         </div>

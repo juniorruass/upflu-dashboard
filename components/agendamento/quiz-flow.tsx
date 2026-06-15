@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,6 @@ import type { AgendamentoConfig, QuizPergunta, AgendamentoSlot } from "@/types";
 import { diaSemanaParaNome, formatarData } from "@/lib/agendamento";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.08)";
 
 interface Props {
   config: AgendamentoConfig | null;
@@ -102,7 +101,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
   const progress = step === "welcome" ? 0 : Math.round((currentStepNum / totalSteps) * 100);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--up-bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: "system-ui, sans-serif" }}>
 
       {/* Card */}
       <div style={{ width: "100%", maxWidth: "520px" }}>
@@ -113,7 +112,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
             {clinicaNome}
           </p>
           {step !== "welcome" && (
-            <div style={{ height: "3px", background: "rgba(255,255,255,0.06)", borderRadius: "99px", overflow: "hidden" }}>
+            <div style={{ height: "3px", background: "var(--up-border)", borderRadius: "99px", overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${progress}%`, background: ACCENT, borderRadius: "99px", transition: "width 0.3s ease" }} />
             </div>
           )}
@@ -128,7 +127,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
             <h1 style={{ fontSize: "26px", fontWeight: "700", color: "#fff", marginBottom: "12px", lineHeight: 1.2 }}>
               Agende sua consulta
             </h1>
-            <p style={{ fontSize: "14px", color: "#9A9288", marginBottom: "36px", lineHeight: 1.6 }}>
+            <p style={{ fontSize: "14px", color: "var(--up-text-muted)", marginBottom: "36px", lineHeight: 1.6 }}>
               {config?.descricao ?? "Processo rápido, sem ligação."}
             </p>
             <button onClick={() => perguntasAtivas.length > 0 ? setStep("quiz") : setStep("dados")}
@@ -143,7 +142,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
           const p = perguntasAtivas[quizIndex];
           return (
             <div>
-              <p style={{ fontSize: "11px", color: "#777068", marginBottom: "12px" }}>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", marginBottom: "12px" }}>
                 Pergunta {quizIndex + 1} de {perguntasAtivas.length}
               </p>
               <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#fff", marginBottom: "24px", lineHeight: 1.4 }}>
@@ -156,7 +155,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
                     const sel = respostas[p.id] === op;
                     return (
                       <button key={op} onClick={() => setRespostas({ ...respostas, [p.id]: op })}
-                        style={{ padding: "14px 16px", background: sel ? "rgba(0,207,255,0.1)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : BORDER}`, borderRadius: "10px", color: sel ? ACCENT : "#ccc", fontSize: "14px", textAlign: "left", cursor: "pointer", transition: "all 0.15s", fontWeight: sel ? "600" : "400" }}>
+                        style={{ padding: "14px 16px", background: sel ? "rgba(0,207,255,0.1)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`, borderRadius: "10px", color: sel ? ACCENT : "#ccc", fontSize: "14px", textAlign: "left", cursor: "pointer", transition: "all 0.15s", fontWeight: sel ? "600" : "400" }}>
                         {op}
                       </button>
                     );
@@ -170,20 +169,20 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
                   onChange={(e) => setRespostas({ ...respostas, [p.id]: e.target.value })}
                   placeholder="Sua resposta..."
                   rows={3}
-                  style={{ width: "100%", padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#fff", fontSize: "14px", resize: "none", outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "#fff", fontSize: "14px", resize: "none", outline: "none", boxSizing: "border-box" }}
                 />
               )}
 
               <div style={{ display: "flex", gap: "10px", marginTop: "28px" }}>
                 {quizIndex > 0 && (
                   <button onClick={() => setQuizIndex(quizIndex - 1)}
-                    style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                    style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                     <ChevronLeft size={16} /> Voltar
                   </button>
                 )}
                 {quizIndex === 0 && (
                   <button onClick={() => setStep("welcome")}
-                    style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                    style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                     <ChevronLeft size={16} /> Voltar
                   </button>
                 )}
@@ -205,7 +204,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
         {step === "dados" && (
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#fff", marginBottom: "6px" }}>Seus dados</h2>
-            <p style={{ fontSize: "13px", color: "#9A9288", marginBottom: "24px" }}>Precisamos para confirmar seu agendamento.</p>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)", marginBottom: "24px" }}>Precisamos para confirmar seu agendamento.</p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginBottom: "28px" }}>
               {[
@@ -214,14 +213,14 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
                 { label: "E-mail (opcional)", key: "email", icon: <Mail size={16} />, placeholder: "seu@email.com" },
               ].map(({ label, key, icon, placeholder }) => (
                 <div key={key}>
-                  <label style={{ fontSize: "12px", color: "#777068", display: "block", marginBottom: "6px" }}>{label}</label>
+                  <label style={{ fontSize: "12px", color: "var(--up-text-label)", display: "block", marginBottom: "6px" }}>{label}</label>
                   <div style={{ position: "relative" }}>
-                    <div style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#555" }}>{icon}</div>
+                    <div style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--up-text-dim)" }}>{icon}</div>
                     <input
                       value={dados[key as keyof typeof dados]}
                       onChange={(e) => setDados({ ...dados, [key]: e.target.value })}
                       placeholder={placeholder}
-                      style={{ width: "100%", padding: "13px 14px 13px 36px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#fff", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                      style={{ width: "100%", padding: "13px 14px 13px 36px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "#fff", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
                     />
                   </div>
                 </div>
@@ -230,7 +229,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => perguntasAtivas.length > 0 ? setStep("quiz") : setStep("welcome")}
-                style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button
@@ -247,7 +246,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
         {step === "data" && (
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#fff", marginBottom: "6px" }}>Escolha a data</h2>
-            <p style={{ fontSize: "13px", color: "#9A9288", marginBottom: "24px" }}>Datas disponíveis para agendamento.</p>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)", marginBottom: "24px" }}>Datas disponíveis para agendamento.</p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px", marginBottom: "28px" }}>
               {datasDisponiveis.slice(0, 21).map((d) => {
@@ -255,7 +254,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
                 const sel = dataSelecionada === d;
                 return (
                   <button key={d} onClick={() => setDataSelecionada(d)}
-                    style={{ padding: "12px 8px", background: sel ? "rgba(0,207,255,0.12)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : BORDER}`, borderRadius: "10px", cursor: "pointer", transition: "all 0.15s" }}>
+                    style={{ padding: "12px 8px", background: sel ? "rgba(0,207,255,0.12)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`, borderRadius: "10px", cursor: "pointer", transition: "all 0.15s" }}>
                     <p style={{ fontSize: "10px", color: sel ? ACCENT : "#777068", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>
                       {diaSemanaParaNome(dt.getDay()).substring(0, 3)}
                     </p>
@@ -272,7 +271,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setStep("dados")}
-                style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button disabled={!dataSelecionada} onClick={() => setStep("hora")}
@@ -287,15 +286,15 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
         {step === "hora" && (
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#fff", marginBottom: "4px" }}>Escolha o horário</h2>
-            <p style={{ fontSize: "13px", color: "#9A9288", marginBottom: "24px" }}>{formatarData(dataSelecionada)}</p>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)", marginBottom: "24px" }}>{formatarData(dataSelecionada)}</p>
 
             {loadingHorarios ? (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "#777068" }}>Carregando horários...</div>
+              <div style={{ textAlign: "center", padding: "40px 0", color: "var(--up-text-label)" }}>Carregando horários...</div>
             ) : horarios.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px 0" }}>
-                <p style={{ color: "#777068", marginBottom: "16px" }}>Nenhum horário disponível nesta data.</p>
+                <p style={{ color: "var(--up-text-label)", marginBottom: "16px" }}>Nenhum horário disponível nesta data.</p>
                 <button onClick={() => { setDataSelecionada(""); setStep("data"); }}
-                  style={{ padding: "10px 20px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#9A9288", cursor: "pointer", fontSize: "13px" }}>
+                  style={{ padding: "10px 20px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "var(--up-text-muted)", cursor: "pointer", fontSize: "13px" }}>
                   Escolher outra data
                 </button>
               </div>
@@ -305,7 +304,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
                   const sel = horaSelecionada === h;
                   return (
                     <button key={h} onClick={() => setHoraSelecionada(h)}
-                      style={{ padding: "12px 8px", background: sel ? "rgba(0,207,255,0.12)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : BORDER}`, borderRadius: "10px", color: sel ? ACCENT : "#ccc", fontSize: "15px", fontWeight: sel ? "700" : "400", cursor: "pointer", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+                      style={{ padding: "12px 8px", background: sel ? "rgba(0,207,255,0.12)" : "#111", border: `1px solid ${sel ? "rgba(0,207,255,0.4)" : "var(--up-border)"}`, borderRadius: "10px", color: sel ? ACCENT : "#ccc", fontSize: "15px", fontWeight: sel ? "700" : "400", cursor: "pointer", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                       <Clock size={12} color={sel ? ACCENT : "#555"} />
                       {h}
                     </button>
@@ -316,7 +315,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setStep("data")}
-                style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button disabled={!horaSelecionada} onClick={() => setStep("revisar")}
@@ -331,23 +330,23 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
         {step === "revisar" && (
           <div>
             <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#fff", marginBottom: "6px" }}>Confirmar agendamento</h2>
-            <p style={{ fontSize: "13px", color: "#9A9288", marginBottom: "24px" }}>Revise os dados antes de confirmar.</p>
+            <p style={{ fontSize: "13px", color: "var(--up-text-muted)", marginBottom: "24px" }}>Revise os dados antes de confirmar.</p>
 
-            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
+            <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
               <Row icon={<User size={15} />} label="Nome" value={dados.nome} />
               <Row icon={<Phone size={15} />} label="WhatsApp" value={dados.telefone} />
               {dados.email && <Row icon={<Mail size={15} />} label="E-mail" value={dados.email} />}
-              <div style={{ height: "1px", background: BORDER, margin: "16px 0" }} />
+              <div style={{ height: "1px", background: "var(--up-border)", margin: "16px 0" }} />
               <Row icon={<Calendar size={15} />} label="Data" value={formatarData(dataSelecionada)} />
               <Row icon={<Clock size={15} />} label="Horário" value={horaSelecionada} last />
             </div>
 
             {Object.keys(respostas).length > 0 && (
-              <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
-                <p style={{ fontSize: "11px", color: "#777068", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Respostas do quiz</p>
+              <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "12px", padding: "20px", marginBottom: "16px" }}>
+                <p style={{ fontSize: "11px", color: "var(--up-text-label)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>Respostas do quiz</p>
                 {perguntasAtivas.filter((p) => respostas[p.id]).map((p) => (
                   <div key={p.id} style={{ marginBottom: "10px" }}>
-                    <p style={{ fontSize: "12px", color: "#777068", marginBottom: "2px" }}>{p.pergunta}</p>
+                    <p style={{ fontSize: "12px", color: "var(--up-text-label)", marginBottom: "2px" }}>{p.pergunta}</p>
                     <p style={{ fontSize: "13px", color: "#ccc" }}>{respostas[p.id]}</p>
                   </div>
                 ))}
@@ -362,7 +361,7 @@ export default function QuizFlow({ config, perguntas, slots }: Props) {
 
             <div style={{ display: "flex", gap: "10px" }}>
               <button onClick={() => setStep("hora")}
-                style={{ flex: 1, padding: "14px", background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", color: "#9A9288", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                style={{ flex: 1, padding: "14px", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", color: "var(--up-text-muted)", fontSize: "14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 <ChevronLeft size={16} /> Voltar
               </button>
               <button disabled={submitting} onClick={handleSubmit}
@@ -382,7 +381,7 @@ function Row({ icon, label, value, last = false }: { icon: React.ReactNode; labe
     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: last ? "0" : "12px" }}>
       <div style={{ color: ACCENT }}>{icon}</div>
       <div>
-        <p style={{ fontSize: "11px", color: "#777068", marginBottom: "1px" }}>{label}</p>
+        <p style={{ fontSize: "11px", color: "var(--up-text-label)", marginBottom: "1px" }}>{label}</p>
         <p style={{ fontSize: "14px", color: "#fff", fontWeight: "500" }}>{value}</p>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase";
+﻿import { createAdminClient } from "@/lib/supabase";
 import Header from "@/components/header";
 import { TrendingUp, TrendingDown, Users, DollarSign } from "lucide-react";
 import PaymentsSection from "@/components/financeiro/payments-section";
@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const BG_CARD = "#111111";
 
 type Client = {
@@ -160,12 +159,12 @@ export default async function FinanceiroPage() {
             { label: "MRR Líquido",  value: currency(d.netMRR),      sub: "MRR menos despesas pendentes", accent: false, warn: d.netMRR < 0, icon: DollarSign },
             { label: "Ticket médio", value: currency(d.ticketMedio), sub: "por cliente ativo",          accent: false, icon: Users },
           ].map(k => (
-            <div key={k.label} style={{ background: BG_CARD, border: `1px solid ${k.warn ? "rgba(255,107,107,0.2)" : BORDER}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
+            <div key={k.label} style={{ background: BG_CARD, border: `1px solid ${k.warn ? "rgba(255,107,107,0.2)" : "var(--up-border)"}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
               {k.accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
               {k.warn && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(255,107,107,0.6), transparent)" }} />}
-              <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{k.label}</p>
+              <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{k.label}</p>
               <p className="fin-kpi-val" style={{ color: k.accent ? ACCENT : k.warn ? "#FF6B6B" : "#F0EDE8" }}>{k.value}</p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{k.sub}</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>{k.sub}</p>
             </div>
           ))}
         </div>
@@ -177,11 +176,11 @@ export default async function FinanceiroPage() {
             { label: "Churn rate",      value: pct(d.churnRate),         sub: `${d.churnedCount} cancelamentos`, warn: d.churnRate > 10, icon: TrendingDown },
             { label: "Clientes ativos", value: String(d.activeCount),    sub: `${d.totalClients} no total`, warn: false, icon: Users },
           ].map(k => (
-            <div key={k.label} style={{ background: BG_CARD, border: `1px solid ${k.warn ? "rgba(255,80,80,0.18)" : BORDER}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
+            <div key={k.label} style={{ background: BG_CARD, border: `1px solid ${k.warn ? "rgba(255,80,80,0.18)" : "var(--up-border)"}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
               {k.warn && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(255,80,80,0.6), transparent)" }} />}
-              <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{k.label}</p>
+              <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{k.label}</p>
               <p className="fin-kpi-val" style={{ color: k.warn ? "#FF6B6B" : "#F0EDE8" }}>{k.value}</p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{k.sub}</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>{k.sub}</p>
             </div>
           ))}
         </div>
@@ -189,13 +188,13 @@ export default async function FinanceiroPage() {
         {/* MRR Chart + Top clients */}
         <div className="fin-grid-chart">
           {/* MRR bar chart */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
-            <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 24px", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "28px" }}>
+            <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 24px", letterSpacing: "0.14em", textTransform: "uppercase" }}>
               Receita recebida — últimos 6 meses
             </p>
             {d.mrrByMonth.every(r => r.received === 0) ? (
               <div style={{ height: "160px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhum pagamento registrado ainda.</p>
+                <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: 0 }}>Nenhum pagamento registrado ainda.</p>
               </div>
             ) : (
               <div style={{ display: "flex", alignItems: "flex-end", gap: "10px", height: "160px" }}>
@@ -211,27 +210,27 @@ export default async function FinanceiroPage() {
                           borderRadius: "4px 4px 0 0", minHeight: r.received > 0 ? "4px" : "2px",
                         }} />
                       </div>
-                      <p style={{ fontSize: "10px", color: "#777068", margin: 0, whiteSpace: "nowrap" }}>{r.label}</p>
+                      <p style={{ fontSize: "10px", color: "var(--up-text-label)", margin: 0, whiteSpace: "nowrap" }}>{r.label}</p>
                     </div>
                   );
                 })}
               </div>
             )}
-            <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: `1px solid ${BORDER}` }}>
-              <p style={{ fontSize: "10px", color: "#777068", margin: "0 0 2px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Total recebido (6 meses)</p>
-              <p style={{ fontSize: "20px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.03em" }}>
+            <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: `1px solid var(--up-border)` }}>
+              <p style={{ fontSize: "10px", color: "var(--up-text-label)", margin: "0 0 2px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Total recebido (6 meses)</p>
+              <p style={{ fontSize: "20px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.03em" }}>
                 {currency(d.mrrByMonth.reduce((s, r) => s + r.received, 0))}
               </p>
             </div>
           </div>
 
           {/* Top clients */}
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px" }}>
-            <p style={{ fontSize: "11px", fontWeight: "500", color: "#777068", margin: "0 0 20px", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "28px" }}>
+            <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 20px", letterSpacing: "0.14em", textTransform: "uppercase" }}>
               Top clientes (MRR)
             </p>
             {d.topClients.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#777068", margin: 0 }}>Nenhum cliente ativo.</p>
+              <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: 0 }}>Nenhum cliente ativo.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 {d.topClients.map((c, i) => {
@@ -240,8 +239,8 @@ export default async function FinanceiroPage() {
                     <div key={c.id}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontSize: "10px", color: "#777068", fontWeight: "600", minWidth: "14px" }}>#{i + 1}</span>
-                          <span style={{ fontSize: "13px", color: "#F0EDE8", fontWeight: "500" }}>{c.name}</span>
+                          <span style={{ fontSize: "10px", color: "var(--up-text-label)", fontWeight: "600", minWidth: "14px" }}>#{i + 1}</span>
+                          <span style={{ fontSize: "13px", color: "var(--up-text)", fontWeight: "500" }}>{c.name}</span>
                         </div>
                         <span style={{ fontSize: "13px", color: ACCENT, fontWeight: "600" }}>{currency(c.monthly_value || 0)}</span>
                       </div>
@@ -264,11 +263,11 @@ export default async function FinanceiroPage() {
         </div>
         <div className="fin-grid-3" style={{ marginBottom: "28px" }}>
           {d.forecast.map((f, i) => (
-            <div key={f.label} style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
+            <div key={f.label} style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
               {i === 0 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />}
-              <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{f.label}</p>
+              <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{f.label}</p>
               <p className="fin-kpi-val" style={{ color: f.amount > 0 ? "#F0EDE8" : "#555" }}>{currency(f.amount)}</p>
-              <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>a receber (pendentes)</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>a receber (pendentes)</p>
             </div>
           ))}
         </div>
@@ -280,21 +279,21 @@ export default async function FinanceiroPage() {
           <div className="fin-divider-line" />
         </div>
         <div className="fin-grid-3" style={{ marginBottom: "0" }}>
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
-            <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>A receber</p>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
+            <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>A receber</p>
             <p className="fin-kpi-val" style={{ color: ACCENT }}>{currency(d.pendingAmount)}</p>
-            <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>pagamentos pendentes</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>pagamentos pendentes</p>
           </div>
-          <div style={{ background: BG_CARD, border: `1px solid ${d.lateAmount > 0 ? "rgba(255,107,107,0.2)" : BORDER}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
+          <div style={{ background: BG_CARD, border: `1px solid ${d.lateAmount > 0 ? "rgba(255,107,107,0.2)" : "var(--up-border)"}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
             {d.lateAmount > 0 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(255,107,107,0.7), transparent)" }} />}
-            <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Em atraso</p>
+            <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Em atraso</p>
             <p className="fin-kpi-val" style={{ color: d.lateAmount > 0 ? "#FF6B6B" : "#F0EDE8" }}>{currency(d.lateAmount)}</p>
-            <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>{d.lateCount} pagamento{d.lateCount !== 1 ? "s" : ""} vencido{d.lateCount !== 1 ? "s" : ""}</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>{d.lateCount} pagamento{d.lateCount !== 1 ? "s" : ""} vencido{d.lateCount !== 1 ? "s" : ""}</p>
           </div>
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Recebido este mês</p>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Recebido este mês</p>
             <p className="fin-kpi-val" style={{ color: d.paidThisMonthAmount > 0 ? "#4CAF50" : "#F0EDE8" }}>{currency(d.paidThisMonthAmount)}</p>
-            <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>pagamentos confirmados</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>pagamentos confirmados</p>
           </div>
         </div>
 
@@ -313,15 +312,15 @@ export default async function FinanceiroPage() {
 
         {/* Expenses KPIs */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "0" }}>
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Despesas a pagar</p>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Despesas a pagar</p>
             <p className="fin-kpi-val" style={{ color: d.expensePending > 0 ? "#F0B429" : "#F0EDE8" }}>{currency(d.expensePending)}</p>
-            <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>contas operacionais pendentes</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>contas operacionais pendentes</p>
           </div>
-          <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "24px" }}>
-            <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Impostos a recolher</p>
+          <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px" }}>
+            <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 10px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Impostos a recolher</p>
             <p className="fin-kpi-val" style={{ color: d.taxPending > 0 ? "#FF6B6B" : "#F0EDE8" }}>{currency(d.taxPending)}</p>
-            <p style={{ fontSize: "11px", color: "#777068", margin: 0, fontWeight: "300" }}>tributos pendentes</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0, fontWeight: "300" }}>tributos pendentes</p>
           </div>
         </div>
         <ExpensesSection />
@@ -332,16 +331,16 @@ export default async function FinanceiroPage() {
           <span className="fin-divider-label">Pipeline de clientes</span>
           <div className="fin-divider-line" />
         </div>
-        <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "28px", marginBottom: "0" }}>
+        <div style={{ background: BG_CARD, border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "28px", marginBottom: "0" }}>
           <div style={{ display: "flex", gap: "0", flexWrap: "wrap" }}>
             {[
-              { label: "Apresentação / Lead", count: d.leadCount,    color: "#777068" },
+              { label: "Apresentação / Lead", count: d.leadCount,    color: "var(--up-text-label)" },
               { label: "Onboarding",          count: d.onboardCount, color: ACCENT },
               { label: "Ativos",              count: d.activeCount,  color: "#4CAF50" },
               { label: "Pausados / Ended",    count: d.churnedCount, color: "#FF6B6B" },
             ].map((s, idx) => (
-              <div key={s.label} style={{ flex: 1, minWidth: "140px", padding: "16px 20px", borderRight: idx < 3 ? `1px solid ${BORDER}` : "none" }}>
-                <p style={{ fontSize: "10px", fontWeight: "500", color: "#777068", margin: "0 0 6px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{s.label}</p>
+              <div key={s.label} style={{ flex: 1, minWidth: "140px", padding: "16px 20px", borderRight: idx < 3 ? `1px solid var(--up-border)` : "none" }}>
+                <p style={{ fontSize: "10px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 6px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{s.label}</p>
                 <p style={{ fontSize: "28px", fontWeight: "700", color: s.color, margin: 0, letterSpacing: "-0.04em" }}>{s.count}</p>
               </div>
             ))}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
@@ -6,7 +6,6 @@ import { RefreshCw, Phone, MapPin, MessageSquare, ChevronRight, X, Check, Calend
 import { scoreLabel } from "@/lib/lead-scoring";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 type Prospect = {
   id: string;
@@ -80,12 +79,12 @@ export default function PipelinePage() {
       <style>{`
         .pipe-wrap { padding: 24px 32px 32px; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
         .pipe-cols { display: flex; gap: 12px; overflow-x: auto; flex: 1; padding-bottom: 12px; }
-        .pipe-col { min-width: 240px; max-width: 240px; background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
-        .pipe-col-header { padding: 12px 14px; border-bottom: 1px solid ${BORDER}; display: flex; align-items: center; justify-content: space-between; }
+        .pipe-col { min-width: 240px; max-width: 240px; background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+        .pipe-col-header { padding: 12px 14px; border-bottom: 1px solid var(--up-border); display: flex; align-items: center; justify-content: space-between; }
         .pipe-cards { flex: 1; padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: calc(100vh - 280px); }
-        .pipe-card { background: #161616; border: 1px solid ${BORDER}; border-radius: 7px; padding: 11px; cursor: pointer; transition: border-color 0.15s; }
+        .pipe-card { background: #161616; border: 1px solid var(--up-border); border-radius: 7px; padding: 11px; cursor: pointer; transition: border-color 0.15s; }
         .pipe-card:hover { border-color: rgba(255,255,255,0.15); }
-        .detail-panel { position: fixed; top: 0; right: 0; width: 360px; height: 100vh; background: #111; border-left: 1px solid ${BORDER}; z-index: 100; display: flex; flex-direction: column; }
+        .detail-panel { position: fixed; top: 0; right: 0; width: 360px; height: 100vh; background: var(--up-card); border-left: 1px solid var(--up-border); z-index: 100; display: flex; flex-direction: column; }
         @media (max-width: 768px) { .pipe-wrap { padding: 16px; } .detail-panel { width: 100%; } }
       `}</style>
 
@@ -93,16 +92,16 @@ export default function PipelinePage() {
         <div style={{ marginBottom: "20px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
           <div>
             <p style={{ fontSize: "11px", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 4px" }}>Prospecção</p>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>Pipeline</h2>
-            <p style={{ fontSize: "13px", color: "#555", margin: "6px 0 0" }}>{prospects.length} lead{prospects.length !== 1 ? "s" : ""} no funil</p>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>Pipeline</h2>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "6px 0 0" }}>{prospects.length} lead{prospects.length !== 1 ? "s" : ""} no funil</p>
           </div>
-          <button onClick={fetchData} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+          <button onClick={fetchData} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "var(--up-text-dim)", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
             <RefreshCw size={13} /> Atualizar
           </button>
         </div>
 
         {loading ? (
-          <div style={{ color: "#555", fontSize: "13px" }}>Carregando...</div>
+          <div style={{ color: "var(--up-text-dim)", fontSize: "13px" }}>Carregando...</div>
         ) : (
           <div className="pipe-cols">
             {byStatus.map((col) => (
@@ -110,9 +109,9 @@ export default function PipelinePage() {
                 <div className="pipe-col-header">
                   <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
                     <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: col.color }} />
-                    <span style={{ fontSize: "12px", fontWeight: "600", color: "#F0EDE8" }}>{col.label}</span>
+                    <span style={{ fontSize: "12px", fontWeight: "600", color: "var(--up-text)" }}>{col.label}</span>
                   </div>
-                  <span style={{ fontSize: "11px", color: "#555", background: "#1a1a1a", padding: "2px 7px", borderRadius: "10px" }}>{col.items.length}</span>
+                  <span style={{ fontSize: "11px", color: "var(--up-text-dim)", background: "var(--up-card)", padding: "2px 7px", borderRadius: "10px" }}>{col.items.length}</span>
                 </div>
                 <div className="pipe-cards">
                   {col.items.length === 0 ? (
@@ -129,14 +128,14 @@ export default function PipelinePage() {
 
       {selected && (
         <div className="detail-panel">
-          <div style={{ padding: "18px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ padding: "18px 20px", borderBottom: `1px solid var(--up-border)`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
+              <div style={{ fontSize: "10px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "2px" }}>
                 {STATUS_STEPS.find((s) => s.id === selected.status)?.label}
               </div>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>{selected.nome}</h3>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "var(--up-text)", margin: 0 }}>{selected.nome}</h3>
             </div>
-            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+            <button onClick={() => setSelected(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
               <X size={18} />
             </button>
           </div>
@@ -158,11 +157,11 @@ function ProspectCard({ prospect, onSelect }: { prospect: Prospect; onSelect: ()
   const sl = scoreLabel(prospect.score);
   return (
     <div className="pipe-card" onClick={onSelect}>
-      <div style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8", marginBottom: "5px", lineHeight: 1.3 }}>{prospect.nome}</div>
+      <div style={{ fontSize: "13px", fontWeight: "600", color: "var(--up-text)", marginBottom: "5px", lineHeight: 1.3 }}>{prospect.nome}</div>
       {prospect.cidade && (
         <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "4px" }}>
           <MapPin size={10} color="#555" />
-          <span style={{ fontSize: "11px", color: "#666" }}>{prospect.cidade.split(",")[0]}</span>
+          <span style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>{prospect.cidade.split(",")[0]}</span>
         </div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
@@ -184,7 +183,7 @@ function ProspectDetail({ prospect, editNota, setEditNota, onUpdateStatus, onSav
   onSaveNota: (id: string) => void;
 }) {
   const sl = scoreLabel(prospect.score);
-  const BORDER_INNER = "rgba(255,255,255,0.07)";
+  const BORDER_INNER = "var(--up-border)";
 
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "18px 20px" }}>
@@ -208,7 +207,7 @@ function ProspectDetail({ prospect, editNota, setEditNota, onUpdateStatus, onSav
       )}
 
       <div style={{ marginBottom: "18px" }}>
-        <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>Mover para</p>
+        <p style={{ fontSize: "10px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 8px" }}>Mover para</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {STATUS_STEPS.filter((s) => s.id !== prospect.status).map((s) => (
             <button key={s.id} onClick={() => onUpdateStatus(prospect.id, s.id)} style={{ background: `${s.color}12`, border: `1px solid ${s.color}40`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", fontSize: "11px", fontWeight: "600", color: s.color }}>
@@ -228,13 +227,13 @@ function ProspectDetail({ prospect, editNota, setEditNota, onUpdateStatus, onSav
       )}
 
       <div>
-        <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Anotações</p>
+        <p style={{ fontSize: "10px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Anotações</p>
         <textarea
           value={editNota}
           onChange={(e) => setEditNota(e.target.value)}
           rows={5}
           placeholder="Registre o que conversaram, próximos passos..."
-          style={{ width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER_INNER}`, borderRadius: "7px", padding: "10px", fontSize: "13px", color: "#ccc", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }}
+          style={{ width: "100%", background: "var(--up-bg)", border: `1px solid ${BORDER_INNER}`, borderRadius: "7px", padding: "10px", fontSize: "13px", color: "#ccc", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }}
         />
         <button onClick={() => onSaveNota(prospect.id)} style={{ marginTop: "6px", width: "100%", background: ACCENT, border: "none", borderRadius: "6px", padding: "9px", fontSize: "12px", fontWeight: "600", color: "#000", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
           <Check size={13} /> Salvar

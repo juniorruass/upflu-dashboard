@@ -5,18 +5,18 @@ import {
   Loader2, Trash2, Play, Pause, X,
   RefreshCw, Wifi, WifiOff, QrCode, LogOut,
   Send, Zap, Clock, MapPin, MessageSquare, CheckCircle2,
-  ChevronLeft, ChevronRight, Plus,
+  ChevronLeft, ChevronRight, Plus, Copy, BarChart2,
+  Layers, Smartphone, Upload,
 } from "lucide-react";
 import Header from "@/components/header";
 import StepsBar from "@/components/automatizar/steps-bar";
-import Step1Alvo, { type Step1Data } from "@/components/automatizar/step1-alvo";
+import Step1Alvo, { type Step1Data, QUAL_FILTERS_DEFAULT } from "@/components/automatizar/step1-alvo";
 import Step2Message, { type Step2Data } from "@/components/automatizar/step2-message";
 import ScheduleConfig, { type ScheduleData } from "@/components/automatizar/schedule-config";
 import Step4Review from "@/components/automatizar/step4-review";
 import MonitorTab from "@/components/automatizar/monitor-tab";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 const GREEN  = "#4ADE80";
 const PINK   = "#E1306C";
 const YELLOW = "#F0B429";
@@ -34,12 +34,17 @@ const STEP1_DEFAULT: Step1Data = {
   source: "google", searchTerm: "", cities: [],
   cnae: "8630504", cnaeLabel: "Odontologia",
   municipio: "", uf: "SP", dailyLimit: 30,
+  filters: { ...QUAL_FILTERS_DEFAULT },
 };
 
 const SCHED_DEFAULT: ScheduleData = {
   minDelay: 120, maxDelay: 300, sessionMax: 20, sessionBreak: 30,
   startHour: 8, endHour: 17, activeDays: [1, 2, 3, 4, 5], dailyLimit: 30,
 };
+
+const DAYS_LABEL = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+type TabKey = "campanhas" | "disparos" | "monitor" | "instancias";
 
 type EvolutionInst = {
   id?: string; name: string; connectionStatus: string;
@@ -62,18 +67,14 @@ type Config = {
 };
 
 const inp: React.CSSProperties = {
-  background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px",
-  padding: "10px 12px", fontSize: "13px", color: "#F0EDE8", outline: "none",
+  background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px",
+  padding: "10px 12px", fontSize: "13px", color: "var(--up-text)", outline: "none",
   width: "100%", boxSizing: "border-box", fontFamily: "inherit",
 };
 const lbl: React.CSSProperties = {
-  fontSize: "11px", fontWeight: "600" as const, color: "#777068",
+  fontSize: "11px", fontWeight: "600" as const, color: "var(--up-text-label)",
   letterSpacing: "0.1em", textTransform: "uppercase" as const,
   display: "block", marginBottom: "6px",
-};
-const sec: React.CSSProperties = {
-  fontSize: "11px", fontWeight: "600" as const, color: "#555",
-  letterSpacing: "0.15em", textTransform: "uppercase" as const, marginBottom: "16px",
 };
 
 function parseMessages(template: string): string[] {
@@ -92,7 +93,7 @@ function latencyColor(ms: number) {
 }
 
 export default function AutomatizarPage() {
-  // ── instance panel ──
+  // ── instances ──
   const [instances, setInstances]         = useState<EvolutionInst[]>([]);
   const [instLoading, setInstLoading]     = useState(true);
   const [latency, setLatency]             = useState(-1);
@@ -101,28 +102,31 @@ export default function AutomatizarPage() {
   const [disconnecting, setDisconnecting] = useState<Record<string, boolean>>({});
 
   // ── test message ──
-  const [showTest, setShowTest]     = useState(false);
-  const [testPhone, setTestPhone]   = useState("");
-  const [testMsg, setTestMsg]       = useState("");
+  const [showTest, setShowTest]       = useState(false);
+  const [testPhone, setTestPhone]     = useState("");
+  const [testMsg, setTestMsg]         = useState("");
   const [testSending, setTestSending] = useState(false);
-  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testResult, setTestResult]   = useState<string | null>(null);
 
   // ── history ──
   const [histLogs, setHistLogs]       = useState<WaLog[]>([]);
   const [histLoading, setHistLoading] = useState(true);
 
-  // ── instant dispatch ──
-  const [dispNumbers, setDispNumbers] = useState("");
-  const [dispMsg, setDispMsg]         = useState("");
-  const [dispSending, setDispSending] = useState(false);
-  const [dispResult, setDispResult]   = useState<string | null>(null);
+  // ── disparos ──
+  const [dispNumbers, setDispNumbers]   = useState("");
+  const [dispMsg, setDispMsg]           = useState("");
+  const [dispSending, setDispSending]   = useState(false);
+  const [dispResult, setDispResult]     = useState<string | null>(null);
+  const [dispMinDelay, setDispMinDelay] = useState(30);
+  const [dispMaxDelay, setDispMaxDelay] = useState(90);
 
-  // ── configs list ──
+  // ── campaigns ──
   const [configs, setConfigs] = useState<Config[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ── tabs ──
-  const [activeTab, setActiveTab] = useState<"automacoes" | "monitor">("automacoes");
+  // ── tabs / wizard ──
+  const [activeTab, setActiveTab]   = useState<TabKey>("campanhas");
+  const [showWizard, setShowWizard] = useState(false);
 
   // ── stepper ──
   const [step, setStep]   = useState(1);
@@ -135,6 +139,7 @@ export default function AutomatizarPage() {
   const [stepErr, setStepErr] = useState("");
 
   const formRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { loadInstances(); loadHistory(); loadConfigs(); }, []);
 
@@ -155,7 +160,7 @@ export default function AutomatizarPage() {
     try {
       const r = await fetch("/api/disparos/whatsapp/historico");
       const d = await r.json();
-      setHistLogs((d.logs ?? []).slice(0, 10));
+      setHistLogs((d.logs ?? []).slice(0, 50));
     } catch { setHistLogs([]); }
     setHistLoading(false);
   }
@@ -216,6 +221,25 @@ export default function AutomatizarPage() {
     loadHistory();
   }
 
+  function handleCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const nums = text.split(/[\n,;]/)
+        .map((s) => s.replace(/\D/g, "").trim())
+        .filter((s) => s.length >= 8);
+      setDispNumbers((prev) => {
+        const combined = [...prev.split("\n").filter(Boolean), ...nums];
+        const unique = combined.filter((v, i, a) => a.indexOf(v) === i);
+        return unique.join("\n");
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  }
+
   // ── stepper ──
   function validateStep(): string {
     if (step === 1) {
@@ -227,7 +251,7 @@ export default function AutomatizarPage() {
       }
     }
     if (step === 2) {
-      if (!step2.name.trim()) return "Nome da automação é obrigatório.";
+      if (!step2.name.trim()) return "Nome da campanha é obrigatório.";
       if (!step2.messages.some((m) => m.trim())) return "Escreva ao menos uma mensagem.";
     }
     return "";
@@ -241,15 +265,13 @@ export default function AutomatizarPage() {
     setStep((p) => p + 1);
   }
 
-  function prevStep() {
-    setStepErr("");
-    setStep((p) => p - 1);
-  }
+  function prevStep() { setStepErr(""); setStep((p) => p - 1); }
 
   function resetForm() {
     setEditId(null); setStep(1); setDone([]);
     setStep1(STEP1_DEFAULT); setStep2({ name: "", messages: [""] });
     setSched(SCHED_DEFAULT); setStepErr(""); setSaving(false);
+    setShowWizard(false);
   }
 
   async function salvar(active: boolean) {
@@ -259,7 +281,8 @@ export default function AutomatizarPage() {
       search_term: step1.searchTerm, cities: step1.cities,
       cnae: step1.cnae, cnae_label: step1.cnaeLabel,
       municipio: step1.municipio, uf: step1.uf,
-      message_template: JSON.stringify(step2.messages.filter((m) => m.trim())), daily_limit: step1.dailyLimit,
+      message_template: JSON.stringify(step2.messages.filter((m) => m.trim())),
+      daily_limit: step1.dailyLimit,
       active, send_hour: sched.startHour, end_hour: sched.endHour,
       active_days: sched.activeDays, min_delay_seconds: sched.minDelay,
       max_delay_seconds: sched.maxDelay, session_max: sched.sessionMax,
@@ -287,19 +310,45 @@ export default function AutomatizarPage() {
       cnae: config.cnae, cnaeLabel: config.cnae_label,
       municipio: config.municipio, uf: config.uf,
       dailyLimit: config.daily_limit,
+      filters: { ...QUAL_FILTERS_DEFAULT },
     });
     setStep2({ name: config.name, messages: parseMessages(config.message_template) });
     setSched({
-      minDelay: config.min_delay_seconds ?? 45,
-      maxDelay: config.max_delay_seconds ?? 120,
+      minDelay: config.min_delay_seconds ?? 120,
+      maxDelay: config.max_delay_seconds ?? 300,
       sessionMax: config.session_max ?? 20,
       sessionBreak: config.session_break_minutes ?? 30,
-      startHour: config.send_hour, endHour: config.end_hour ?? 18,
+      startHour: config.send_hour, endHour: config.end_hour ?? 17,
       activeDays: config.active_days ?? [1, 2, 3, 4, 5],
       dailyLimit: config.daily_limit,
     });
     setStep(1); setDone([]); setStepErr("");
-    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setShowWizard(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  async function duplicar(config: Config) {
+    await fetch("/api/prospecting-configs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: config.name + " (cópia)",
+        source: config.source, search_term: config.search_term,
+        cities: config.cities ?? [], cnae: config.cnae, cnae_label: config.cnae_label,
+        municipio: config.municipio, uf: config.uf,
+        message_template: config.message_template,
+        daily_limit: config.daily_limit, active: false,
+        send_hour: config.send_hour, end_hour: config.end_hour ?? 17,
+        active_days: config.active_days ?? [1,2,3,4,5],
+        min_delay_seconds: config.min_delay_seconds ?? 120,
+        max_delay_seconds: config.max_delay_seconds ?? 300,
+        session_max: config.session_max ?? 20,
+        session_break_minutes: config.session_break_minutes ?? 30,
+        followup_days: config.followup_days ?? 3,
+        followup_template: config.followup_template ?? FOLLOWUP_DEFAULT,
+      }),
+    });
+    await loadConfigs();
   }
 
   async function toggleActive(config: Config) {
@@ -311,7 +360,7 @@ export default function AutomatizarPage() {
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir esta automação?")) return;
+    if (!confirm("Excluir esta campanha?")) return;
     await fetch("/api/prospecting-configs", {
       method: "DELETE", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -319,363 +368,532 @@ export default function AutomatizarPage() {
     await loadConfigs();
   }
 
+  const dispCount = dispNumbers.split("\n").filter((s) => s.trim()).length;
+  const dispEst   = dispCount > 0 ? Math.ceil((dispCount * dispMaxDelay) / 60) : 0;
+  const connectedInstances = instances.filter((i) => {
+    const s = (i.connectionStatus ?? "").toUpperCase();
+    return s === "OPEN" || s === "CONNECTED" || s === "AUTHENTICATED";
+  });
+
   return (
     <>
-      <Header title="Prospecção Automática" />
-      <div style={{ padding: "40px", maxWidth: "1100px" }}>
+      <Header title="Automatizar" />
+      <div style={{ padding: "32px 40px 60px", maxWidth: "1200px" }}>
 
-        {/* ── TABS ── */}
-        <div className="flex gap-1 mb-8 p-1 bg-[#111] border border-white/[0.07] rounded-xl w-fit">
+        {/* ── TAB BAR ── */}
+        <div style={{ display: "flex", gap: "2px", marginBottom: "32px", background: "var(--up-card)", border: "1px solid var(--up-border)", borderRadius: "12px", padding: "4px", width: "fit-content" }}>
           {([
-            { key: "automacoes", label: "Automações" },
-            { key: "monitor",    label: "Monitor de envios" },
-          ] as const).map((t) => (
-            <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
-              className={`px-5 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                activeTab === t.key
-                  ? "bg-[#00CFFF]/10 text-[#00CFFF] border border-[#00CFFF]/25"
-                  : "text-[#555] hover:text-[#888]"
-              }`}>
-              {t.label}
+            { key: "campanhas",  label: "Campanhas",  Icon: Layers      },
+            { key: "disparos",   label: "Disparos",   Icon: Zap         },
+            { key: "monitor",    label: "Monitor",    Icon: BarChart2   },
+            { key: "instancias", label: "Instâncias", Icon: Smartphone  },
+          ] as const).map(({ key, label, Icon }) => (
+            <button key={key} type="button" onClick={() => setActiveTab(key)}
+              style={{
+                display: "flex", alignItems: "center", gap: "7px",
+                padding: "8px 18px", borderRadius: "8px", cursor: "pointer",
+                background: activeTab === key ? "rgba(0,207,255,0.1)" : "transparent",
+                border: activeTab === key ? "1px solid rgba(0,207,255,0.25)" : "1px solid transparent",
+                color: activeTab === key ? ACCENT : "var(--up-text-dim)",
+                fontSize: "13px", fontWeight: activeTab === key ? "600" : "400",
+                transition: "all 0.15s",
+              }}>
+              <Icon size={13} />
+              {label}
             </button>
           ))}
         </div>
 
-        {activeTab === "monitor" && <MonitorTab />}
-
-        {activeTab === "automacoes" && <>
-
-        {/* ── INSTANCE CARD ── */}
-        <div style={{ marginBottom: "32px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-            <p style={sec}>WhatsApp — Evolution API</p>
-            <button onClick={loadInstances} disabled={instLoading}
-              style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "5px 10px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "5px", fontSize: "12px" }}>
-              <RefreshCw size={11} style={{ animation: instLoading ? "spin 1s linear infinite" : "none" }} /> Atualizar
-            </button>
-          </div>
-
-          {instLoading ? (
-            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", textAlign: "center" }}>
-              <Loader2 size={18} style={{ animation: "spin 1s linear infinite", color: "#555" }} />
+        {/* ════════════════════════════════
+            TAB: CAMPANHAS
+        ════════════════════════════════ */}
+        {activeTab === "campanhas" && (
+          <div>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+              <div>
+                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>Campanhas</h2>
+                <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: 0 }}>
+                  {loading ? "Carregando…" : configs.length === 0 ? "Nenhuma campanha criada" : `${configs.filter((c) => c.active).length} ativas · ${configs.length} total`}
+                </p>
+              </div>
+              {!showWizard && !editId && (
+                <button type="button" onClick={() => { resetForm(); setShowWizard(true); }}
+                  style={{ display: "flex", alignItems: "center", gap: "8px", background: ACCENT, color: "#000", border: "none", borderRadius: "9px", padding: "10px 20px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+                  <Plus size={14} /> Nova campanha
+                </button>
+              )}
             </div>
-          ) : instances.length === 0 ? (
-            <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "24px", textAlign: "center" }}>
-              <p style={{ fontSize: "13px", color: "#555", margin: 0 }}>Nenhuma instância encontrada.</p>
-            </div>
-          ) : instances.map((inst) => {
-            const name      = inst.name;
-            const state     = (inst.connectionStatus ?? "").toUpperCase();
-            const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
-            const owner     = inst.ownerJid?.replace("@s.whatsapp.net", "") ?? "";
-            const profile   = inst.profileName ?? "";
-            const qr        = qrData[name];
 
-            return (
-              <div key={name} style={{ background: "#111", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "14px", padding: "20px 24px", marginBottom: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    {inst.profilePicUrl ? (
-                      <img src={inst.profilePicUrl} alt="foto" style={{ width: "48px", height: "48px", borderRadius: "50%", border: `2px solid ${connected ? "rgba(74,222,128,0.4)" : BORDER}`, objectFit: "cover" }} />
-                    ) : (
-                      <div style={{ width: "48px", height: "48px", borderRadius: "50%", background: "#1a1a1a", border: `2px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {connected ? <Wifi size={20} color={GREEN} /> : <WifiOff size={20} color="#555" />}
+            {/* ── WIZARD ── */}
+            {(showWizard || !!editId) && (
+              <div ref={formRef} style={{ background: "var(--up-card)", border: "1px solid rgba(0,207,255,0.18)", borderRadius: "16px", overflow: "hidden", marginBottom: "32px" }}>
+                {/* Accent bar */}
+                <div style={{ height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)` }} />
+                <div style={{ padding: "28px 32px" }}>
+
+                  {/* Wizard header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "9px", background: "rgba(0,207,255,0.1)", border: "1px solid rgba(0,207,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Plus size={15} color={ACCENT} />
                       </div>
-                    )}
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "15px", fontWeight: "700", color: "#F0EDE8" }}>{name}</span>
-                        <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", background: connected ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: connected ? GREEN : "#555", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : BORDER}` }}>
-                          {connected ? "CONECTADO" : "DESCONECTADO"}
-                        </span>
-                        {latency > 0 && (
-                          <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: "rgba(255,255,255,0.03)", color: latencyColor(latency), border: "1px solid rgba(255,255,255,0.06)" }}>
-                            {latency}ms
-                          </span>
+                      <div>
+                        <p style={{ fontSize: "14px", fontWeight: "700", color: "var(--up-text)", margin: 0 }}>
+                          {editId ? "Editar campanha" : "Nova campanha"}
+                        </p>
+                        {editId && step2.name && (
+                          <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "3px 0 0" }}>{step2.name}</p>
                         )}
                       </div>
-                      {connected && (
-                        <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
-                          {profile}{profile && owner ? " · " : ""}{owner}
-                        </p>
-                      )}
                     </div>
+                    <button type="button" onClick={resetForm}
+                      style={{ display: "flex", alignItems: "center", gap: "6px", background: "transparent", border: "1px solid var(--up-border)", borderRadius: "8px", padding: "6px 14px", fontSize: "12px", color: "var(--up-text-dim)", cursor: "pointer" }}>
+                      <X size={12} /> Cancelar
+                    </button>
                   </div>
 
-                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                    {connected && (
-                      <button onClick={() => setShowTest((v) => !v)}
-                        style={{ display: "flex", alignItems: "center", gap: "6px", background: showTest ? "rgba(0,207,255,0.12)" : "rgba(0,207,255,0.06)", border: `1px solid ${showTest ? "rgba(0,207,255,0.4)" : "rgba(0,207,255,0.2)"}`, borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
-                        <Send size={12} /> Testar
-                      </button>
-                    )}
-                    {!connected && (
-                      <button onClick={() => connectInstance(name)} disabled={qrLoading[name]}
-                        style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
-                        {qrLoading[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <QrCode size={12} />} QR Code
-                      </button>
-                    )}
-                    {connected && (
-                      <button onClick={() => disconnectInstance(name)} disabled={disconnecting[name]}
-                        style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: "#FF6B6B", cursor: "pointer" }}>
-                        {disconnecting[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={12} />} Desconectar
-                      </button>
-                    )}
-                  </div>
-                </div>
+                  <StepsBar steps={STEPS} current={step} done={done} />
 
-                {qr && (
-                  <div style={{ marginTop: "16px", padding: "16px", background: "#fff", borderRadius: "8px", display: "inline-block" }}>
-                    <img src={qr} alt="QR Code" style={{ width: "200px", height: "200px", display: "block" }} />
-                    <p style={{ fontSize: "11px", color: "#333", textAlign: "center", margin: "8px 0 0" }}>Escaneie com o WhatsApp</p>
-                  </div>
-                )}
-
-                {showTest && connected && (
-                  <div style={{ marginTop: "16px", padding: "16px", background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "10px" }}>
-                    <p style={{ ...lbl, color: ACCENT, margin: "0 0 12px" }}>Mensagem de teste</p>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
-                      <div>
-                        <label style={lbl}>Número</label>
-                        <input style={inp} placeholder="55119..." value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
-                      </div>
-                      <div>
-                        <label style={lbl}>Mensagem</label>
-                        <input style={inp} placeholder="Teste da Evolution API..." value={testMsg} onChange={(e) => setTestMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendTest()} />
-                      </div>
-                      <button onClick={sendTest} disabled={testSending || !testPhone || !testMsg}
-                        style={{ display: "flex", alignItems: "center", gap: "6px", background: ACCENT, color: "#000", border: "none", borderRadius: "8px", padding: "10px 16px", fontSize: "12px", fontWeight: "700", cursor: "pointer", opacity: testSending ? 0.7 : 1, whiteSpace: "nowrap" }}>
-                        {testSending ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={12} />} Enviar
-                      </button>
-                    </div>
-                    {testResult && <p style={{ fontSize: "12px", color: testResult.includes("!") ? GREEN : "#FF6B6B", margin: "10px 0 0" }}>{testResult}</p>}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ── STEPPER — NOVA AUTOMAÇÃO ── */}
-        <div ref={formRef} className="bg-[#111] border border-white/[0.07] rounded-[14px] p-8 mb-10">
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-7">
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-lg bg-[#00CFFF]/10 border border-[#00CFFF]/20 flex items-center justify-center">
-                <Plus size={13} color={ACCENT} />
-              </div>
-              <div>
-                <p className="text-[11px] font-semibold text-[#00CFFF] tracking-[0.18em] uppercase leading-none">
-                  {editId ? "Editando automação" : "Nova automação"}
-                </p>
-                {editId && step2.name && (
-                  <p className="text-[11px] text-[#555] mt-0.5">{step2.name}</p>
-                )}
-              </div>
-            </div>
-            {editId && (
-              <button type="button" onClick={resetForm}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.07] text-[12px] text-[#555] hover:border-white/20 hover:text-[#888] transition-all">
-                <X size={12} /> Cancelar
-              </button>
-            )}
-          </div>
-
-          {/* StepsBar */}
-          <StepsBar steps={STEPS} current={step} done={done} />
-
-          {/* Step content */}
-          <div className="mt-6">
-            {step === 1 && <Step1Alvo value={step1} onChange={setStep1} />}
-            {step === 2 && <Step2Message value={step2} onChange={setStep2} />}
-            {step === 3 && (
-              <div className="flex flex-col gap-8">
-                <ScheduleConfig onChange={setSched} initial={sched} />
-
-                {/* Disparo Imediato */}
-                <div className="rounded-xl border border-[#F0B429]/20 bg-[#F0B429]/03 p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Zap size={13} color={YELLOW} />
-                    <p className="text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: YELLOW }}>
-                      Disparo Imediato
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#777068] tracking-[0.1em] uppercase mb-2">
-                        Números (um por linha)
-                      </label>
-                      <textarea
-                        className="w-full bg-[#0d0d0d] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] text-[#F0EDE8] placeholder-[#444] resize-y outline-none focus:border-[#F0B429]/40 transition-colors"
-                        rows={4}
-                        placeholder={"11999999999\n21988888888\n31977777777"}
-                        value={dispNumbers}
-                        onChange={(e) => setDispNumbers(e.target.value)}
+                  <div style={{ marginTop: "28px" }}>
+                    {step === 1 && <Step1Alvo value={step1} onChange={setStep1} />}
+                    {step === 2 && <Step2Message value={step2} onChange={setStep2} />}
+                    {step === 3 && <ScheduleConfig onChange={setSched} initial={sched} />}
+                    {step === 4 && (
+                      <Step4Review
+                        step1={step1}
+                        automacaoName={step2.name}
+                        messages={step2.messages}
+                        schedule={sched}
+                        saving={saving}
+                        onSalvar={() => salvar(false)}
+                        onCriar={() => salvar(true)}
                       />
-                      <p className="text-[11px] text-[#555] mt-1">
-                        {dispNumbers.split("\n").filter((s) => s.trim()).length} número(s)
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-semibold text-[#777068] tracking-[0.1em] uppercase mb-2">
-                        Mensagem
-                      </label>
-                      <textarea
-                        className="w-full bg-[#0d0d0d] border border-white/[0.07] rounded-xl px-4 py-3 text-[13px] text-[#F0EDE8] placeholder-[#444] resize-y outline-none focus:border-[#F0B429]/40 transition-colors"
-                        rows={3}
-                        placeholder="Escreva a mensagem..."
-                        value={dispMsg}
-                        onChange={(e) => setDispMsg(e.target.value)}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={sendNow}
-                      disabled={dispSending || !dispNumbers.trim() || !dispMsg.trim()}
-                      className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-50"
-                      style={{ background: YELLOW, color: "#000" }}
-                    >
-                      {dispSending
-                        ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />
-                        : <Zap size={14} />}
-                      {dispSending ? "Enviando..." : "Disparar agora"}
-                    </button>
-                    {dispResult && (
-                      <p className="text-[12px] text-center" style={{ color: GREEN }}>{dispResult}</p>
                     )}
                   </div>
+
+                  {stepErr && (
+                    <p style={{ marginTop: "20px", fontSize: "12px", color: "#FF6B6B", background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "10px", padding: "12px 16px" }}>
+                      {stepErr}
+                    </p>
+                  )}
+
+                  {step < 4 && (
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "28px", paddingTop: "22px", borderTop: "1px solid var(--up-border)" }}>
+                      <button type="button" onClick={prevStep} disabled={step === 1}
+                        style={{ display: "flex", alignItems: "center", gap: "7px", padding: "9px 18px", background: "transparent", border: "1px solid var(--up-border)", borderRadius: "9px", fontSize: "13px", color: "var(--up-text-dim)", cursor: step === 1 ? "default" : "pointer", opacity: step === 1 ? 0.3 : 1 }}>
+                        <ChevronLeft size={14} /> Voltar
+                      </button>
+                      <button type="button" onClick={nextStep}
+                        style={{ display: "flex", alignItems: "center", gap: "7px", padding: "9px 22px", background: ACCENT, border: "none", borderRadius: "9px", fontSize: "13px", fontWeight: "700", color: "#000", cursor: "pointer" }}>
+                        {step === 3 ? "Revisar" : "Próximo"} <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-            {step === 4 && (
-              <Step4Review
-                step1={step1}
-                automacaoName={step2.name}
-                messages={step2.messages}
-                schedule={sched}
-                saving={saving}
-                onSalvar={() => salvar(false)}
-                onCriar={() => salvar(true)}
-              />
-            )}
-          </div>
 
-          {/* Error */}
-          {stepErr && (
-            <p className="mt-5 text-[12px] text-[#FF6B6B] bg-[#FF6B6B]/06 border border-[#FF6B6B]/20 rounded-xl px-4 py-3">
-              {stepErr}
-            </p>
-          )}
-
-          {/* Navigation — only for steps 1–3 */}
-          {step < 4 && (
-            <div className="flex items-center justify-between mt-6 pt-5 border-t border-white/[0.06]">
-              <button type="button" onClick={prevStep} disabled={step === 1}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/[0.07] text-[#666] text-[13px] font-semibold hover:border-white/20 hover:text-[#F0EDE8] transition-all disabled:opacity-25 disabled:cursor-default">
-                <ChevronLeft size={14} /> Voltar
-              </button>
-              <button type="button" onClick={nextStep}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#00CFFF] text-black text-[13px] font-bold hover:bg-[#00CFFF]/90 transition-all">
-                {step === 3 ? "Revisar" : "Próximo"} <ChevronRight size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ── AUTOMAÇÕES ATIVAS ── */}
-        <p style={sec}>Automações ativas</p>
-        {loading ? (
-          <div style={{ textAlign: "center", padding: "40px", color: "#555" }}>
-            <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
-          </div>
-        ) : configs.length === 0 ? (
-          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", padding: "40px", textAlign: "center" }}>
-            <p style={{ fontSize: "14px", color: "#555", margin: 0 }}>Nenhuma automação criada ainda.</p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {configs.map((c) => {
-              const isG = c.source === "google";
-              return (
-                <div key={c.id} style={{ background: "#111", border: `1px solid ${c.active ? (isG ? "rgba(0,207,255,0.15)" : "rgba(74,222,128,0.15)") : BORDER}`, borderRadius: "12px", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8" }}>{c.name}</span>
-                      <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: isG ? "rgba(0,207,255,0.1)" : "rgba(255,255,255,0.05)", color: isG ? ACCENT : "#777", border: `1px solid ${isG ? "rgba(0,207,255,0.2)" : BORDER}` }}>
-                        {isG ? "Google Maps" : "CNAE"}
-                      </span>
-                      <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: c.active ? GREEN : "#555", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}` }}>
-                        {c.active ? "ATIVA" : "PAUSADA"}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: "12px", color: "#666", margin: 0 }}>
-                      {isG
-                        ? `"${c.search_term}" · ${(c.cities ?? []).length} cidades · ${String(c.send_hour).padStart(2, "0")}h–${String(c.end_hour ?? 18).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`
-                        : `${c.cnae_label} · ${c.municipio}, ${c.uf} · ${String(c.send_hour).padStart(2, "0")}h–${String(c.end_hour ?? 18).padStart(2, "0")}h · ${c.daily_limit} msgs/dia`}
-                      {c.followup_days ? ` · follow-up ${c.followup_days}d` : ""}
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                    <button onClick={() => toggleActive(c)} title={c.active ? "Pausar" : "Ativar"}
-                      style={{ background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: c.active ? GREEN : "#555" }}>
-                      {c.active ? <Pause size={14} /> : <Play size={14} />}
-                    </button>
-                    <button onClick={() => editar(c)}
-                      style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#888", fontSize: "12px" }}>
-                      Editar
-                    </button>
-                    <button onClick={() => excluir(c.id)}
-                      style={{ background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#FF6B6B" }}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+            {/* ── CAMPAIGN CARDS ── */}
+            {loading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "60px", color: "var(--up-text-dim)" }}>
+                <Loader2 size={22} style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : configs.length === 0 && !showWizard ? (
+              <div style={{ background: "var(--up-card)", border: "1px solid var(--up-border)", borderRadius: "16px", padding: "64px 40px", textAlign: "center" }}>
+                <div style={{ width: "60px", height: "60px", borderRadius: "16px", background: "rgba(0,207,255,0.07)", border: "1px solid rgba(0,207,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                  <Layers size={26} color={ACCENT} strokeWidth={1.5} />
                 </div>
-              );
-            })}
+                <p style={{ fontSize: "16px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 8px" }}>Nenhuma campanha ainda</p>
+                <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "0 0 28px" }}>Configure sua primeira campanha de prospecção automática</p>
+                <button onClick={() => setShowWizard(true)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: ACCENT, color: "#000", border: "none", borderRadius: "9px", padding: "10px 22px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}>
+                  <Plus size={14} /> Nova campanha
+                </button>
+              </div>
+            ) : (
+              <div className="camp-grid">
+                {configs.map((c) => {
+                  const isG  = c.source === "google";
+                  const msgs = parseMessages(c.message_template);
+                  const days = (c.active_days ?? [1,2,3,4,5]).map((d) => DAYS_LABEL[d]).join(", ");
+                  const target = isG
+                    ? `"${c.search_term}" · ${(c.cities ?? []).slice(0, 3).join(", ")}${(c.cities ?? []).length > 3 ? ` +${(c.cities ?? []).length - 3}` : ""}`
+                    : `${c.cnae_label} · ${c.municipio}, ${c.uf}`;
+
+                  return (
+                    <div key={c.id} style={{ background: "var(--up-card)", border: `1px solid ${c.active ? "rgba(0,207,255,0.18)" : "var(--up-border)"}`, borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", transition: "border-color 0.2s" }}>
+                      {c.active && <div style={{ height: "2px", background: `linear-gradient(90deg, transparent, ${ACCENT}, transparent)`, flexShrink: 0 }} />}
+
+                      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px", flex: 1 }}>
+                        {/* Name + badges */}
+                        <div>
+                          <p style={{ fontSize: "15px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 8px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {c.name}
+                          </p>
+                          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 9px", borderRadius: "5px", background: c.active ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: c.active ? GREEN : "#555", border: `1px solid ${c.active ? "rgba(74,222,128,0.25)" : "var(--up-border)"}`, letterSpacing: "0.05em" }}>
+                              {c.active ? "● ATIVA" : "◐ PAUSADA"}
+                            </span>
+                            <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 9px", borderRadius: "5px", background: isG ? "rgba(0,207,255,0.08)" : "rgba(74,222,128,0.08)", color: isG ? ACCENT : GREEN, border: `1px solid ${isG ? "rgba(0,207,255,0.2)" : "rgba(74,222,128,0.2)"}` }}>
+                              {isG ? "Google Maps" : "CNAE"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Target */}
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "7px" }}>
+                          <MapPin size={11} color="var(--up-text-dim)" style={{ marginTop: "2px", flexShrink: 0 }} />
+                          <span style={{ fontSize: "12px", color: "var(--up-text-label)", lineHeight: "1.5", wordBreak: "break-word" }}>{target}</span>
+                        </div>
+
+                        {/* Info pills */}
+                        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                          {[
+                            `${String(c.send_hour ?? 8).padStart(2,"0")}h–${String(c.end_hour ?? 17).padStart(2,"0")}h`,
+                            days,
+                            `${c.daily_limit} msgs/dia`,
+                            `${msgs.length} variação${msgs.length !== 1 ? "ões" : ""}`,
+                            ...(c.followup_days ? [`follow-up ${c.followup_days}d`] : []),
+                          ].map((pill) => (
+                            <span key={pill} style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "5px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--up-border)", color: "var(--up-text-dim)" }}>
+                              {pill}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Divider + actions */}
+                        <div style={{ marginTop: "auto", borderTop: "1px solid var(--up-border)", paddingTop: "14px", display: "flex", gap: "6px" }}>
+                          <button onClick={() => toggleActive(c)}
+                            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "6px 13px", background: c.active ? "rgba(74,222,128,0.08)" : "rgba(0,207,255,0.08)", border: `1px solid ${c.active ? "rgba(74,222,128,0.2)" : "rgba(0,207,255,0.2)"}`, borderRadius: "7px", fontSize: "12px", fontWeight: "600", color: c.active ? GREEN : ACCENT, cursor: "pointer" }}>
+                            {c.active ? <><Pause size={11} /> Pausar</> : <><Play size={11} /> Ativar</>}
+                          </button>
+                          <button onClick={() => editar(c)}
+                            style={{ display: "flex", alignItems: "center", gap: "5px", padding: "6px 13px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--up-border)", borderRadius: "7px", fontSize: "12px", color: "var(--up-text-dim)", cursor: "pointer" }}>
+                            Editar
+                          </button>
+                          <button onClick={() => duplicar(c)} title="Duplicar campanha"
+                            style={{ display: "flex", alignItems: "center", padding: "6px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--up-border)", borderRadius: "7px", cursor: "pointer", color: "var(--up-text-dim)" }}>
+                            <Copy size={12} />
+                          </button>
+                          <button onClick={() => excluir(c.id)} title="Excluir"
+                            style={{ display: "flex", alignItems: "center", padding: "6px 10px", background: "rgba(255,107,107,0.06)", border: "1px solid rgba(255,107,107,0.15)", borderRadius: "7px", cursor: "pointer", color: "#FF6B6B", marginLeft: "auto" }}>
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
-        {/* ── HISTÓRICO RÁPIDO ── */}
-        <div style={{ marginTop: "40px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Clock size={13} color="#555" />
-              <p style={{ ...sec, margin: 0 }}>Últimas mensagens enviadas</p>
+        {/* ════════════════════════════════
+            TAB: DISPAROS
+        ════════════════════════════════ */}
+        {activeTab === "disparos" && (
+          <div>
+            <div style={{ marginBottom: "28px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>Disparos</h2>
+              <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: 0 }}>Envio imediato para listas avulsas</p>
             </div>
-            <button onClick={loadHistory} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}>
-              <RefreshCw size={12} style={{ animation: histLoading ? "spin 1s linear infinite" : "none" }} />
-            </button>
-          </div>
-          <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "12px", overflow: "hidden" }}>
-            {histLoading ? (
-              <div style={{ padding: "24px", textAlign: "center" }}>
-                <Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "#555" }} />
-              </div>
-            ) : histLogs.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#555", padding: "24px", margin: 0, textAlign: "center" }}>Nenhum envio registrado ainda.</p>
-            ) : histLogs.map((log, i) => (
-              <div key={log.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderBottom: i < histLogs.length - 1 ? `1px solid ${BORDER}` : "none", gap: "12px" }}>
-                <div style={{ minWidth: 0 }}>
-                  <span style={{ fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>{log.nome ?? "—"}</span>
-                  <span style={{ fontSize: "12px", color: "#555", marginLeft: "10px" }}>{log.telefone}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                  <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "4px", background: log.status === "enviado" ? "rgba(74,222,128,0.1)" : "rgba(255,107,107,0.1)", color: log.status === "enviado" ? GREEN : "#FF6B6B", border: `1px solid ${log.status === "enviado" ? "rgba(74,222,128,0.2)" : "rgba(255,107,107,0.2)"}` }}>
-                    {log.status?.toUpperCase()}
-                  </span>
-                  <span style={{ fontSize: "11px", color: "#555" }}>
-                    {log.sent_at ? new Date(log.sent_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        </> /* fim automacoes */}
+            <div className="disp-grid">
+              {/* ── Compose ── */}
+              <div style={{ background: "var(--up-card)", border: "1px solid var(--up-border)", borderRadius: "14px", padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
+                <p style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--up-text-label)", margin: 0 }}>Compose</p>
 
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                {/* Numbers */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "7px" }}>
+                    <label style={lbl}>Números</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {dispCount > 0 && (
+                        <span style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>{dispCount} número{dispCount !== 1 ? "s" : ""}</span>
+                      )}
+                      <button onClick={() => fileRef.current?.click()}
+                        style={{ display: "flex", alignItems: "center", gap: "4px", background: "rgba(0,207,255,0.06)", border: "1px solid rgba(0,207,255,0.18)", borderRadius: "5px", padding: "3px 9px", fontSize: "11px", color: ACCENT, cursor: "pointer", fontWeight: "600" }}>
+                        <Upload size={10} /> CSV
+                      </button>
+                      <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display: "none" }} onChange={handleCSV} />
+                    </div>
+                  </div>
+                  <textarea
+                    style={{ ...inp, resize: "vertical", minHeight: "110px" }}
+                    placeholder={"55119...\n55218...\n55317..."}
+                    value={dispNumbers}
+                    onChange={(e) => setDispNumbers(e.target.value)}
+                  />
+                  {dispCount > 0 && dispEst > 0 && (
+                    <p style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "6px" }}>
+                      Estimativa: ~{dispEst} min de disparo
+                    </p>
+                  )}
+                </div>
+
+                {/* Message */}
+                <div>
+                  <label style={lbl}>Mensagem</label>
+                  <textarea
+                    style={{ ...inp, resize: "vertical", minHeight: "90px" }}
+                    placeholder="Escreva a mensagem..."
+                    value={dispMsg}
+                    onChange={(e) => setDispMsg(e.target.value)}
+                  />
+                  <div style={{ display: "flex", gap: "6px", marginTop: "7px", flexWrap: "wrap" }}>
+                    {["{nome_empresa}", "{cidade}", "{ramo}"].map((v) => (
+                      <button key={v} onClick={() => setDispMsg((p) => p + v)}
+                        style={{ fontSize: "10px", padding: "2px 8px", background: "rgba(0,207,255,0.06)", border: "1px solid rgba(0,207,255,0.15)", borderRadius: "4px", color: ACCENT, cursor: "pointer", fontWeight: "600" }}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Delays */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div>
+                    <label style={lbl}>Delay mín (seg)</label>
+                    <input type="number" style={inp} value={dispMinDelay} min={5} max={600}
+                      onChange={(e) => setDispMinDelay(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label style={lbl}>Delay máx (seg)</label>
+                    <input type="number" style={inp} value={dispMaxDelay} min={5} max={600}
+                      onChange={(e) => setDispMaxDelay(Number(e.target.value))} />
+                  </div>
+                </div>
+
+                {/* Send */}
+                <button onClick={sendNow} disabled={dispSending || !dispNumbers.trim() || !dispMsg.trim()}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px", background: YELLOW, color: "#000", border: "none", borderRadius: "10px", fontSize: "14px", fontWeight: "700", cursor: "pointer", opacity: (dispSending || !dispNumbers.trim() || !dispMsg.trim()) ? 0.45 : 1, transition: "opacity 0.2s" }}>
+                  {dispSending ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} /> : <Zap size={15} />}
+                  {dispSending ? "Enviando…" : `Disparar agora${dispCount > 0 ? ` (${dispCount})` : ""}`}
+                </button>
+                {dispResult && (
+                  <p style={{ textAlign: "center", fontSize: "12px", color: GREEN }}>{dispResult}</p>
+                )}
+              </div>
+
+              {/* ── History ── */}
+              <div style={{ background: "var(--up-card)", border: "1px solid var(--up-border)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid var(--up-border)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                  <p style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--up-text-label)", margin: 0 }}>Histórico</p>
+                  <button onClick={loadHistory} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
+                    <RefreshCw size={12} style={{ animation: histLoading ? "spin 1s linear infinite" : "none" }} />
+                  </button>
+                </div>
+
+                {histLoading ? (
+                  <div style={{ padding: "48px", textAlign: "center" }}>
+                    <Loader2 size={16} style={{ animation: "spin 1s linear infinite", color: "var(--up-text-dim)" }} />
+                  </div>
+                ) : histLogs.length === 0 ? (
+                  <p style={{ padding: "48px", textAlign: "center", fontSize: "13px", color: "var(--up-text-dim)", margin: 0 }}>Nenhum envio registrado.</p>
+                ) : (
+                  <div style={{ overflowY: "auto", flex: 1 }}>
+                    {histLogs.map((log, i) => (
+                      <div key={log.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 20px", borderBottom: i < histLogs.length - 1 ? "1px solid var(--up-border)" : "none", gap: "10px" }}>
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{ fontSize: "12px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {log.nome ?? log.telefone}
+                          </p>
+                          <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: 0 }}>{log.telefone}</p>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                          <span style={{ fontSize: "9px", fontWeight: "700", padding: "2px 6px", borderRadius: "3px", background: log.status === "enviado" ? "rgba(74,222,128,0.1)" : "rgba(255,107,107,0.1)", color: log.status === "enviado" ? GREEN : "#FF6B6B", border: `1px solid ${log.status === "enviado" ? "rgba(74,222,128,0.2)" : "rgba(255,107,107,0.2)"}`, textTransform: "uppercase" }}>
+                            {log.status}
+                          </span>
+                          <span style={{ fontSize: "10px", color: "var(--up-text-dim)", whiteSpace: "nowrap" }}>
+                            {log.sent_at ? new Date(log.sent_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════
+            TAB: MONITOR
+        ════════════════════════════════ */}
+        {activeTab === "monitor" && (
+          <div>
+            <div style={{ marginBottom: "28px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>Monitor</h2>
+              <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: 0 }}>Acompanhamento em tempo real dos envios</p>
+            </div>
+            <MonitorTab />
+          </div>
+        )}
+
+        {/* ════════════════════════════════
+            TAB: INSTÂNCIAS
+        ════════════════════════════════ */}
+        {activeTab === "instancias" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "28px" }}>
+              <div>
+                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 4px", letterSpacing: "-0.02em" }}>Instâncias WhatsApp</h2>
+                <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: 0 }}>
+                  Evolution API · {latency > 0 ? `${latency}ms` : "—"} · {connectedInstances.length}/{instances.length} conectadas
+                </p>
+              </div>
+              <button onClick={loadInstances} disabled={instLoading}
+                style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,255,255,0.04)", border: "1px solid var(--up-border)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", color: "var(--up-text-dim)", cursor: "pointer" }}>
+                <RefreshCw size={12} style={{ animation: instLoading ? "spin 1s linear infinite" : "none" }} /> Atualizar
+              </button>
+            </div>
+
+            {instLoading ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "60px", color: "var(--up-text-dim)" }}>
+                <Loader2 size={22} style={{ animation: "spin 1s linear infinite" }} />
+              </div>
+            ) : instances.length === 0 ? (
+              <div style={{ background: "var(--up-card)", border: "1px solid var(--up-border)", borderRadius: "14px", padding: "48px", textAlign: "center" }}>
+                <p style={{ fontSize: "14px", color: "var(--up-text-dim)", margin: 0 }}>Nenhuma instância encontrada.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {instances.map((inst) => {
+                  const name      = inst.name;
+                  const state     = (inst.connectionStatus ?? "").toUpperCase();
+                  const connected = state === "OPEN" || state === "CONNECTED" || state === "AUTHENTICATED";
+                  const owner     = inst.ownerJid?.replace("@s.whatsapp.net", "") ?? "";
+                  const profile   = inst.profileName ?? "";
+                  const qr        = qrData[name];
+                  const health    = connected ? (latency < 200 ? 100 : latency < 500 ? 70 : 40) : 0;
+                  const hColor    = health >= 80 ? GREEN : health >= 50 ? YELLOW : "#FF6B6B";
+
+                  return (
+                    <div key={name} style={{ background: "var(--up-card)", border: `1px solid ${connected ? "rgba(74,222,128,0.2)" : "var(--up-border)"}`, borderRadius: "14px", padding: "22px 26px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                          {/* Avatar */}
+                          <div style={{ position: "relative", flexShrink: 0 }}>
+                            {inst.profilePicUrl ? (
+                              <img src={inst.profilePicUrl} alt="foto" style={{ width: "52px", height: "52px", borderRadius: "50%", border: `2px solid ${connected ? "rgba(74,222,128,0.4)" : "var(--up-border)"}`, objectFit: "cover" }} />
+                            ) : (
+                              <div style={{ width: "52px", height: "52px", borderRadius: "50%", background: "var(--up-bg)", border: `2px solid ${connected ? "rgba(74,222,128,0.3)" : "var(--up-border)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {connected ? <Wifi size={22} color={GREEN} /> : <WifiOff size={22} color="#555" />}
+                              </div>
+                            )}
+                            <div style={{ position: "absolute", bottom: "1px", right: "1px", width: "13px", height: "13px", borderRadius: "50%", background: connected ? GREEN : "#444", border: "2px solid var(--up-card)" }} />
+                          </div>
+
+                          {/* Info */}
+                          <div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+                              <span style={{ fontSize: "16px", fontWeight: "700", color: "var(--up-text)" }}>{name}</span>
+                              <span style={{ fontSize: "10px", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", background: connected ? "rgba(74,222,128,0.1)" : "rgba(255,255,255,0.04)", color: connected ? GREEN : "#555", border: `1px solid ${connected ? "rgba(74,222,128,0.25)" : "var(--up-border)"}`, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                                {connected ? "Conectado" : "Offline"}
+                              </span>
+                            </div>
+                            {connected && profile && (
+                              <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: "0 0 7px" }}>
+                                {profile}{owner ? ` · +${owner}` : ""}
+                              </p>
+                            )}
+                            {/* Health bar */}
+                            <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+                              <div style={{ width: "88px", height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "99px", overflow: "hidden" }}>
+                                <div style={{ width: `${health}%`, height: "100%", background: hColor, borderRadius: "99px", transition: "width 0.4s" }} />
+                              </div>
+                              <span style={{ fontSize: "10px", color: hColor, fontWeight: "600" }}>
+                                {connected ? `Saúde ${health}%` : "Offline"}
+                              </span>
+                              {latency > 0 && connected && (
+                                <span style={{ fontSize: "10px", color: latencyColor(latency), fontWeight: "600" }}>{latency}ms</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+                          {connected && (
+                            <button onClick={() => setShowTest((v) => !v)}
+                              style={{ display: "flex", alignItems: "center", gap: "6px", background: showTest ? "rgba(0,207,255,0.12)" : "rgba(0,207,255,0.06)", border: `1px solid ${showTest ? "rgba(0,207,255,0.35)" : "rgba(0,207,255,0.18)"}`, borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
+                              <Send size={12} /> Testar
+                            </button>
+                          )}
+                          {!connected && (
+                            <button onClick={() => connectInstance(name)} disabled={qrLoading[name]}
+                              style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(0,207,255,0.08)", border: "1px solid rgba(0,207,255,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: ACCENT, cursor: "pointer" }}>
+                              {qrLoading[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <QrCode size={12} />} Conectar
+                            </button>
+                          )}
+                          {connected && (
+                            <button onClick={() => disconnectInstance(name)} disabled={disconnecting[name]}
+                              style={{ display: "flex", alignItems: "center", gap: "6px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: "8px", padding: "7px 14px", fontSize: "12px", fontWeight: "600", color: "#FF6B6B", cursor: "pointer" }}>
+                              {disconnecting[name] ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <LogOut size={12} />} Desconectar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* QR Code */}
+                      {qr && (
+                        <div style={{ marginTop: "20px", padding: "16px", background: "#fff", borderRadius: "10px", display: "inline-block" }}>
+                          <img src={qr} alt="QR Code" style={{ width: "200px", height: "200px", display: "block" }} />
+                          <p style={{ fontSize: "11px", color: "#333", textAlign: "center", margin: "8px 0 0" }}>Escaneie com o WhatsApp</p>
+                        </div>
+                      )}
+
+                      {/* Test panel */}
+                      {showTest && connected && (
+                        <div style={{ marginTop: "20px", padding: "18px 20px", background: "rgba(0,207,255,0.04)", border: "1px solid rgba(0,207,255,0.12)", borderRadius: "12px" }}>
+                          <p style={{ fontSize: "11px", fontWeight: "700", color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 14px" }}>Mensagem de teste</p>
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr auto", gap: "10px", alignItems: "end" }}>
+                            <div>
+                              <label style={lbl}>Número</label>
+                              <input style={inp} placeholder="55119..." value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
+                            </div>
+                            <div>
+                              <label style={lbl}>Mensagem</label>
+                              <input style={inp} placeholder="Teste da Evolution API..." value={testMsg} onChange={(e) => setTestMsg(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendTest()} />
+                            </div>
+                            <button onClick={sendTest} disabled={testSending || !testPhone || !testMsg}
+                              style={{ display: "flex", alignItems: "center", gap: "6px", background: ACCENT, color: "#000", border: "none", borderRadius: "8px", padding: "10px 16px", fontSize: "12px", fontWeight: "700", cursor: "pointer", opacity: testSending ? 0.7 : 1, whiteSpace: "nowrap" }}>
+                              {testSending ? <Loader2 size={12} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={12} />} Enviar
+                            </button>
+                          </div>
+                          {testResult && (
+                            <p style={{ fontSize: "12px", color: testResult.includes("!") ? GREEN : "#FF6B6B", margin: "10px 0 0" }}>{testResult}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .camp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 16px;
+          }
+          .disp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            align-items: start;
+          }
+          @media (max-width: 900px) {
+            .camp-grid { grid-template-columns: 1fr; }
+            .disp-grid { grid-template-columns: 1fr; }
+          }
+        `}</style>
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase";
+﻿import { createAdminClient } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import type { Client, ClientMetric, ClientNote, OnboardingTask } from "@/types";
@@ -15,7 +15,6 @@ const ACCENT = "#00CFFF";
 const BG = "#080808";
 const CARD = "#111111";
 const CARD2 = "#161616";
-const BORDER = "rgba(255,255,255,0.07)";
 const TEXT = "#F0EDE8";
 const MUTED = "#777068";
 const GREEN = "#4ADE80";
@@ -175,7 +174,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
       </div>
 
       {/* ── Header ──────────────────────────────────────────── */}
-      <div style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid ${BORDER}`, background: "rgba(8,8,8,0.88)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
+      <div style={{ position: "sticky", top: 0, zIndex: 50, borderBottom: `1px solid var(--up-border)`, background: "rgba(8,8,8,0.88)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }}>
         <div className="p-header-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px", maxWidth: "960px", margin: "0 auto", padding: "0 40px" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "22px", width: "auto", flexShrink: 0 }} />
@@ -230,8 +229,8 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
             {/* Tasks list */}
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {tasks.map((task) => (
-                <div key={task.id} style={{ display: "flex", alignItems: "center", gap: "12px", background: CARD, border: `1px solid ${task.done ? "rgba(74,222,128,0.15)" : BORDER}`, borderRadius: "10px", padding: "12px 16px" }}>
-                  <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1.5px solid ${task.done ? GREEN : BORDER}`, background: task.done ? `${GREEN}20` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div key={task.id} style={{ display: "flex", alignItems: "center", gap: "12px", background: CARD, border: `1px solid ${task.done ? "rgba(74,222,128,0.15)" : "var(--up-border)"}`, borderRadius: "10px", padding: "12px 16px" }}>
+                  <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: `1.5px solid ${task.done ? GREEN : "var(--up-border)"}`, background: task.done ? `${GREEN}20` : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     {task.done && <span style={{ fontSize: "10px", color: GREEN }}>✓</span>}
                   </div>
                   <span style={{ fontSize: "13px", color: task.done ? MUTED : TEXT, textDecoration: task.done ? "line-through" : "none" }}>{task.title}</span>
@@ -251,7 +250,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
                 { label: "Total Investido", value: fmt(totalSpend, "R$ ","",0) },
                 { label: "Receita Gerada",  value: fmt(totalRevenue, "R$ ","",0), hi: true },
               ].map((s) => (
-                <div key={s.label} style={{ background: CARD, border: `1px solid ${s.hi ? "rgba(0,207,255,0.22)" : BORDER}`, borderRadius: "14px", padding: "22px 18px", position: "relative", overflow: "hidden" }}>
+                <div key={s.label} style={{ background: CARD, border: `1px solid ${s.hi ? "rgba(0,207,255,0.22)" : "var(--up-border)"}`, borderRadius: "14px", padding: "22px 18px", position: "relative", overflow: "hidden" }}>
                   {s.hi && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${ACCENT},transparent)` }} />}
                   <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 8px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{s.label}</p>
                   <p style={{ fontSize: "24px", fontWeight: "700", color: s.hi ? ACCENT : TEXT, margin: 0, letterSpacing: "-0.025em" }}>{s.value}</p>
@@ -274,7 +273,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
                 { label: "Receita",      value: fmt(lastMetric.revenue, "R$ ","",0), hi: true },
                 { label: "ROAS",         value: fmt(roas,"","x",2), hi: roas != null && roas >= 2 },
               ].map((s) => (
-                <div key={s.label} style={{ background: CARD, border: `1px solid ${s.hi ? "rgba(0,207,255,0.22)" : BORDER}`, borderRadius: "14px", padding: "20px 18px", position: "relative", overflow: "hidden" }}>
+                <div key={s.label} style={{ background: CARD, border: `1px solid ${s.hi ? "rgba(0,207,255,0.22)" : "var(--up-border)"}`, borderRadius: "14px", padding: "20px 18px", position: "relative", overflow: "hidden" }}>
                   {s.hi && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${ACCENT},transparent)` }} />}
                   <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 8px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{s.label}</p>
                   <p style={{ fontSize: "22px", fontWeight: "700", color: s.hi ? ACCENT : TEXT, margin: 0, letterSpacing: "-0.02em" }}>{s.value}</p>
@@ -303,7 +302,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
           <div className="p-section p-fade-4">
             <p className="p-label">Evolução mensal</p>
             <div className="p-grid2">
-              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "20px 18px" }}>
+              <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "14px", padding: "20px 18px" }}>
                 <p style={{ fontSize: "11px", fontWeight: "600", color: MUTED, margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Leads</p>
                 <p style={{ fontSize: "22px", fontWeight: "700", color: TEXT, margin: "0 0 12px" }}>{fmt(totalLeads)}</p>
                 <AreaChart data={metrics} field="leads" color={ACCENT} />
@@ -312,7 +311,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
                   <span style={{ fontSize: "10px", color: MUTED }}>{fmtMonth(metrics[metrics.length-1].month)}</span>
                 </div>
               </div>
-              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "20px 18px" }}>
+              <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "14px", padding: "20px 18px" }}>
                 <p style={{ fontSize: "11px", fontWeight: "600", color: MUTED, margin: "0 0 4px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Receita</p>
                 <p style={{ fontSize: "22px", fontWeight: "700", color: GREEN, margin: "0 0 12px" }}>{fmt(totalRevenue,"R$ ","",0)}</p>
                 <AreaChart data={metrics} field="revenue" color={GREEN} />
@@ -329,10 +328,10 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
         {metrics.length > 1 && (
           <div className="p-section p-fade-4">
             <p className="p-label">Histórico Mensal</p>
-            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "14px", overflow: "hidden", overflowX: "auto" }}>
+            <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "14px", overflow: "hidden", overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "480px" }}>
                 <thead>
-                  <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                  <tr style={{ borderBottom: `1px solid var(--up-border)` }}>
                     {["Mês","Leads","Investimento","Receita","ROAS"].map((h) => (
                       <th key={h} style={{ padding: "12px 16px", textAlign: h === "Mês" ? "left" : "right", fontSize: "10px", fontWeight: "600", color: MUTED, letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
@@ -343,7 +342,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
                     const mRoas = m.revenue && m.ad_spend ? m.revenue / m.ad_spend : null;
                     const isLatest = i === 0;
                     return (
-                      <tr key={m.id} style={{ borderBottom: i < metrics.length-1 ? `1px solid ${BORDER}` : "none", background: isLatest ? "rgba(0,207,255,0.03)" : "transparent" }}>
+                      <tr key={m.id} style={{ borderBottom: i < metrics.length-1 ? `1px solid var(--up-border)` : "none", background: isLatest ? "rgba(0,207,255,0.03)" : "transparent" }}>
                         <td style={{ padding: "12px 16px", color: isLatest ? ACCENT : TEXT, fontWeight: isLatest ? "600" : "400" }}>{fmtMonth(m.month)}</td>
                         <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{fmt(m.leads)}</td>
                         <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{fmt(m.ad_spend,"R$ ","",0)}</td>
@@ -364,7 +363,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
             <p className="p-label">Mensagens da equipe</p>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {notes.map((note) => (
-                <div key={note.id} style={{ background: CARD2, border: `1px solid ${BORDER}`, borderRadius: "14px", padding: "20px 22px" }}>
+                <div key={note.id} style={{ background: CARD2, border: `1px solid var(--up-border)`, borderRadius: "14px", padding: "20px 22px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                     <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "rgba(0,207,255,0.12)", border: "1px solid rgba(0,207,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <span style={{ fontSize: "10px", fontWeight: "700", color: ACCENT }}>UP</span>
@@ -382,7 +381,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
         )}
 
         {/* ── Footer ───────────────────────────────────────── */}
-        <div className="p-fade-5" style={{ borderTop: `1px solid ${BORDER}`, paddingTop: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div className="p-fade-5" style={{ borderTop: `1px solid var(--up-border)`, paddingTop: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/upflu-logo.png" alt="UPFLU" style={{ height: "18px", opacity: 0.6 }} />

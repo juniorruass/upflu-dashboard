@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,7 +7,6 @@ import ConstellationCanvas from "@/components/constellation-canvas";
 const ACCENT = "#00CFFF";
 const BG = "#080808";
 const CARD = "#111111";
-const BORDER = "rgba(255,255,255,0.07)";
 const TEXT = "#F0EDE8";
 const MUTED = "#777068";
 
@@ -68,7 +67,7 @@ export function PortalLogin({ slug, clientName }: { slug: string; clientName: st
         {/* Card */}
         <form
           onSubmit={handleSubmit}
-          style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "20px", padding: "36px 32px", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
+          style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "20px", padding: "36px 32px", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
         >
           <p style={{ fontSize: "18px", fontWeight: "700", color: TEXT, margin: "0 0 6px", letterSpacing: "-0.02em" }}>
             Acessar painel
@@ -89,9 +88,9 @@ export function PortalLogin({ slug, clientName }: { slug: string; clientName: st
                 placeholder="••••••••"
                 required
                 autoFocus
-                style={{ width: "100%", background: BG, border: `1px solid ${error ? "#FF6B6B44" : BORDER}`, borderRadius: "10px", padding: "13px 44px 13px 16px", fontSize: "14px", color: TEXT, outline: "none", boxSizing: "border-box", fontFamily: "inherit", transition: "border-color .2s" }}
+                style={{ width: "100%", background: BG, border: `1px solid ${error ? "#FF6B6B44" : "var(--up-border)"}`, borderRadius: "10px", padding: "13px 44px 13px 16px", fontSize: "14px", color: TEXT, outline: "none", boxSizing: "border-box", fontFamily: "inherit", transition: "border-color .2s" }}
                 onFocus={(e) => { e.target.style.borderColor = "rgba(0,207,255,0.35)"; }}
-                onBlur={(e) => { e.target.style.borderColor = error ? "#FF6B6B44" : BORDER; }}
+                onBlur={(e) => { e.target.style.borderColor = error ? "#FF6B6B44" : "var(--up-border)"; }}
               />
               <button
                 type="button"

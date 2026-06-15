@@ -1,14 +1,13 @@
-"use client";
+﻿"use client";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 type Row = { date: string; prospects: number; enviados: number };
 
-const BORDER = "rgba(255,255,255,0.07)";
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "10px 14px", fontSize: "12px" }}>
+    <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "10px 14px", fontSize: "12px" }}>
       <p style={{ color: "#777", margin: "0 0 6px" }}>{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color, margin: "2px 0", fontWeight: 600 }}>
@@ -22,7 +21,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 export default function ProspeccaoChart({ data }: { data: Row[] }) {
   if (!data.length) return (
     <div style={{ height: "220px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <p style={{ fontSize: "13px", color: "#555" }}>Sem dados de prospecção ainda.</p>
+      <p style={{ fontSize: "13px", color: "var(--up-text-dim)" }}>Sem dados de prospecção ainda.</p>
     </div>
   );
 

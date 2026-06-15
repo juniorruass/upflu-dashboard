@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { Plus, RefreshCw, Wifi, WifiOff, Trash2, X, QrCode, Copy, Check } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 type Instance = {
   name: string;
@@ -99,14 +98,14 @@ export default function InstanciasPage() {
 
       <style>{`
         .inst-wrap { padding: 24px 32px 32px; flex: 1; }
-        .inst-card { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 10px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
-        .inst-avatar { width: 42px; height: 42px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .inst-card { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 10px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+        .inst-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--up-card); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
         .inst-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .qr-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .qr-panel { background: #111; border: 1px solid ${BORDER}; border-radius: 14px; padding: 28px; width: 100%; max-width: 360px; text-align: center; }
+        .qr-panel { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 14px; padding: 28px; width: 100%; max-width: 360px; text-align: center; }
         .qr-image { background: #fff; border-radius: 10px; padding: 12px; display: inline-block; margin: 16px 0; }
         .btn-primary { background: ${ACCENT}; border: none; border-radius: 6px; padding: 9px 18px; font-size: 13px; font-weight: 600; color: #000; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-ghost { background: transparent; border: 1px solid ${BORDER}; border-radius: 6px; padding: 8px 14px; font-size: 12px; color: #555; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.15s; }
+        .btn-ghost { background: transparent; border: 1px solid var(--up-border); border-radius: 6px; padding: 8px 14px; font-size: 12px; color: #555; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.15s; }
         .btn-ghost:hover { color: #aaa; }
         .btn-danger { background: transparent; border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 8px 10px; cursor: pointer; color: #ef4444; display: flex; align-items: center; }
         @media (max-width: 768px) { .inst-wrap { padding: 16px; } }
@@ -117,8 +116,8 @@ export default function InstanciasPage() {
         <div style={{ marginBottom: "28px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <p style={{ fontSize: "11px", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 4px" }}>WhatsApp</p>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>Instâncias</h2>
-            <p style={{ fontSize: "13px", color: "#555", margin: "6px 0 0" }}>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>Instâncias</h2>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "6px 0 0" }}>
               {connected.length} conectada{connected.length !== 1 ? "s" : ""} · {instances.length} total
             </p>
           </div>
@@ -134,29 +133,29 @@ export default function InstanciasPage() {
 
         {/* Create input inline */}
         {showCreate && (
-          <div style={{ background: "#0d0d0d", border: `1px solid ${ACCENT}`, borderRadius: "10px", padding: "16px 20px", marginBottom: "16px", display: "flex", gap: "10px", alignItems: "center" }}>
+          <div style={{ background: "var(--up-bg)", border: `1px solid ${ACCENT}`, borderRadius: "10px", padding: "16px 20px", marginBottom: "16px", display: "flex", gap: "10px", alignItems: "center" }}>
             <input
               autoFocus
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") createInstance(); if (e.key === "Escape") setShowCreate(false); }}
               placeholder="Nome da instância (ex: UPFLU-VENDAS)"
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: "#F0EDE8" }}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: "13px", color: "var(--up-text)" }}
             />
             <button onClick={createInstance} disabled={creating} className="btn-primary" style={{ opacity: creating ? 0.6 : 1 }}>
               {creating ? "Criando..." : "Criar"}
             </button>
-            <button onClick={() => setShowCreate(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+            <button onClick={() => setShowCreate(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
               <X size={16} />
             </button>
           </div>
         )}
 
         {loading ? (
-          <div style={{ color: "#555", fontSize: "13px", padding: "20px 0" }}>Carregando instâncias...</div>
+          <div style={{ color: "var(--up-text-dim)", fontSize: "13px", padding: "20px 0" }}>Carregando instâncias...</div>
         ) : instances.length === 0 ? (
-          <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "40px", textAlign: "center" }}>
-            <p style={{ color: "#555", fontSize: "13px", margin: "0 0 16px" }}>Nenhuma instância cadastrada</p>
+          <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "40px", textAlign: "center" }}>
+            <p style={{ color: "var(--up-text-dim)", fontSize: "13px", margin: "0 0 16px" }}>Nenhuma instância cadastrada</p>
             <button onClick={() => setShowCreate(true)} className="btn-primary" style={{ margin: "0 auto" }}>
               <Plus size={14} /> Criar primeira instância
             </button>
@@ -166,7 +165,7 @@ export default function InstanciasPage() {
             {/* Conectadas */}
             {connected.length > 0 && (
               <>
-                <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 10px" }}>Conectadas</p>
+                <p style={{ fontSize: "10px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.14em", margin: "0 0 10px" }}>Conectadas</p>
                 {connected.map((inst) => (
                   <InstanceCard
                     key={inst.name}
@@ -183,7 +182,7 @@ export default function InstanciasPage() {
             {/* Desconectadas */}
             {disconnected.length > 0 && (
               <>
-                <p style={{ fontSize: "10px", color: "#555", textTransform: "uppercase", letterSpacing: "0.14em", margin: `${connected.length > 0 ? "24px" : "0"} 0 10px` }}>Desconectadas</p>
+                <p style={{ fontSize: "10px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.14em", margin: `${connected.length > 0 ? "24px" : "0"} 0 10px` }}>Desconectadas</p>
                 {disconnected.map((inst) => (
                   <InstanceCard
                     key={inst.name}
@@ -206,15 +205,15 @@ export default function InstanciasPage() {
           <div className="qr-panel">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
               <div>
-                <p style={{ fontSize: "11px", color: "#555", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Conectar instância</p>
-                <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>{qrModal.instance}</h3>
+                <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Conectar instância</p>
+                <h3 style={{ fontSize: "16px", fontWeight: "600", color: "var(--up-text)", margin: 0 }}>{qrModal.instance}</h3>
               </div>
-              <button onClick={() => setQrModal(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+              <button onClick={() => setQrModal(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
                 <X size={18} />
               </button>
             </div>
 
-            <p style={{ fontSize: "12px", color: "#666", margin: "0 0 4px" }}>
+            <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: "0 0 4px" }}>
               Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo
             </p>
 
@@ -228,9 +227,9 @@ export default function InstanciasPage() {
                 />
               </div>
             ) : (
-              <div style={{ background: "#1a1a1a", borderRadius: "8px", padding: "16px", margin: "16px 0", display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ background: "var(--up-card)", borderRadius: "8px", padding: "16px", margin: "16px 0", display: "flex", alignItems: "center", gap: "10px" }}>
                 <QrCode size={20} color="#555" />
-                <span style={{ fontSize: "12px", color: "#555", wordBreak: "break-all", textAlign: "left", flex: 1 }}>{qrModal.data.code}</span>
+                <span style={{ fontSize: "12px", color: "var(--up-text-dim)", wordBreak: "break-all", textAlign: "left", flex: 1 }}>{qrModal.data.code}</span>
               </div>
             )}
 
@@ -288,7 +287,7 @@ function InstanceCard({
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          <span style={{ fontSize: "14px", fontWeight: "600", color: "#F0EDE8" }}>{inst.name}</span>
+          <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--up-text)" }}>{inst.name}</span>
           <span style={{
             fontSize: "10px", fontWeight: "600", padding: "2px 8px", borderRadius: "10px",
             background: isConnected ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.05)",
@@ -298,7 +297,7 @@ function InstanceCard({
           </span>
         </div>
         {inst.profileName && (
-          <p style={{ fontSize: "12px", color: "#666", margin: "2px 0 0" }}>{inst.profileName}</p>
+          <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: "2px 0 0" }}>{inst.profileName}</p>
         )}
         {inst.ownerJid && (
           <p style={{ fontSize: "11px", color: "#444", margin: "1px 0 0" }}>

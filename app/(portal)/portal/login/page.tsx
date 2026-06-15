@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -29,26 +29,26 @@ export default function PortalLoginPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: "var(--font-outfit, sans-serif)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--up-bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", fontFamily: "var(--font-outfit, sans-serif)" }}>
       <div style={{ width: "100%", maxWidth: "400px" }}>
 
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
           <p style={{ fontSize: "11px", fontWeight: "600", color: ACCENT, letterSpacing: "0.2em", textTransform: "uppercase", margin: "0 0 10px" }}>Portal do Cliente</p>
-          <h1 style={{ fontSize: "28px", fontWeight: "700", color: "#F0EDE8", margin: "0 0 8px", letterSpacing: "-0.03em" }}>UPFLU</h1>
-          <p style={{ fontSize: "13px", color: "#777068", margin: 0 }}>Acesse seu painel de acompanhamento</p>
+          <h1 style={{ fontSize: "28px", fontWeight: "700", color: "var(--up-text)", margin: "0 0 8px", letterSpacing: "-0.03em" }}>UPFLU</h1>
+          <p style={{ fontSize: "13px", color: "var(--up-text-label)", margin: 0 }}>Acesse seu painel de acompanhamento</p>
         </div>
 
-        <div style={{ background: "#111111", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "32px" }}>
+        <div style={{ background: "var(--up-card)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "14px", padding: "32px" }}>
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "#9A9288", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" }}>Email</label>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "var(--up-text-muted)", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" }}>Email</label>
               <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com"
-                style={{ width: "100%", background: "#080808", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px 14px", color: "#F0EDE8", fontSize: "13px", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                style={{ width: "100%", background: "var(--up-bg)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px 14px", color: "var(--up-text)", fontSize: "13px", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "#9A9288", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" }}>Senha</label>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: "600", color: "var(--up-text-muted)", marginBottom: "7px", letterSpacing: "0.08em", textTransform: "uppercase" }}>Senha</label>
               <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
-                style={{ width: "100%", background: "#080808", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px 14px", color: "#F0EDE8", fontSize: "13px", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+                style={{ width: "100%", background: "var(--up-bg)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "12px 14px", color: "var(--up-text)", fontSize: "13px", outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
             </div>
 
             {error && <p style={{ fontSize: "13px", color: "#FF6B6B", margin: 0 }}>{error}</p>}
@@ -60,7 +60,7 @@ export default function PortalLoginPage() {
           </form>
         </div>
 
-        <p style={{ textAlign: "center", fontSize: "12px", color: "#555", marginTop: "24px" }}>
+        <p style={{ textAlign: "center", fontSize: "12px", color: "var(--up-text-dim)", marginTop: "24px" }}>
           UPFLU · IA & Automação
         </p>
       </div>

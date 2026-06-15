@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { Plus, Trash2, Check, X, User, Bell, RefreshCw, ChevronRight } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 type Client = { id: string; name: string; contact_phone?: string; contact_email?: string };
 type Instance = { name: string; connectionStatus: string };
@@ -216,8 +215,8 @@ export default function AgendaPage() {
   const todayCount = events.filter((e) => (e.starts_at ?? "").slice(0, 10) === today && (e.status === "pending" || e.status === "notified")).length;
 
   const inputStyle = {
-    width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER}`,
-    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "#F0EDE8",
+    width: "100%", background: "var(--up-bg)", border: `1px solid var(--up-border)`,
+    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "var(--up-text)",
     outline: "none", boxSizing: "border-box" as const,
   };
 
@@ -227,13 +226,13 @@ export default function AgendaPage() {
 
       <style>{`
         .agenda-wrap { padding: 24px 32px 32px; flex: 1; }
-        .ev-card { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+        .ev-card { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 8px; padding: 16px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
         .ev-card:hover { border-color: rgba(255,255,255,0.12); }
         .form-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .form-panel { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
-        .day-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.12em; margin: 20px 0 8px; padding-bottom: 8px; border-bottom: 1px solid ${BORDER}; }
+        .form-panel { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+        .day-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.12em; margin: 20px 0 8px; padding-bottom: 8px; border-bottom: 1px solid var(--up-border); }
         input:focus, select:focus, textarea:focus { border-color: ${ACCENT} !important; }
-        .filter-btn { background: transparent; border: 1px solid ${BORDER}; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: #555; transition: all 0.15s; }
+        .filter-btn { background: transparent; border: 1px solid var(--up-border); border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: #555; transition: all 0.15s; }
         .filter-btn.active { background: rgba(0,207,255,0.08); border-color: ${ACCENT}; color: ${ACCENT}; }
         @media (max-width: 768px) { .agenda-wrap { padding: 16px; } }
       `}</style>
@@ -242,13 +241,13 @@ export default function AgendaPage() {
         <div style={{ marginBottom: "28px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <p style={{ fontSize: "11px", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 4px" }}>Interno</p>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>Agenda</h2>
-            <p style={{ fontSize: "13px", color: "#555", margin: "6px 0 0" }}>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>Agenda</h2>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "6px 0 0" }}>
               {todayCount > 0 ? `${todayCount} compromisso${todayCount > 1 ? "s" : ""} hoje` : "Nenhum compromisso hoje"}
             </p>
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={fetchEvents} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
+            <button onClick={fetchEvents} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "var(--up-text-dim)", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}>
               <RefreshCw size={13} /> Atualizar
             </button>
             <button onClick={openCreate} style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "8px 16px", cursor: "pointer", color: "#000", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", fontWeight: "600" }}>
@@ -263,9 +262,9 @@ export default function AgendaPage() {
             { label: "Concluídos", value: events.filter((e) => e.status === "done").length, color: "#22c55e" },
             { label: "Hoje", value: todayCount, color: ACCENT },
           ].map((s) => (
-            <div key={s.label} style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px 20px", minWidth: "110px" }}>
+            <div key={s.label} style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "14px 20px", minWidth: "110px" }}>
               <div style={{ fontSize: "22px", fontWeight: "700", color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>{s.label}</div>
+              <div style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "2px" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -279,9 +278,9 @@ export default function AgendaPage() {
         </div>
 
         {loading ? (
-          <div style={{ color: "#555", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
+          <div style={{ color: "var(--up-text-dim)", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
         ) : filtered.length === 0 ? (
-          <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "32px", textAlign: "center", color: "#444", fontSize: "13px" }}>
+          <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "32px", textAlign: "center", color: "#444", fontSize: "13px" }}>
             Nenhum evento encontrado
           </div>
         ) : (
@@ -300,27 +299,27 @@ export default function AgendaPage() {
         <div className="form-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
           <div className="form-panel">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "var(--up-text)", margin: 0 }}>
                 {editingId ? "Editar evento" : "Novo evento"}
               </h3>
-              <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+              <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Título *</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Título *</label>
                 <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder="Ex: Reunião com cliente" required style={inputStyle} />
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Descrição</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Descrição</label>
                 <textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Detalhes do evento..." rows={3} style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }} />
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Cliente (opcional)</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Cliente (opcional)</label>
                 <select value={form.client_id} onChange={(e) => setForm((f) => ({ ...f, client_id: e.target.value }))} style={{ ...inputStyle }}>
                   <option value="">Sem cliente vinculado</option>
                   {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -329,11 +328,11 @@ export default function AgendaPage() {
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Início *</label>
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Início *</label>
                   <input type="datetime-local" value={form.starts_at} onChange={(e) => setForm((f) => ({ ...f, starts_at: e.target.value }))} required style={inputStyle} />
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Fim (opcional)</label>
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Fim (opcional)</label>
                   <input type="datetime-local" value={form.ends_at} onChange={(e) => setForm((f) => ({ ...f, ends_at: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
@@ -341,14 +340,14 @@ export default function AgendaPage() {
               {/* Instância e telefone do admin */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Instância WhatsApp</label>
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Instância WhatsApp</label>
                   <select value={form.notify_instance} onChange={(e) => setForm((f) => ({ ...f, notify_instance: e.target.value }))} style={{ ...inputStyle }}>
                     <option value="">Padrão do sistema</option>
                     {instances.map((i) => <option key={i.name} value={i.name}>{i.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Seu número (notif.)</label>
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Seu número (notif.)</label>
                   <input
                     value={form.notify_admin_phone}
                     onChange={(e) => setForm((f) => ({ ...f, notify_admin_phone: e.target.value }))}
@@ -359,7 +358,7 @@ export default function AgendaPage() {
               </div>
 
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "10px" }}>Notificações</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "10px" }}>Notificações</label>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   {([
                     { key: "notify_admin_whatsapp" as const, label: "WhatsApp — você" },
@@ -385,7 +384,7 @@ export default function AgendaPage() {
                 <button type="submit" disabled={saving} style={{ flex: 1, background: ACCENT, border: "none", borderRadius: "6px", padding: "11px", fontSize: "13px", fontWeight: "600", color: "#000", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1 }}>
                   {saving ? "Salvando..." : editingId ? "Salvar" : "Criar evento"}
                 </button>
-                <button type="button" onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "#555", fontSize: "13px" }}>
+                <button type="button" onClick={() => setShowForm(false)} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "var(--up-text-dim)", fontSize: "13px" }}>
                   Cancelar
                 </button>
               </div>
@@ -422,10 +421,10 @@ function EventCard({ ev, onEdit, onDone, onDelete }: { ev: AgendaEvent; onEdit: 
               {STATUS_LABEL[ev.status] ?? ev.status}
             </span>
           </div>
-          {ev.description && <p style={{ fontSize: "12px", color: "#666", margin: "0 0 6px", lineHeight: 1.5 }}>{ev.description}</p>}
+          {ev.description && <p style={{ fontSize: "12px", color: "var(--up-text-dim)", margin: "0 0 6px", lineHeight: 1.5 }}>{ev.description}</p>}
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            {ev.clients && <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#555" }}><User size={11} /> {ev.clients.name}</span>}
-            {notifyIcons.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#555" }}><Bell size={11} /> {notifyIcons.join(", ")}</span>}
+            {ev.clients && <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--up-text-dim)" }}><User size={11} /> {ev.clients.name}</span>}
+            {notifyIcons.length > 0 && <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--up-text-dim)" }}><Bell size={11} /> {notifyIcons.join(", ")}</span>}
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px", flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>

@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
 
         {/* Space background */}
-        <div aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "#05060a" }}>
+        <div aria-hidden className="constellation-bg" style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden", background: "var(--up-canvas)" }}>
           <ConstellationCanvas />
         </div>
 

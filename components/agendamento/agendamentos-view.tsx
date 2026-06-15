@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Calendar, Clock, User, Phone, ChevronDown, ExternalLink, Settings, RefreshCw } from "lucide-react";
@@ -7,7 +7,6 @@ import type { Agendamento, AgendamentoStatus } from "@/types";
 import { formatarData, STATUS_LABELS, STATUS_COLORS } from "@/lib/agendamento";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.08)";
 
 const STATUS_ALL = ["pendente", "confirmado", "cancelado", "concluido", "no_show"] as AgendamentoStatus[];
 
@@ -63,8 +62,8 @@ export default function AgendamentosView({ initialData }: Props) {
           { label: "Pendentes", value: stats.pendentes, color: "#F59E0B" },
           { label: "Confirmados", value: stats.confirmados, color: "#10B981" },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "16px" }}>
-            <p style={{ fontSize: "11px", color: "#777068", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>{label}</p>
+          <div key={label} style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "16px" }}>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>{label}</p>
             <p style={{ fontSize: "28px", fontWeight: "700", color }}>{value}</p>
           </div>
         ))}
@@ -75,14 +74,14 @@ export default function AgendamentosView({ initialData }: Props) {
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {(["todos", ...STATUS_ALL] as const).map((s) => (
             <button key={s} onClick={() => setFiltroStatus(s)}
-              style={{ padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "500", cursor: "pointer", border: `1px solid ${filtroStatus === s ? (s === "todos" ? ACCENT : STATUS_COLORS[s] ?? ACCENT) : BORDER}`, background: filtroStatus === s ? (s === "todos" ? "rgba(0,207,255,0.1)" : `${STATUS_COLORS[s]}18`) : "transparent", color: filtroStatus === s ? (s === "todos" ? ACCENT : STATUS_COLORS[s] ?? ACCENT) : "#9A9288" }}>
+              style={{ padding: "6px 14px", borderRadius: "6px", fontSize: "12px", fontWeight: "500", cursor: "pointer", border: `1px solid ${filtroStatus === s ? (s === "todos" ? ACCENT : STATUS_COLORS[s] ?? ACCENT) : "var(--up-border)"}`, background: filtroStatus === s ? (s === "todos" ? "rgba(0,207,255,0.1)" : `${STATUS_COLORS[s]}18`) : "transparent", color: filtroStatus === s ? (s === "todos" ? ACCENT : STATUS_COLORS[s] ?? ACCENT) : "#9A9288" }}>
               {s === "todos" ? "Todos" : STATUS_LABELS[s]}
             </button>
           ))}
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
           <button onClick={refresh} disabled={loading}
-            style={{ padding: "8px 14px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#9A9288", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
+            style={{ padding: "8px 14px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "var(--up-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Atualizar
           </button>
@@ -92,7 +91,7 @@ export default function AgendamentosView({ initialData }: Props) {
             Ver página pública
           </Link>
           <Link href="/dashboard/agendamentos/configuracoes"
-            style={{ padding: "8px 14px", background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "8px", color: "#9A9288", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
+            style={{ padding: "8px 14px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "8px", color: "var(--up-text-muted)", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
             <Settings size={14} />
             Configurar
           </Link>
@@ -101,7 +100,7 @@ export default function AgendamentosView({ initialData }: Props) {
 
       {/* Tabela */}
       {filtrados.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#777068" }}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "var(--up-text-label)" }}>
           <Calendar size={36} style={{ margin: "0 auto 12px", opacity: 0.4 }} />
           <p>Nenhum agendamento {filtroStatus !== "todos" ? `com status "${STATUS_LABELS[filtroStatus]}"` : "encontrado"}</p>
         </div>
@@ -126,7 +125,7 @@ function AgendamentoCard({ ag, onStatusChange, loading }: {
   const cor = STATUS_COLORS[ag.status] ?? "#777";
 
   return (
-    <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "10px", overflow: "hidden" }}>
+    <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", overflow: "hidden" }}>
       <div style={{ padding: "16px", display: "flex", alignItems: "center", gap: "16px", cursor: "pointer" }} onClick={() => setExpanded(!expanded)}>
 
         <div style={{ width: "4px", height: "44px", background: cor, borderRadius: "99px", flexShrink: 0 }} />
@@ -139,14 +138,14 @@ function AgendamentoCard({ ag, onStatusChange, loading }: {
             </span>
           </div>
           <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "12px", color: "#9A9288", display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ fontSize: "12px", color: "var(--up-text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
               <Calendar size={11} /> {formatarData(ag.data)}
             </span>
-            <span style={{ fontSize: "12px", color: "#9A9288", display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ fontSize: "12px", color: "var(--up-text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
               <Clock size={11} /> {ag.hora}
             </span>
             {ag.paciente?.telefone && (
-              <span style={{ fontSize: "12px", color: "#9A9288", display: "flex", alignItems: "center", gap: "4px" }}>
+              <span style={{ fontSize: "12px", color: "var(--up-text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
                 <Phone size={11} /> {ag.paciente.telefone}
               </span>
             )}
@@ -159,11 +158,11 @@ function AgendamentoCard({ ag, onStatusChange, loading }: {
             <button
               disabled={loading}
               onClick={(e) => { e.stopPropagation(); setShowStatusMenu(!showStatusMenu); }}
-              style={{ padding: "6px 12px", background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, borderRadius: "6px", color: "#9A9288", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
+              style={{ padding: "6px 12px", background: "var(--up-border)", border: `1px solid var(--up-border)`, borderRadius: "6px", color: "var(--up-text-muted)", cursor: "pointer", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
               {loading ? "..." : <><User size={12} /> Status <ChevronDown size={12} /></>}
             </button>
             {showStatusMenu && (
-              <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#1a1a1a", border: `1px solid ${BORDER}`, borderRadius: "8px", zIndex: 50, minWidth: "160px", overflow: "hidden" }}
+              <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", zIndex: 50, minWidth: "160px", overflow: "hidden" }}
                 onMouseLeave={() => setShowStatusMenu(false)}>
                 {(["pendente", "confirmado", "concluido", "cancelado", "no_show"] as AgendamentoStatus[]).map((s) => (
                   <button key={s}
@@ -180,13 +179,13 @@ function AgendamentoCard({ ag, onStatusChange, loading }: {
       </div>
 
       {expanded && (
-        <div style={{ borderTop: `1px solid ${BORDER}`, padding: "16px", background: "#0d0d0d" }}>
+        <div style={{ borderTop: `1px solid var(--up-border)`, padding: "16px", background: "var(--up-bg)" }}>
           {ag.quiz_respostas && Object.keys(ag.quiz_respostas).length > 0 && (
             <div>
-              <p style={{ fontSize: "11px", color: "#777068", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Respostas do quiz</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px" }}>Respostas do quiz</p>
               {Object.entries(ag.quiz_respostas).map(([k, v]) => (
                 <div key={k} style={{ marginBottom: "8px" }}>
-                  <p style={{ fontSize: "11px", color: "#555", marginBottom: "2px" }}>{k}</p>
+                  <p style={{ fontSize: "11px", color: "var(--up-text-dim)", marginBottom: "2px" }}>{k}</p>
                   <p style={{ fontSize: "13px", color: "#ccc" }}>{v}</p>
                 </div>
               ))}
@@ -194,7 +193,7 @@ function AgendamentoCard({ ag, onStatusChange, loading }: {
           )}
           {ag.observacoes && (
             <div style={{ marginTop: "12px" }}>
-              <p style={{ fontSize: "11px", color: "#777068", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Observações</p>
+              <p style={{ fontSize: "11px", color: "var(--up-text-label)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>Observações</p>
               <p style={{ fontSize: "13px", color: "#ccc" }}>{ag.observacoes}</p>
             </div>
           )}

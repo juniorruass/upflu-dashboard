@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -7,7 +7,6 @@ import { Client, ServiceType } from "@/types";
 import { STATUS_LABELS, STATUS_COLORS } from "./clients-view";
 
 const GOLD = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 const SERVICE_LABELS: Record<ServiceType, string> = {
   ai: "IA", automation: "Automação", traffic: "Tráfego",
@@ -25,7 +24,7 @@ interface Props {
 }
 
 export default function ClientCard({ client, onDelete }: Props) {
-  const sc = STATUS_COLORS[client.status] ?? { color: "#9A9288", bg: "rgba(154,146,136,0.08)" };
+  const sc = STATUS_COLORS[client.status] ?? { color: "var(--up-text-muted)", bg: "rgba(154,146,136,0.08)" };
   const services = client.services ?? [];
   const [deleting, setDeleting] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -48,7 +47,7 @@ export default function ClientCard({ client, onDelete }: Props) {
       <div
         style={{
           background: hovered ? "#131313" : "#111111",
-          border: `1px solid ${hovered ? "rgba(0,207,255,0.25)" : BORDER}`,
+          border: `1px solid ${hovered ? "rgba(0,207,255,0.25)" : "var(--up-border)"}`,
           borderRadius: "12px", padding: "24px", cursor: "pointer",
           transition: "border-color 0.15s, background 0.15s",
           position: "relative",
@@ -86,10 +85,10 @@ export default function ClientCard({ client, onDelete }: Props) {
             {initials(client.name)}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: "15px", fontWeight: "600", color: "#F0EDE8", margin: "0 0 3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <p style={{ fontSize: "15px", fontWeight: "600", color: "var(--up-text)", margin: "0 0 3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {client.name}
             </p>
-            <p style={{ fontSize: "12px", color: "#777068", margin: 0 }}>{client.segment}</p>
+            <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: 0 }}>{client.segment}</p>
           </div>
           <span style={{
             fontSize: "10px", fontWeight: "600",
@@ -107,7 +106,7 @@ export default function ClientCard({ client, onDelete }: Props) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "18px" }}>
             {services.map((s) => (
               <span key={s.service} style={{
-                fontSize: "10px", fontWeight: "500", color: "#9A9288",
+                fontSize: "10px", fontWeight: "500", color: "var(--up-text-muted)",
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.07)",
                 padding: "3px 8px", borderRadius: "4px",
@@ -123,13 +122,13 @@ export default function ClientCard({ client, onDelete }: Props) {
           {client.contact_phone && (
             <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
               <Phone size={11} color="#777068" />
-              <span style={{ fontSize: "12px", color: "#9A9288" }}>{client.contact_phone}</span>
+              <span style={{ fontSize: "12px", color: "var(--up-text-muted)" }}>{client.contact_phone}</span>
             </div>
           )}
           {client.contact_email && (
             <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
               <Mail size={11} color="#777068" />
-              <span style={{ fontSize: "12px", color: "#9A9288", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.contact_email}</span>
+              <span style={{ fontSize: "12px", color: "var(--up-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{client.contact_email}</span>
             </div>
           )}
         </div>
@@ -137,7 +136,7 @@ export default function ClientCard({ client, onDelete }: Props) {
         {/* Footer */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <div>
-            <p style={{ fontSize: "11px", color: "#777068", margin: "0 0 1px" }}>MRR</p>
+            <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: "0 0 1px" }}>MRR</p>
             <p style={{ fontSize: "16px", fontWeight: "700", color: client.monthly_value > 0 ? GOLD : "#777068", margin: 0, letterSpacing: "-0.02em" }}>
               {client.monthly_value > 0
                 ? "R$ " + client.monthly_value.toLocaleString("pt-BR", { minimumFractionDigits: 0 })

@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 type StatusRow  = { status: string; total: number };
 type MrrRow     = { name: string; mrr: number };
 
-const BORDER = "rgba(255,255,255,0.07)";
 const STATUS_COLORS: Record<string, string> = {
   active:     "#4ADE80",
   onboarding: "#00CFFF",
@@ -21,7 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "#111", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "10px 14px", fontSize: "12px" }}>
+    <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "10px 14px", fontSize: "12px" }}>
       <p style={{ color: "#777", margin: "0 0 4px" }}>{label}</p>
       <p style={{ color: payload[0].color, margin: 0, fontWeight: 600 }}>{payload[0].value}</p>
     </div>
@@ -36,10 +35,10 @@ export default function ClientesChart({ statusData, mrrData }: { statusData: Sta
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
       {/* Status */}
       <div>
-        <p style={{ fontSize: "11px", color: "#555", margin: "0 0 10px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Por status</p>
+        <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 10px", letterSpacing: "0.1em", textTransform: "uppercase" }}>Por status</p>
         {!hasStatus ? (
           <div style={{ height: "160px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <p style={{ fontSize: "12px", color: "#555" }}>Sem dados</p>
+            <p style={{ fontSize: "12px", color: "var(--up-text-dim)" }}>Sem dados</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={160}>
@@ -60,10 +59,10 @@ export default function ClientesChart({ statusData, mrrData }: { statusData: Sta
 
       {/* MRR por cliente */}
       <div>
-        <p style={{ fontSize: "11px", color: "#555", margin: "0 0 10px", letterSpacing: "0.1em", textTransform: "uppercase" }}>MRR por cliente</p>
+        <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 10px", letterSpacing: "0.1em", textTransform: "uppercase" }}>MRR por cliente</p>
         {!hasMrr ? (
           <div style={{ height: "160px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <p style={{ fontSize: "12px", color: "#555" }}>Sem dados</p>
+            <p style={{ fontSize: "12px", color: "var(--up-text-dim)" }}>Sem dados</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={160}>

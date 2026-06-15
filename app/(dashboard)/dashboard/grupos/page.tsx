@@ -1,11 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Header from "@/components/header";
 import { Plus, Trash2, Send, RefreshCw, Users, Calendar, Clock, X, ImageIcon, Video, FileX } from "lucide-react";
 
 const ACCENT = "#00CFFF";
-const BORDER = "rgba(255,255,255,0.07)";
 
 type GroupMsg = {
   id: string;
@@ -199,8 +198,8 @@ export default function GruposPage() {
   const history = messages.filter((m) => m.status !== "pending");
 
   const inputStyle = {
-    width: "100%", background: "#0d0d0d", border: `1px solid ${BORDER}`,
-    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "#F0EDE8",
+    width: "100%", background: "var(--up-bg)", border: `1px solid var(--up-border)`,
+    borderRadius: "6px", padding: "10px 12px", fontSize: "13px", color: "var(--up-text)",
     outline: "none", boxSizing: "border-box" as const,
   };
 
@@ -213,10 +212,10 @@ export default function GruposPage() {
       <style>{`
         .grupos-wrap { padding: 24px 32px 32px; flex: 1; }
         .section-title { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 0.14em; margin: 0 0 12px; }
-        .msg-card { background: #0d0d0d; border: 1px solid ${BORDER}; border-radius: 8px; padding: 16px; margin-bottom: 8px; }
+        .msg-card { background: var(--up-bg); border: 1px solid var(--up-border); border-radius: 8px; padding: 16px; margin-bottom: 8px; }
         .msg-card:hover { border-color: rgba(255,255,255,0.12); }
         .form-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .form-panel { background: #111; border: 1px solid ${BORDER}; border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+        .form-panel { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 12px; padding: 28px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
         input:focus, select:focus, textarea:focus { border-color: ${ACCENT} !important; }
         @media (max-width: 768px) { .grupos-wrap { padding: 16px; } }
       `}</style>
@@ -226,13 +225,13 @@ export default function GruposPage() {
         <div style={{ marginBottom: "28px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
           <div>
             <p style={{ fontSize: "11px", color: ACCENT, letterSpacing: "0.22em", textTransform: "uppercase", margin: "0 0 4px" }}>WhatsApp</p>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#F0EDE8", margin: 0, letterSpacing: "-0.02em" }}>Grupos</h2>
-            <p style={{ fontSize: "13px", color: "#555", margin: "6px 0 0" }}>Agende mensagens para grupos do WhatsApp</p>
+            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "var(--up-text)", margin: 0, letterSpacing: "-0.02em" }}>Grupos</h2>
+            <p style={{ fontSize: "13px", color: "var(--up-text-dim)", margin: "6px 0 0" }}>Agende mensagens para grupos do WhatsApp</p>
           </div>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <button
               onClick={() => { fetchMessages(); fetchInstances(); }}
-              style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "#555", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}
+              style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "8px 12px", cursor: "pointer", color: "var(--up-text-dim)", display: "flex", alignItems: "center", gap: "6px", fontSize: "12px" }}
             >
               <RefreshCw size={13} /> Atualizar
             </button>
@@ -252,9 +251,9 @@ export default function GruposPage() {
             { label: "Enviadas", value: messages.filter((m) => m.status === "sent").length, color: "#22c55e" },
             { label: "Falhas", value: messages.filter((m) => m.status === "failed").length, color: "#ef4444" },
           ].map((s) => (
-            <div key={s.label} style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "14px 20px", minWidth: "120px" }}>
+            <div key={s.label} style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "14px 20px", minWidth: "120px" }}>
               <div style={{ fontSize: "22px", fontWeight: "700", color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>{s.label}</div>
+              <div style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "2px" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -262,9 +261,9 @@ export default function GruposPage() {
         {/* Pending */}
         <p className="section-title">Agendadas ({pending.length})</p>
         {loading ? (
-          <div style={{ color: "#555", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
+          <div style={{ color: "var(--up-text-dim)", fontSize: "13px", padding: "20px 0" }}>Carregando...</div>
         ) : pending.length === 0 ? (
-          <div style={{ background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "8px", padding: "24px", textAlign: "center", color: "#444", fontSize: "13px", marginBottom: "28px" }}>
+          <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "24px", textAlign: "center", color: "#444", fontSize: "13px", marginBottom: "28px" }}>
             Nenhuma mensagem agendada
           </div>
         ) : (
@@ -293,8 +292,8 @@ export default function GruposPage() {
         <div className="form-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
           <div className="form-panel">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "#F0EDE8", margin: 0 }}>Nova mensagem para grupo</h3>
-              <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", color: "var(--up-text)", margin: 0 }}>Nova mensagem para grupo</h3>
+              <button onClick={() => setShowForm(false)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
                 <X size={18} />
               </button>
             </div>
@@ -302,7 +301,7 @@ export default function GruposPage() {
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               {/* Instance */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Instância</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Instância</label>
                 <select
                   value={form.instance}
                   onChange={(e) => {
@@ -324,12 +323,12 @@ export default function GruposPage() {
               {/* Groups multi-select */}
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                    Grupos {loadingGroups && <span style={{ color: "#555" }}>carregando...</span>}
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                    Grupos {loadingGroups && <span style={{ color: "var(--up-text-dim)" }}>carregando...</span>}
                     {selectedGroups.length > 0 && <span style={{ color: ACCENT, marginLeft: "6px" }}>{selectedGroups.length} selecionado{selectedGroups.length > 1 ? "s" : ""}</span>}
                   </label>
                   {groups.length > 0 && (
-                    <button type="button" onClick={toggleAllGroups} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "11px", color: "#555" }}>
+                    <button type="button" onClick={toggleAllGroups} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: "11px", color: "var(--up-text-dim)" }}>
                       {selectedGroups.length === groups.length ? "Desmarcar todos" : "Selecionar todos"}
                     </button>
                   )}
@@ -351,7 +350,7 @@ export default function GruposPage() {
                       title="Somente grupos onde sou admin"
                       style={{
                         background: adminOnly ? "rgba(0,207,255,0.12)" : "transparent",
-                        border: `1px solid ${adminOnly ? ACCENT : BORDER}`,
+                        border: `1px solid ${adminOnly ? ACCENT : "var(--up-border)"}`,
                         borderRadius: "6px", padding: "8px 12px", cursor: "pointer",
                         fontSize: "11px", fontWeight: adminOnly ? "600" : "400",
                         color: adminOnly ? ACCENT : "#555",
@@ -376,7 +375,7 @@ export default function GruposPage() {
 
               {/* Type */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Tipo</label>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Tipo</label>
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
@@ -389,20 +388,20 @@ export default function GruposPage() {
 
               {/* Media upload */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
                   Imagem / Vídeo (opcional)
                 </label>
                 {mediaFile ? (
-                  <div style={{ background: "#0d0d0d", border: `1px solid ${ACCENT}`, borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ background: "var(--up-bg)", border: `1px solid ${ACCENT}`, borderRadius: "6px", padding: "10px 14px", display: "flex", alignItems: "center", gap: "10px" }}>
                     {mediaFile.type === "image" ? <ImageIcon size={16} color={ACCENT} /> : <Video size={16} color={ACCENT} />}
                     <span style={{ fontSize: "12px", color: "#ccc", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{mediaFile.name}</span>
-                    <button type="button" onClick={() => setMediaFile(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#555" }}>
+                    <button type="button" onClick={() => setMediaFile(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)" }}>
                       <FileX size={15} />
                     </button>
                   </div>
                 ) : (
                   <label style={{ display: "block", cursor: "pointer" }}>
-                    <div style={{ ...inputStyle, display: "flex", alignItems: "center", gap: "8px", color: "#555", cursor: "pointer" }}>
+                    <div style={{ ...inputStyle, display: "flex", alignItems: "center", gap: "8px", color: "var(--up-text-dim)", cursor: "pointer" }}>
                       <ImageIcon size={14} /> Clique para selecionar arquivo
                     </div>
                     <input
@@ -417,7 +416,7 @@ export default function GruposPage() {
 
               {/* Message */}
               <div>
-                <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
+                <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>
                   {mediaFile ? "Legenda (opcional)" : "Mensagem *"}
                 </label>
                 <textarea
@@ -428,14 +427,14 @@ export default function GruposPage() {
                   required={!mediaFile}
                   style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }}
                 />
-                <div style={{ fontSize: "11px", color: "#555", marginTop: "4px" }}>{form.message.length} caracteres</div>
+                <div style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "4px" }}>{form.message.length} caracteres</div>
               </div>
 
               {/* Enviar agora ou agendar */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#0d0d0d", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "12px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "12px 14px" }}>
                 <div>
-                  <div style={{ fontSize: "13px", color: "#F0EDE8", fontWeight: "600" }}>Enviar agora</div>
-                  <div style={{ fontSize: "11px", color: "#555", marginTop: "2px" }}>Dispara imediatamente sem agendar</div>
+                  <div style={{ fontSize: "13px", color: "var(--up-text)", fontWeight: "600" }}>Enviar agora</div>
+                  <div style={{ fontSize: "11px", color: "var(--up-text-dim)", marginTop: "2px" }}>Dispara imediatamente sem agendar</div>
                 </div>
                 <div
                   onClick={() => { setSendNow((v) => !v); setSendResult(""); }}
@@ -448,7 +447,7 @@ export default function GruposPage() {
               {/* Date/time — só mostra se não for envio imediato */}
               {!sendNow && (
                 <div>
-                  <label style={{ fontSize: "11px", color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Data e hora</label>
+                  <label style={{ fontSize: "11px", color: "var(--up-text-dim)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: "6px" }}>Data e hora</label>
                   <input
                     type="datetime-local"
                     value={form.scheduled_at}
@@ -462,7 +461,7 @@ export default function GruposPage() {
               {sendResult && (
                 <div style={{ background: "rgba(0,207,255,0.08)", border: `1px solid rgba(0,207,255,0.2)`, borderRadius: "6px", padding: "10px 14px", fontSize: "13px", color: ACCENT }}>
                   {sendResult}
-                  <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSelectedGroups([]); setMediaFile(null); setSendNow(false); setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" }); }} style={{ marginLeft: "12px", background: "transparent", border: "none", cursor: "pointer", color: "#555", fontSize: "12px" }}>Fechar</button>
+                  <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSelectedGroups([]); setMediaFile(null); setSendNow(false); setForm({ instance: "", message: "", type: "marketing", scheduled_at: "" }); }} style={{ marginLeft: "12px", background: "transparent", border: "none", cursor: "pointer", color: "var(--up-text-dim)", fontSize: "12px" }}>Fechar</button>
                 </div>
               )}
 
@@ -477,7 +476,7 @@ export default function GruposPage() {
                     ? `Enviar agora${selectedGroups.length > 1 ? ` (${selectedGroups.length} grupos)` : ""}`
                     : selectedGroups.length > 1 ? `Agendar para ${selectedGroups.length} grupos` : "Agendar"}
                 </button>
-                <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSendNow(false); }} style={{ background: "transparent", border: `1px solid ${BORDER}`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "#555", fontSize: "13px" }}>
+                <button type="button" onClick={() => { setShowForm(false); setSendResult(""); setSendNow(false); }} style={{ background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "11px 16px", cursor: "pointer", color: "var(--up-text-dim)", fontSize: "13px" }}>
                   Cancelar
                 </button>
               </div>
@@ -499,9 +498,8 @@ function GroupList({ groups, selected, loading, hasInstance, adminOnly, search, 
   onToggle: (g: Group) => void;
 }) {
   const ACCENT = "#00CFFF";
-  const BORDER = "rgba(255,255,255,0.07)";
 
-  const borderColor = selected.length > 0 ? ACCENT : BORDER;
+  const borderColor = selected.length > 0 ? ACCENT : "var(--up-border)";
   const opacity = !hasInstance || loading ? 0.5 : 1;
 
   let content: React.ReactNode;
@@ -523,7 +521,7 @@ function GroupList({ groups, selected, loading, hasInstance, adminOnly, search, 
           <label key={g.id} style={{
             display: "flex", alignItems: "center", gap: "10px",
             padding: "9px 12px", cursor: "pointer",
-            borderBottom: `1px solid ${BORDER}`,
+            borderBottom: `1px solid var(--up-border)`,
             background: checked ? "rgba(0,207,255,0.05)" : "transparent",
           }}>
             <input
@@ -541,7 +539,7 @@ function GroupList({ groups, selected, loading, hasInstance, adminOnly, search, 
   }
 
   return (
-    <div style={{ maxHeight: "200px", overflowY: "auto", background: "#0d0d0d", border: `1px solid ${borderColor}`, borderRadius: "6px", opacity }}>
+    <div style={{ maxHeight: "200px", overflowY: "auto", background: "var(--up-bg)", border: `1px solid ${borderColor}`, borderRadius: "6px", opacity }}>
       {content}
     </div>
   );
@@ -555,13 +553,13 @@ function MsgCard({ msg, onDelete }: { msg: GroupMsg; onDelete: (id: string) => v
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px", fontWeight: "600", color: "#F0EDE8" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "13px", fontWeight: "600", color: "var(--up-text)" }}>
               <Users size={13} color={ACCENT} /> {msg.group_name}
             </span>
             <span style={{ fontSize: "10px", fontWeight: "600", padding: "2px 7px", borderRadius: "4px", textTransform: "uppercase", letterSpacing: "0.06em", background: `${STATUS_COLOR[msg.status]}20`, color: STATUS_COLOR[msg.status] }}>
               {STATUS_LABEL[msg.status] ?? msg.status}
             </span>
-            <span style={{ fontSize: "10px", color: "#444", background: "#1a1a1a", padding: "2px 7px", borderRadius: "4px", textTransform: "uppercase" }}>
+            <span style={{ fontSize: "10px", color: "#444", background: "var(--up-card)", padding: "2px 7px", borderRadius: "4px", textTransform: "uppercase" }}>
               {msg.type}
             </span>
           </div>
@@ -569,15 +567,15 @@ function MsgCard({ msg, onDelete }: { msg: GroupMsg; onDelete: (id: string) => v
           {msg.media_type && (
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
               {msg.media_type === "image" ? <ImageIcon size={13} color="#555" /> : <Video size={13} color="#555" />}
-              <span style={{ fontSize: "11px", color: "#555" }}>{msg.media_filename ?? msg.media_type}</span>
+              <span style={{ fontSize: "11px", color: "var(--up-text-dim)" }}>{msg.media_filename ?? msg.media_type}</span>
             </div>
           )}
-          <p style={{ fontSize: "12px", color: "#888", margin: "0 0 8px", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+          <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: "0 0 8px", lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
             {(msg.media_caption ?? msg.message ?? "").slice(0, 200)}{(msg.media_caption ?? msg.message ?? "").length > 200 ? "..." : ""}
           </p>
 
           <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#555" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "var(--up-text-dim)" }}>
               <Calendar size={11} /> {scheduledDate}
             </span>
             <span style={{ fontSize: "11px", color: "#444" }}>{msg.instance}</span>
