@@ -49,46 +49,19 @@ function tipoBadgeStyle(tipo: string) {
   return { bg: "rgba(255,255,255,0.05)", color: "var(--up-text-muted)", bd: "rgba(255,255,255,0.1)" };
 }
 
-const WA_MESSAGES = [
-  `Olá! Tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
-
-Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
-
-Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
-
-Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
-
-Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
-
-Posso te mostrar? É bem rápido.`,
-
-  `Oi Tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
-
-Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
-
-Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
-
-Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
-
-Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
-
-Posso te mostrar? É bem rápido.`,
-
-  `Oi, tudo bem? Analisei rapidamente o perfil do seu consultório e percebi um ponto interessante:
-
-Vocês transmitem confiança e profissionalismo, mas o posicionamento digital ainda não reflete todo o potencial da marca.
-
-Hoje, muitos pacientes criam percepção de valor antes mesmo do primeiro contato — e pequenas melhorias no Instagram, presença no Google e estrutura digital podem aumentar bastante a autoridade e a procura pelo serviço.
-
-Inclusive, percebi algumas oportunidades que poderiam fortalecer ainda mais a presença digital e destacar vocês da concorrência na região.
-
-Anotei algumas ideias rápidas que acredito que fariam bastante diferença.
-
-Posso te mostrar? É bem rápido.`,
+const WA_TEMPLATES = [
+  "Olá! Vi que a {nome} atua em {cidade} e queria trazer algo que pode fazer diferença no crescimento digital.\n\nTemos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?\n\nUpflu | upflu.digital",
+  "Olá! Pesquisando {tipo} em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.\n\nPosso mostrar em 2 minutos onde estão os pontos de melhoria. Faz sentido?\n\nUpflu | upflu.digital",
+  "Olá! Vi que a {nome} atende clientes em {cidade} e queria compartilhar algo concreto sobre presença digital nesse segmento.\n\nA Upflu faz um diagnóstico gratuito e sem compromisso. Posso enviar o link?\n\nUpflu | upflu.digital",
+  "Olá! Vi que a {nome} está em {cidade} e queria mostrar onde estão as maiores oportunidades de crescimento digital para {tipo}.\n\nIdentificamos pontos específicos que podem fazer diferença. Faz sentido conversar?\n\nUpflu | upflu.digital",
 ];
 
-function randomWaMsg() {
-  return WA_MESSAGES[Math.floor(Math.random() * WA_MESSAGES.length)];
+function buildWaMsg(p: { nome: string; cidade: string; tipo: string }): string {
+  const tpl = WA_TEMPLATES[Math.floor(Math.random() * WA_TEMPLATES.length)];
+  return tpl
+    .replace(/{nome}/g, p.nome)
+    .replace(/{cidade}/g, p.cidade.split(",")[0].trim())
+    .replace(/{tipo}/g, tipoLabel(p.tipo));
 }
 
 function waLink(phone: string, msg: string) {
@@ -123,6 +96,7 @@ type Prospect = {
   situacao_cadastral: string | null;
   proximo_contato: string | null;
   anotacoes: string | null;
+  contatado_em: string | null;
 };
 
 function CRMPageInner() {
@@ -184,7 +158,12 @@ function CRMPageInner() {
 
   async function updateStatus(id: string, status: string) {
     setUpdating(id);
-    await patchProspect(id, { status });
+    const patch: Partial<Prospect> = { status };
+    if (status === "contatado" || status === "followup" || status === "respondeu") {
+      const current = prospects.find((p) => p.id === id);
+      if (!current?.contatado_em) patch.contatado_em = new Date().toISOString();
+    }
+    await patchProspect(id, patch);
     setUpdating(null);
   }
 
@@ -380,17 +359,24 @@ function CRMPageInner() {
                         <td onClick={(e) => e.stopPropagation()}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                             <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: cfg?.color, flexShrink: 0 }} />
-                            <select
-                              className="crm-select"
-                              value={p.status}
-                              disabled={updating === p.id}
-                              onChange={(e) => updateStatus(p.id, e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                                <option key={k} value={k}>{v.label}</option>
-                              ))}
-                            </select>
+                            <div>
+                              <select
+                                className="crm-select"
+                                value={p.status}
+                                disabled={updating === p.id}
+                                onChange={(e) => updateStatus(p.id, e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                                  <option key={k} value={k}>{v.label}</option>
+                                ))}
+                              </select>
+                              {p.contatado_em && (
+                                <div style={{ fontSize: "10px", color: "#555", marginTop: "3px", paddingLeft: "2px" }}>
+                                  {new Date(p.contatado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "2-digit" })}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
@@ -485,7 +471,7 @@ function CRMPageInner() {
             {selected.telefone && (
               <div style={{ marginBottom: "20px" }}>
                 <a
-                  href={waLink(selected.telefone, randomWaMsg())}
+                  href={waLink(selected.telefone, buildWaMsg(selected))}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.2)", borderRadius: "8px", padding: "10px 14px", color: "#25D366", fontSize: "13px", fontWeight: "500", textDecoration: "none" }}
@@ -536,11 +522,21 @@ function CRMPageInner() {
             </div>
 
             {/* Rodapé */}
-            <div style={{ padding: "12px", background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)` }}>
-              <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 2px" }}>Adicionado em</p>
-              <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>
-                {new Date(selected.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
-              </p>
+            <div style={{ padding: "12px", background: "var(--up-bg)", borderRadius: "8px", border: `1px solid var(--up-border)`, display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div>
+                <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 2px" }}>Adicionado em</p>
+                <p style={{ fontSize: "12px", color: "var(--up-text-muted)", margin: 0 }}>
+                  {new Date(selected.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                </p>
+              </div>
+              {selected.contatado_em && (
+                <div>
+                  <p style={{ fontSize: "11px", color: "var(--up-text-dim)", margin: "0 0 2px" }}>Contactado em</p>
+                  <p style={{ fontSize: "12px", color: "#f59e0b", margin: 0 }}>
+                    {new Date(selected.contatado_em).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
