@@ -14,25 +14,47 @@ const SEARCH_TERMS: Record<string, string[]> = {
   "nutricionista": ["nutricionista"],
 };
 
-const ABERTURAS_ESTETICA = [
-  "Vi que a {nome} atua no mercado de estética em {cidade} e queria trazer algo que pode fazer diferença.",
-  "A {nome} está presente em {cidade}, mas será que está aparecendo para quem pesquisa no Google?",
-];
-const ABERTURAS_ODONTO = [
-  "Vi que a {nome} atende pacientes em {cidade} e queria compartilhar algo relevante.",
-  "A {nome} está em {cidade}, mas quando alguém pesquisa dentista na região — ela aparece?",
-];
+const ABERTURAS: Record<string, string[]> = {
+  estetica: [
+    "Vi que a {nome} atua no mercado de estética em {cidade} e queria trazer algo que pode fazer diferença.",
+    "Pesquisando clínicas de estética em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
+    "A {nome} está em {cidade} — queria compartilhar algo sobre presença digital nesse segmento.",
+    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as maiores oportunidades de crescimento.",
+  ],
+  odonto: [
+    "Vi que a {nome} atende pacientes em {cidade} e queria compartilhar algo concreto sobre captação digital.",
+    "Pesquisando clínicas odontológicas em {cidade}, encontrei a {nome} e identifiquei pontos que podem gerar mais pacientes.",
+    "A {nome} está em {cidade} — queria trazer algo sobre como pacientes estão buscando dentistas na região.",
+    "Vi que a {nome} está em {cidade} e queria mostrar o que pode estar limitando a captação de novos pacientes.",
+  ],
+  geral: [
+    "Vi que a {nome} atua em {cidade} e queria trazer algo que pode fazer diferença no crescimento digital.",
+    "Pesquisando {tipo} em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
+    "A {nome} está presente em {cidade} — queria compartilhar algo concreto sobre presença digital nesse mercado.",
+    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as oportunidades de crescimento.",
+  ],
+};
+
 const FECHAMENTOS = [
-  "A Upflu oferece um diagnóstico digital gratuito de 2 minutos, sem compromisso. Posso enviar o link?",
   "Temos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?",
+  "A Upflu faz um diagnóstico digital gratuito e sem compromisso. Posso enviar o link?",
+  "Posso mostrar em 2 minutos o que está travando o crescimento digital da {nome}. Faz sentido?",
+  "Identificamos pontos específicos de melhoria para esse segmento em {cidade}. Posso compartilhar?",
 ];
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function generateMessage(nome: string, cidade: string, tipo: string): string {
-  const aberturas = tipo.includes("estética") || tipo.includes("nutri") || tipo.includes("fisiо") ? ABERTURAS_ESTETICA : ABERTURAS_ODONTO;
-  const abertura = pick(aberturas).replace(/{nome}/g, nome).replace(/{cidade}/g, cidade);
-  const fechamento = pick(FECHAMENTOS).replace(/{nome}/g, nome);
+  const key = tipo.includes("estét") || tipo.includes("nutri") || tipo.includes("fisio") ? "estetica"
+    : tipo.includes("odonto") || tipo.includes("dentista") ? "odonto"
+    : "geral";
+  const abertura = pick(ABERTURAS[key])
+    .replace(/{nome}/g, nome)
+    .replace(/{cidade}/g, cidade)
+    .replace(/{tipo}/g, tipo);
+  const fechamento = pick(FECHAMENTOS)
+    .replace(/{nome}/g, nome)
+    .replace(/{cidade}/g, cidade);
   return `Olá! ${abertura}\n\n${fechamento}\n\nUpflu | upflu.digital`;
 }
 
