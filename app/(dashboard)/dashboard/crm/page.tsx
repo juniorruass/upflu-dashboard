@@ -55,7 +55,7 @@ function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.
 
 function generateProspectMsg(): string {
   const saudacao = pickRandom(SAUDACOES_MSG);
-  return `${saudacao} Tudo bem? 👋\n\nPercebi algo na sua clínica que pode estar afastando pacientes sem que você perceba.\n\nPosso te contar o que é? 👀\n\n*OBS: Não é sobre o marketing!*`;
+  return `${saudacao} Tudo bem? \u{1F44B}\n\nPercebi algo na sua clínica que pode estar afastando pacientes sem que você perceba.\n\nPosso te contar o que é? \u{1F440}\n\n*OBS: Não é sobre o marketing!*`;
 }
 
 function waLink(phone: string, msg: string) {
