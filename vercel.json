@@ -1,7 +1,7 @@
 {
   "crons": [
-    { "path": "/api/cron/send-group-messages", "schedule": "* * * * *" },
-    { "path": "/api/cron/check-agenda", "schedule": "* * * * *" },
+    { "path": "/api/cron/send-group-messages", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/check-agenda", "schedule": "0 8 * * *" },
     { "path": "/api/cron/check-payments", "schedule": "0 12 * * *" },
     { "path": "/api/cron/check-campaigns", "schedule": "0 12 * * *" },
     { "path": "/api/cron/daily-summary", "schedule": "0 12 * * *" },
