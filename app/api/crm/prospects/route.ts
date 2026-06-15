@@ -53,7 +53,9 @@ export async function GET(req: NextRequest) {
   const fonte  = searchParams.get("fonte"); // "cnae" | "maps"
 
   const supabase = createAdminClient();
-  let query = supabase.from("prospects").select("*").order("created_at", { ascending: false });
+  let query = supabase.from("prospects").select("*")
+    .order("contatado_em", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
 
   if (status && status !== "todos") query = query.eq("status", status);
   if (cidade && cidade !== "todas") query = query.eq("cidade", cidade);
