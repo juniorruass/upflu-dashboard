@@ -63,7 +63,12 @@ function generateProspectMsg(): string {
 function waLink(phone: string, msg: string) {
   const num = phone.replace(/\D/g, "");
   const intl = num.startsWith("55") ? num : `55${num}`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(msg)}`;
+  // Emoji (supplementary plane > U+FFFF) deixado raw; demais chars encodados normalmente
+  const encoded = [...msg].map(c => {
+    const cp = c.codePointAt(0)!;
+    return cp > 0xFFFF ? c : encodeURIComponent(c);
+  }).join("");
+  return `https://wa.me/${intl}?text=${encoded}`;
 }
 
 function isOverdue(date: string | null) {
