@@ -150,11 +150,16 @@ function CRMPageInner() {
   }, [selected?.id]);
 
   async function patchProspect(id: string, patch: Partial<Prospect>) {
-    await fetch(`/api/crm/prospects/${id}`, {
+    const res = await fetch(`/api/crm/prospects/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("patchProspect error:", err);
+      return;
+    }
     setProspects((prev) => prev.map((p) => p.id === id ? { ...p, ...patch } : p));
     if (selected?.id === id) setSelected((prev) => prev ? { ...prev, ...patch } : null);
   }
