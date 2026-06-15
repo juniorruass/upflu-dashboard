@@ -49,19 +49,46 @@ function tipoBadgeStyle(tipo: string) {
   return { bg: "rgba(255,255,255,0.05)", color: "var(--up-text-muted)", bd: "rgba(255,255,255,0.1)" };
 }
 
-const WA_TEMPLATES = [
-  "Olá! Vi que a {nome} atua em {cidade} e queria trazer algo que pode fazer diferença no crescimento digital.\n\nTemos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?\n\nUpflu | upflu.digital",
-  "Olá! Pesquisando {tipo} em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.\n\nPosso mostrar em 2 minutos onde estão os pontos de melhoria. Faz sentido?\n\nUpflu | upflu.digital",
-  "Olá! Vi que a {nome} atende clientes em {cidade} e queria compartilhar algo concreto sobre presença digital nesse segmento.\n\nA Upflu faz um diagnóstico gratuito e sem compromisso. Posso enviar o link?\n\nUpflu | upflu.digital",
-  "Olá! Vi que a {nome} está em {cidade} e queria mostrar onde estão as maiores oportunidades de crescimento digital para {tipo}.\n\nIdentificamos pontos específicos que podem fazer diferença. Faz sentido conversar?\n\nUpflu | upflu.digital",
+const ABERTURAS_MSG: Record<string, string[]> = {
+  estetica: [
+    "Vi que a {nome} atua no mercado de estética em {cidade} e queria trazer algo que pode fazer diferença.",
+    "Pesquisando clínicas de estética em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
+    "A {nome} está em {cidade} — queria compartilhar algo concreto sobre presença digital nesse segmento.",
+    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as maiores oportunidades de crescimento.",
+  ],
+  odonto: [
+    "Vi que a {nome} atende pacientes em {cidade} e queria compartilhar algo concreto sobre captação digital.",
+    "Pesquisando clínicas odontológicas em {cidade}, encontrei a {nome} e identifiquei pontos que podem gerar mais pacientes.",
+    "A {nome} está em {cidade} — queria trazer algo sobre como pacientes estão buscando dentistas na região.",
+    "Vi que a {nome} está em {cidade} e queria mostrar o que pode estar limitando a captação de novos pacientes.",
+  ],
+  geral: [
+    "Vi que a {nome} atua em {cidade} e queria trazer algo que pode fazer diferença no crescimento digital.",
+    "Pesquisando {tipo} em {cidade}, encontrei a {nome} e identifiquei uma oportunidade relevante.",
+    "A {nome} está presente em {cidade} — queria compartilhar algo concreto sobre presença digital nesse mercado.",
+    "Vi que a {nome} atende clientes em {cidade} e queria mostrar onde estão as oportunidades de crescimento.",
+  ],
+};
+
+const FECHAMENTOS_MSG = [
+  "Temos um diagnóstico gratuito que mostra exatamente onde estão as oportunidades. Faz sentido conversar?",
+  "A Upflu faz um diagnóstico digital gratuito e sem compromisso. Posso enviar o link?",
+  "Posso mostrar em 2 minutos o que está travando o crescimento digital da {nome}. Faz sentido?",
+  "Identificamos pontos específicos de melhoria para esse segmento em {cidade}. Posso compartilhar?",
 ];
 
-function buildWaMsg(p: { nome: string; cidade: string; tipo: string }): string {
-  const tpl = WA_TEMPLATES[Math.floor(Math.random() * WA_TEMPLATES.length)];
-  return tpl
-    .replace(/{nome}/g, p.nome)
-    .replace(/{cidade}/g, p.cidade.split(",")[0].trim())
-    .replace(/{tipo}/g, tipoLabel(p.tipo));
+function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generateProspectMsg(p: { nome: string; cidade: string; tipo: string }): string {
+  const cidade = p.cidade.split(",")[0].trim();
+  const key = p.tipo.includes("estét") || p.tipo.includes("nutri") || p.tipo.includes("fisio") ? "estetica"
+    : p.tipo.includes("odonto") || p.tipo.includes("dentista") ? "odonto"
+    : "geral";
+  const abertura = pickRandom(ABERTURAS_MSG[key])
+    .replace(/{nome}/g, p.nome).replace(/{cidade}/g, cidade).replace(/{tipo}/g, tipoLabel(p.tipo));
+  const fechamento = pickRandom(FECHAMENTOS_MSG)
+    .replace(/{nome}/g, p.nome).replace(/{cidade}/g, cidade);
+  return `Olá! ${abertura}\n\n${fechamento}\n\nUpflu | upflu.digital`;
 }
 
 function waLink(phone: string, msg: string) {
@@ -115,6 +142,7 @@ function CRMPageInner() {
   const [updating, setUpdating]         = useState<string | null>(null);
   const [noteDraft, setNoteDraft]       = useState("");
   const [savingNote, setSavingNote]     = useState(false);
+  const [generatedMsg, setGeneratedMsg] = useState("");
 
   const cidades = ["todas", ...Array.from(new Set(prospects.map((p) => p.cidade).filter(Boolean)))];
 
@@ -143,6 +171,7 @@ function CRMPageInner() {
 
   useEffect(() => {
     setNoteDraft(selected?.anotacoes || "");
+    if (selected) setGeneratedMsg(generateProspectMsg(selected));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
@@ -165,6 +194,10 @@ function CRMPageInner() {
     }
     await patchProspect(id, patch);
     setUpdating(null);
+    if (status === "contatado") {
+      const prospect = prospects.find((p) => p.id === id);
+      if (prospect) setSelected({ ...prospect, ...patch });
+    }
   }
 
   async function saveNote() {
@@ -471,7 +504,7 @@ function CRMPageInner() {
             {selected.telefone && (
               <div style={{ marginBottom: "20px" }}>
                 <a
-                  href={waLink(selected.telefone, buildWaMsg(selected))}
+                  href={waLink(selected.telefone, generatedMsg)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ display: "flex", alignItems: "center", gap: "8px", background: "rgba(37,211,102,0.08)", border: "1px solid rgba(37,211,102,0.2)", borderRadius: "8px", padding: "10px 14px", color: "#25D366", fontSize: "13px", fontWeight: "500", textDecoration: "none" }}
@@ -485,10 +518,10 @@ function CRMPageInner() {
             <div style={{ marginBottom: "20px" }}>
               <p className="detail-label"><MessageSquare size={11} /> Mensagem gerada</p>
               <div style={{ background: "var(--up-bg)", border: `1px solid var(--up-border)`, borderRadius: "8px", padding: "14px", fontSize: "13px", color: "#aaa", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
-                {selected.mensagem}
+                {generatedMsg}
               </div>
               <button
-                onClick={() => navigator.clipboard.writeText(selected.mensagem)}
+                onClick={() => navigator.clipboard.writeText(generatedMsg)}
                 style={{ marginTop: "8px", background: "transparent", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "6px 12px", fontSize: "12px", color: "var(--up-text-dim)", cursor: "pointer", width: "100%" }}
               >
                 Copiar mensagem
