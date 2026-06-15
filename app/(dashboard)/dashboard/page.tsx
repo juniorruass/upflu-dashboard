@@ -2,9 +2,11 @@
 import Header from "@/components/header";
 import Link from "next/link";
 import { Megaphone, ArrowRight } from "lucide-react";
-import ProspeccaoChart from "@/components/charts/prospeccao-chart";
-import ClientesChart   from "@/components/charts/clientes-chart";
-import FinanceiroChart from "@/components/charts/financeiro-chart";
+import dynamic from "next/dynamic";
+
+const ProspeccaoChart = dynamic(() => import("@/components/charts/prospeccao-chart"), { ssr: false });
+const ClientesChart   = dynamic(() => import("@/components/charts/clientes-chart"),   { ssr: false });
+const FinanceiroChart = dynamic(() => import("@/components/charts/financeiro-chart"), { ssr: false });
 
 const ACCENT  = "#00CFFF";
 
