@@ -53,7 +53,7 @@ const SAUDACOES_MSG = ["Oii", "Olá", "Opa,"];
 
 function pickRandom<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 
-function generateProspectMsg(_p: { nome: string; cidade: string; tipo: string }): string {
+function generateProspectMsg(): string {
   const saudacao = pickRandom(SAUDACOES_MSG);
   return `${saudacao} Tudo bem? 👋\n\nPercebi algo na sua clínica que pode estar afastando pacientes sem que você perceba.\n\nPosso te contar o que é? 👀\n\n*OBS: Não é sobre o marketing!*`;
 }
@@ -138,7 +138,7 @@ function CRMPageInner() {
 
   useEffect(() => {
     setNoteDraft(selected?.anotacoes || "");
-    if (selected) setGeneratedMsg(generateProspectMsg(selected));
+    if (selected) setGeneratedMsg(generateProspectMsg());
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.id]);
 
