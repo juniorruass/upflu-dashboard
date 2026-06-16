@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const SERPAPI_URL = "https://serpapi.com/search.json";
 
@@ -85,7 +85,7 @@ async function searchMaps(query: string, apiKey: string): Promise<Record<string,
     const res = await fetch(`${SERPAPI_URL}?${params}`, { signal: AbortSignal.timeout(10000) });
     const data = await res.json();
     const results = (data.local_results as Record<string, unknown>[]) || [];
-    return results.slice(0, 5); // max 5 per term
+    return results.slice(0, 20);
   } catch {
     return [];
   }
@@ -121,8 +121,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Run all searches in parallel (max 8 at a time)
-    const BATCH = 8;
+    // Run all searches in parallel (max 15 at a time)
+    const BATCH = 15;
     const allPlaces: { place: Record<string, unknown>; city: string; type: string }[] = [];
 
     for (let i = 0; i < queries.length; i += BATCH) {
