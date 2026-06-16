@@ -12,9 +12,25 @@ const ACCENT = "#00CFFF";
 
 const ALL_CITIES = [
   "Teixeira de Freitas, BA",
+  "Eunápolis, BA",
+  "Porto Seguro, BA",
+  "Itabuna, BA",
+  "Ilhéus, BA",
+  "Feira de Santana, BA",
+  "Salvador, BA",
   "Vila Velha, ES",
   "Serra, ES",
   "Vitória, ES",
+  "Cariacica, ES",
+  "São Paulo, SP",
+  "Rio de Janeiro, RJ",
+  "Belo Horizonte, MG",
+  "Curitiba, PR",
+  "Manaus, AM",
+  "Recife, PE",
+  "Fortaleza, CE",
+  "Porto Alegre, RS",
+  "Goiânia, GO",
 ];
 
 const ALL_TYPES = [
@@ -66,7 +82,9 @@ export default function ProspeccaoPage() {
   const [modo, setModo] = useState<"maps" | "cnae">("maps");
 
   // Maps state
-  const [cities, setCities]   = useState<string[]>([...ALL_CITIES]);
+  const [cities, setCities]       = useState<string[]>(["Teixeira de Freitas, BA"]);
+  const [extraCities, setExtraCities] = useState<string[]>([]);
+  const [newCity, setNewCity]     = useState("");
   const [types, setTypes]     = useState<string[]>([...ALL_TYPES]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(false);
@@ -307,12 +325,43 @@ export default function ProspeccaoPage() {
           <div className="prosp-grid">
             <div style={{ background: "var(--up-card)", border: `1px solid var(--up-border)`, borderRadius: "10px", padding: "24px", position: "sticky", top: "20px" }}>
               <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Cidades</p>
-              {ALL_CITIES.map((c) => (
-                <label key={c} className="check-item" style={{ userSelect: "none" }}>
-                  <input type="checkbox" checked={cities.includes(c)} onChange={() => setCities((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
-                  <span style={{ fontSize: "13px", color: cities.includes(c) ? "#F0EDE8" : "#666" }}>{c}</span>
-                </label>
-              ))}
+              <div style={{ maxHeight: "220px", overflowY: "auto", marginBottom: "10px" }}>
+                {[...ALL_CITIES, ...extraCities].map((c) => (
+                  <label key={c} className="check-item" style={{ userSelect: "none" }}>
+                    <input type="checkbox" checked={cities.includes(c)} onChange={() => setCities((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c])} style={{ accentColor: ACCENT, width: "14px", height: "14px", cursor: "pointer" }} />
+                    <span style={{ fontSize: "13px", color: cities.includes(c) ? "#F0EDE8" : "#666", flex: 1 }}>{c}</span>
+                    {extraCities.includes(c) && (
+                      <span onClick={() => { setExtraCities(p => p.filter(x => x !== c)); setCities(p => p.filter(x => x !== c)); }} style={{ fontSize: "11px", color: "#555", cursor: "pointer", padding: "0 2px" }}>✕</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <input
+                  value={newCity}
+                  onChange={(e) => setNewCity(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newCity.trim()) {
+                      const city = newCity.trim();
+                      if (![...ALL_CITIES, ...extraCities].includes(city)) setExtraCities(p => [...p, city]);
+                      setCities(p => p.includes(city) ? p : [...p, city]);
+                      setNewCity("");
+                    }
+                  }}
+                  placeholder="Ex: Campinas, SP"
+                  style={{ flex: 1, background: "var(--up-bg)", border: "1px solid var(--up-border)", borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: "#ccc", outline: "none" }}
+                />
+                <button
+                  onClick={() => {
+                    const city = newCity.trim();
+                    if (!city) return;
+                    if (![...ALL_CITIES, ...extraCities].includes(city)) setExtraCities(p => [...p, city]);
+                    setCities(p => p.includes(city) ? p : [...p, city]);
+                    setNewCity("");
+                  }}
+                  style={{ background: ACCENT, border: "none", borderRadius: "6px", padding: "6px 10px", fontSize: "12px", color: "#000", fontWeight: "600", cursor: "pointer" }}
+                >+</button>
+              </div>
               <div style={{ height: "1px", background: "var(--up-border)", margin: "20px 0" }} />
               <p style={{ fontSize: "11px", fontWeight: "600", color: "var(--up-text-dim)", letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 12px" }}>Tipo de negócio</p>
               {ALL_TYPES.map((t) => (
