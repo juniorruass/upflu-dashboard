@@ -45,6 +45,80 @@ const PORTAL_METRIC_OPTIONS: { key: string; label: string; group: string }[] = [
   { key: "reach",          label: "Alcance",                group: "Métricas Gerais" },
 ];
 
+function TokenMetaField({ clientId, currentToken, currentExpiry, onSaved }: {
+  clientId: string;
+  currentToken: string | null;
+  currentExpiry: string | null;
+  onSaved: (token: string | null, expiry: string | null) => void;
+}) {
+  const [token, setToken]   = useState(currentToken ?? "");
+  const [expiry, setExpiry] = useState(currentExpiry ? currentExpiry.split("T")[0] : "");
+  const [saving, setSaving] = useState(false);
+  const [saved,  setSaved]  = useState(false);
+
+  const expiryStatus = (() => {
+    if (!currentExpiry) return null;
+    const days = Math.ceil((new Date(currentExpiry).getTime() - Date.now()) / 86400000);
+    if (days <= 0)  return { label: "Expirado", color: "#EF4444" };
+    if (days <= 7)  return { label: `Expira em ${days}d`, color: "#F59E0B" };
+    if (days <= 30) return { label: `Expira em ${days}d`, color: "#F0B429" };
+    return { label: `Válido (${days}d)`, color: "#4ADE80" };
+  })();
+
+  async function save() {
+    setSaving(true);
+    const res = await fetch(`/api/clients/${clientId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        meta_access_token: token || null,
+        meta_token_expires_at: expiry ? new Date(expiry).toISOString() : null,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) { onSaved(token || null, expiry ? new Date(expiry).toISOString() : null); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
+          placeholder="EAAxxxxx... (Access Token)"
+          style={{ flex: 1, background: "var(--up-bg)", border: "1px solid var(--up-border)", borderRadius: "6px", padding: "8px 12px", fontSize: "12px", color: "var(--up-text)", outline: "none", fontFamily: "var(--font-outfit),sans-serif" }}
+        />
+        {expiryStatus && (
+          <span style={{ fontSize: "11px", fontWeight: "600", color: expiryStatus.color, whiteSpace: "nowrap", background: `${expiryStatus.color}18`, padding: "4px 10px", borderRadius: "6px", border: `1px solid ${expiryStatus.color}44` }}>
+            {expiryStatus.label}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+          <span style={{ fontSize: "10px", color: "var(--up-text-label)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Data de expiração</span>
+          <input
+            type="date"
+            value={expiry}
+            onChange={(e) => setExpiry(e.target.value)}
+            style={{ background: "var(--up-bg)", border: "1px solid var(--up-border)", borderRadius: "6px", padding: "7px 10px", fontSize: "12px", color: "var(--up-text)", outline: "none", colorScheme: "dark", fontFamily: "var(--font-outfit),sans-serif" }}
+          />
+        </div>
+        <button
+          onClick={save}
+          disabled={saving}
+          style={{ marginTop: "18px", padding: "8px 18px", borderRadius: "6px", fontSize: "12px", fontWeight: "600", background: saved ? "#4ADE80" : GOLD, color: "#000", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1, fontFamily: "var(--font-outfit),sans-serif", transition: "background 0.2s" }}
+        >
+          {saving ? "Salvando..." : saved ? "Salvo ✓" : "Salvar token"}
+        </button>
+      </div>
+      <p style={{ fontSize: "11px", color: "var(--up-text-label)", margin: 0 }}>
+        Token salvo aqui tem prioridade sobre o env var do Vercel. Tokens Meta expiram em ~60 dias — use um System User para token permanente.
+      </p>
+    </div>
+  );
+}
+
 export default function ClientDetail({ initialClient }: { initialClient: Client }) {
   const router = useRouter();
   const [client, setClient] = useState<Client>(initialClient);
@@ -528,6 +602,20 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
                 <span style={{ fontSize: "12px", color: "var(--up-text-label)" }}>Salva ao sair do campo. Aparece no portal quando a Meta não retornar dados de seguidores.</span>
               </div>
             </div>
+          </>)}
+        </div>
+      )}
+
+      {/* ── Token Meta ── */}
+      {client.meta_account_id && (
+        <div style={{ marginTop: "20px" }}>
+          {card(<>
+            {sectionTitle("Token Meta Ads")}
+            <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: "0 0 14px" }}>
+              Token de acesso à API do Meta. Fica salvo aqui — sem precisar mexer no Vercel.
+            </p>
+            <TokenMetaField clientId={client.id} currentToken={client.meta_access_token} currentExpiry={client.meta_token_expires_at}
+              onSaved={(token, expiry) => setClient((prev) => ({ ...prev, meta_access_token: token, meta_token_expires_at: expiry }))} />
           </>)}
         </div>
       )}

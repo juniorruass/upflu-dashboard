@@ -95,6 +95,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
   const [loading,          setLoading]           = useState(false);
   const [loadingCampaigns, setLoadingCampaigns]  = useState(false);
   const [error,            setError]             = useState<string | null>(null);
+  const [tokenWarning,     setTokenWarning]      = useState<string | null>(null);
   const [expanded,         setExpanded]          = useState(false);
   const [datePreset,       setDatePreset]        = useState<DatePreset>("last_30d");
   const [since,            setSince]             = useState("");
@@ -127,7 +128,7 @@ export default function MetaAdsPanel({ clientId }: Props) {
     if (overRes.status === "fulfilled") {
       const j = await overRes.value.json();
       if (j.error) setError(j.error);
-      else setInsights(j.data ?? null);
+      else { setInsights(j.data ?? null); setTokenWarning(j.tokenWarning ?? null); }
     }
     setLoading(false);
 
@@ -215,6 +216,14 @@ export default function MetaAdsPanel({ clientId }: Props) {
           </button>
         </div>
       </div>
+
+      {/* ── Token warning ── */}
+      {tokenWarning && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "12px 16px", background: "rgba(245,158,11,0.07)", border: "1px solid rgba(245,158,11,0.25)", borderRadius: "10px" }}>
+          <AlertCircle size={14} color="#F59E0B" style={{ flexShrink: 0, marginTop: "2px" }} />
+          <p style={{ fontSize: "13px", color: "#F59E0B", margin: 0 }}>{tokenWarning}</p>
+        </div>
+      )}
 
       {/* ── Results ── */}
       <div style={{ background: CARD, border: `1px solid var(--up-border)`, borderRadius: "12px", overflow: "hidden" }}>

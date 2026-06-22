@@ -19,6 +19,8 @@ export interface Client {
   appointment_time: string | null;
   captado_via: string | null;
   meta_account_id: string | null;
+  meta_access_token: string | null;
+  meta_token_expires_at: string | null;
   slug: string | null;
   portal_password: string | null;
   portal_metrics: string[] | null;

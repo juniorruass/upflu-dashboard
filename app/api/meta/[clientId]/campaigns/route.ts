@@ -60,21 +60,21 @@ function findCostPerAction(cpa: { action_type: string; value: string }[], types:
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
-  const token = process.env.META_ACCESS_TOKEN;
-
-  if (!token) {
-    return NextResponse.json({ error: "META_ACCESS_TOKEN não configurado." }, { status: 500 });
-  }
 
   const supabase = createAdminClient();
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id, name, meta_account_id")
+    .select("id, name, meta_account_id, meta_access_token")
     .eq("id", clientId)
     .single();
 
   if (clientError || !client || !client.meta_account_id) {
     return NextResponse.json({ error: "Cliente não encontrado ou sem Meta configurado." }, { status: 404 });
+  }
+
+  const token = client.meta_access_token || process.env.META_ACCESS_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: "Token Meta não configurado." }, { status: 500 });
   }
 
   const searchParams = req.nextUrl.searchParams;

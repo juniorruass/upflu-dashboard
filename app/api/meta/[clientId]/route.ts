@@ -94,16 +94,11 @@ function findCostPerAction(cpa: { action_type: string; value: string }[], types:
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
-  const token = process.env.META_ACCESS_TOKEN;
-
-  if (!token) {
-    return NextResponse.json({ error: "META_ACCESS_TOKEN não configurado." }, { status: 500 });
-  }
 
   const supabase = createAdminClient();
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id, name, meta_account_id")
+    .select("id, name, meta_account_id, meta_access_token, meta_token_expires_at")
     .eq("id", clientId)
     .single();
 
@@ -113,6 +108,20 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
   if (!client.meta_account_id) {
     return NextResponse.json({ error: "meta_account_id não configurado." }, { status: 400 });
+  }
+
+  const token = client.meta_access_token || process.env.META_ACCESS_TOKEN;
+  if (!token) {
+    return NextResponse.json({ error: "Token Meta não configurado. Adicione o token no cadastro do cliente." }, { status: 500 });
+  }
+
+  // Aviso de expiração
+  let tokenWarning: string | null = null;
+  if (client.meta_token_expires_at) {
+    const expiresAt = new Date(client.meta_token_expires_at);
+    const daysLeft = Math.ceil((expiresAt.getTime() - Date.now()) / 86400000);
+    if (daysLeft <= 0) tokenWarning = "Token expirado. Atualize o token Meta no cadastro do cliente.";
+    else if (daysLeft <= 7) tokenWarning = `Token expira em ${daysLeft} dia(s). Renove em breve.`;
   }
 
   const searchParams = req.nextUrl.searchParams;
@@ -198,6 +207,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const roas = roasArr?.[0] ? parseFloat(roasArr[0].value) : null;
 
     return NextResponse.json({
+      tokenWarning,
       data: {
         spend,
         impressions: parseInt(row.impressions ?? "0"),
