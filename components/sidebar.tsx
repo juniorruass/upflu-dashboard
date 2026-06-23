@@ -101,24 +101,14 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: collapsed ? "16px 8px" : "20px 12px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto", overflowX: "hidden" }}>
-        {navItems.map((item, idx) => {
+        {navItems.map((item) => {
           const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-          const prevItem = navItems[idx - 1];
-          const showDivider = item.divider && !collapsed && prevItem;
 
           // Sub-items: hide when autoOpen is false (or sidebar collapsed)
           if (item.sub && (!autoOpen || collapsed)) return null;
 
           return (
             <div key={item.href}>
-              {/* Divider label before "Automatizar" group */}
-              {showDivider && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", margin: "10px 12px 6px", opacity: 0.45 }}>
-                  <div style={{ flex: 1, height: "1px", background: "var(--up-border)" }} />
-                  <span style={{ fontSize: "9px", fontWeight: "600", color: "var(--up-text-label)", letterSpacing: "0.18em", textTransform: "uppercase", whiteSpace: "nowrap" }}>Automação</span>
-                  <div style={{ flex: 1, height: "1px", background: "var(--up-border)" }} />
-                </div>
-              )}
 
               {item.disabled ? (
                 <div
