@@ -1,6 +1,6 @@
 ﻿import { createAdminClient } from "@/lib/supabase";
 import Header from "@/components/header";
-import { TrendingUp, TrendingDown, Users, DollarSign } from "lucide-react";
+import { TrendingUp, Users, DollarSign } from "lucide-react";
 import PaymentsSection from "@/components/financeiro/payments-section";
 import ExpensesSection from "@/components/financeiro/expenses-section";
 import BulkPaymentsButton from "@/components/financeiro/bulk-payments-button";
