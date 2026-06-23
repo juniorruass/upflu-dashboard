@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import { Plus, Search, Users } from "lucide-react";
@@ -28,23 +28,51 @@ const STATUS_COLORS: Record<ClientStatus, { color: string; bg: string }> = {
 
 export { STATUS_LABELS, STATUS_COLORS };
 
-interface Props { initialClients: Client[] }
+type SortOption = "recent" | "name_asc" | "name_desc" | "mrr_desc" | "mrr_asc";
 
-export default function ClientsView({ initialClients }: Props) {
+const SORT_LABELS: Record<SortOption, string> = {
+  recent:    "Mais recente",
+  name_asc:  "A → Z",
+  name_desc: "Z → A",
+  mrr_desc:  "Maior MRR",
+  mrr_asc:   "Menor MRR",
+};
+
+interface Props {
+  initialClients: Client[];
+  overdueClientIds: string[];
+}
+
+export default function ClientsView({ initialClients, overdueClientIds }: Props) {
   const [clients, setClients] = useState<Client[]>(initialClients);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<ClientStatus | "all">("all");
+  const [sort, setSort] = useState<SortOption>("recent");
   const [showForm, setShowForm] = useState(false);
 
+  const overdueSet = useMemo(() => new Set(overdueClientIds), [overdueClientIds]);
+
   const filtered = useMemo(() => {
-    return clients.filter((c) => {
+    const result = clients.filter((c) => {
       const matchSearch =
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.segment.toLowerCase().includes(search.toLowerCase());
       const matchStatus = filterStatus === "all" || c.status === filterStatus;
       return matchSearch && matchStatus;
     });
-  }, [clients, search, filterStatus]);
+
+    result.sort((a, b) => {
+      switch (sort) {
+        case "name_asc":  return a.name.localeCompare(b.name, "pt-BR");
+        case "name_desc": return b.name.localeCompare(a.name, "pt-BR");
+        case "mrr_desc":  return (b.monthly_value || 0) - (a.monthly_value || 0);
+        case "mrr_asc":   return (a.monthly_value || 0) - (b.monthly_value || 0);
+        default:          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [clients, search, filterStatus, sort]);
 
   const stats = useMemo(() => ({
     total: clients.length,
@@ -69,9 +97,10 @@ export default function ClientsView({ initialClients }: Props) {
       .cv-pad { padding: 40px; }
       .cv-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 40px; }
       .cv-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-      .cv-search { position: relative; flex: 1; max-width: 360px; }
+      .cv-search { position: relative; flex: 1; max-width: 320px; }
       .cv-filters { display: flex; gap: 6px; flex-wrap: wrap; }
       .cv-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(320px,1fr)); gap: 16px; }
+      .cv-sort-select { background: var(--up-card); border: 1px solid var(--up-border); border-radius: 6px; padding: 8px 12px; font-size: 12px; color: var(--up-text-muted); cursor: pointer; font-family: inherit; outline: none; }
       @media (max-width: 768px) {
         .cv-pad { padding: 20px 16px 48px; }
         .cv-stats { grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 24px; }
@@ -100,7 +129,7 @@ export default function ClientsView({ initialClients }: Props) {
             {i === 2 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: `linear-gradient(90deg,transparent,${GOLD},transparent)` }} />}
             <p style={{ fontSize: "11px", fontWeight: "500", color: "var(--up-text-label)", margin: "0 0 8px", letterSpacing: "0.12em", textTransform: "uppercase" }}>{s.label}</p>
             <p style={{ fontSize: s.isText ? "26px" : "36px", fontWeight: "700", color: i === 2 ? GOLD : "#F0EDE8", margin: 0, letterSpacing: "-0.03em", lineHeight: 1 }}>
-              {s.isText ? s.value : s.value}
+              {s.value}
             </p>
           </div>
         ))}
@@ -142,6 +171,17 @@ export default function ClientsView({ initialClients }: Props) {
           ))}
         </div>
 
+        {/* Sort */}
+        <select
+          className="cv-sort-select"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as SortOption)}
+        >
+          {(Object.entries(SORT_LABELS) as [SortOption, string][]).map(([val, label]) => (
+            <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
+
         <button
           onClick={() => setShowForm(true)}
           style={{
@@ -155,6 +195,13 @@ export default function ClientsView({ initialClients }: Props) {
           Novo cliente
         </button>
       </div>
+
+      {/* Result count */}
+      <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: "-12px 0 20px", fontWeight: "400" }}>
+        {filtered.length === clients.length
+          ? `${clients.length} cliente${clients.length !== 1 ? "s" : ""}`
+          : `${filtered.length} de ${clients.length} cliente${clients.length !== 1 ? "s" : ""}`}
+      </p>
 
       {/* Grid */}
       {filtered.length === 0 ? (
@@ -170,7 +217,12 @@ export default function ClientsView({ initialClients }: Props) {
       ) : (
         <div className="cv-grid">
           {filtered.map((client) => (
-            <ClientCard key={client.id} client={client} onDelete={handleDeleted} />
+            <ClientCard
+              key={client.id}
+              client={client}
+              onDelete={handleDeleted}
+              isOverdue={overdueSet.has(client.id)}
+            />
           ))}
         </div>
       )}

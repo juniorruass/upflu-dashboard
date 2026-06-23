@@ -1,15 +1,11 @@
 import Sidebar from "@/components/sidebar";
 import { SidebarProvider } from "@/components/sidebar-context";
 import ConstellationCanvas from "@/components/constellation-canvas";
+import { DashboardMain } from "@/components/dashboard-main";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <style>{`
-        .dashboard-main { margin-left: 240px; }
-        @media (max-width: 768px) { .dashboard-main { margin-left: 0; } }
-      `}</style>
-
       <div style={{ display: "flex", minHeight: "100vh", position: "relative" }}>
 
         {/* Space background */}
@@ -18,9 +14,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <Sidebar />
-        <main className="dashboard-main" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", overflow: "hidden", position: "relative", zIndex: 1 }}>
+        <DashboardMain>
           {children}
-        </main>
+        </DashboardMain>
       </div>
     </SidebarProvider>
   );

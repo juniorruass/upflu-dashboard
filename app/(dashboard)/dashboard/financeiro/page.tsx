@@ -112,8 +112,17 @@ async function getData() {
   // Net (MRR - expenses pending)
   const netMRR = mrr - expensePending;
 
+  // Average lifetime of active clients (from start_date to today)
+  const withDate = active.filter((c) => c.start_date);
+  const avgLifetimeDays = withDate.length > 0
+    ? Math.round(withDate.reduce((s, c) => {
+        return s + Math.floor((now.getTime() - new Date(c.start_date!).getTime()) / 86400000);
+      }, 0) / withDate.length)
+    : 0;
+  const avgLifetimeMonths = Math.round(avgLifetimeDays / 30);
+
   return {
-    mrr, arr, ticketMedio, ltv, netMRR,
+    mrr, arr, ticketMedio, ltv, netMRR, avgLifetimeMonths,
     activeCount: active.length, onboardCount: onboard.length,
     churnedCount: churned.length, leadCount: leads.length,
     churnRate, mrrByMonth, maxMrr, topClients,
@@ -136,14 +145,32 @@ export default async function FinanceiroPage() {
         .fin-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
         .fin-grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 14px; }
         .fin-grid-chart { display: grid; grid-template-columns: 1fr 300px; gap: 14px; margin-bottom: 14px; }
+        .fin-grid-health { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
         .fin-kpi-val { font-size: 28px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; margin: 0 0 4px; }
         .fin-divider { display: flex; align-items: center; gap: 16px; margin: 20px 0 14px; }
         .fin-divider-line { flex: 1; height: 1px; background: rgba(255,255,255,0.07); }
         .fin-divider-label { font-size: 10px; font-weight: 500; color: #777068; letter-spacing: 0.2em; text-transform: uppercase; white-space: nowrap; }
+        /* Bar tooltip */
+        [data-tooltip] { position: relative; cursor: default; }
+        [data-tooltip]:hover::after {
+          content: attr(data-tooltip);
+          position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+          background: #1C1C1C; border: 1px solid rgba(255,255,255,0.12);
+          color: #F0EDE8; font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 6px;
+          white-space: nowrap; z-index: 100; pointer-events: none;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        }
+        [data-tooltip]:hover::before {
+          content: '';
+          position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+          border: 5px solid transparent; border-top-color: rgba(255,255,255,0.12);
+          z-index: 100; pointer-events: none;
+        }
         @media (max-width: 900px) {
           .fin-pad { padding: 20px 16px 48px; }
           .fin-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
           .fin-grid-3 { grid-template-columns: 1fr; gap: 10px; }
+          .fin-grid-health { grid-template-columns: 1fr 1fr; gap: 10px; }
           .fin-grid-chart { grid-template-columns: 1fr; }
           .fin-kpi-val { font-size: 22px !important; }
         }
@@ -170,11 +197,12 @@ export default async function FinanceiroPage() {
         </div>
 
         {/* KPIs row 2 — saúde */}
-        <div className="fin-grid-3" style={{ marginBottom: "28px" }}>
+        <div className="fin-grid-health" style={{ marginBottom: "28px" }}>
           {[
-            { label: "LTV estimado",    value: currency(d.ltv),          sub: "projeção 12 meses/cliente", warn: false, icon: TrendingUp },
-            { label: "Churn rate",      value: pct(d.churnRate),         sub: `${d.churnedCount} cancelamentos`, warn: d.churnRate > 10, icon: TrendingDown },
-            { label: "Clientes ativos", value: String(d.activeCount),    sub: `${d.totalClients} no total`, warn: false, icon: Users },
+            { label: "LTV estimado",       value: currency(d.ltv),                                sub: "projeção 12 meses/cliente",    warn: false },
+            { label: "Churn rate",         value: pct(d.churnRate),                               sub: `${d.churnedCount} cancelamentos`, warn: d.churnRate > 10 },
+            { label: "Clientes ativos",    value: String(d.activeCount),                          sub: `${d.totalClients} no total`,   warn: false },
+            { label: "Tempo médio ativo",  value: d.avgLifetimeMonths > 0 ? `${d.avgLifetimeMonths} ${d.avgLifetimeMonths === 1 ? "mês" : "meses"}` : "—", sub: "média dos clientes ativos", warn: false },
           ].map(k => (
             <div key={k.label} style={{ background: BG_CARD, border: `1px solid ${k.warn ? "rgba(255,80,80,0.18)" : "var(--up-border)"}`, borderRadius: "10px", padding: "24px", position: "relative", overflow: "hidden" }}>
               {k.warn && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(255,80,80,0.6), transparent)" }} />}
@@ -203,7 +231,7 @@ export default async function FinanceiroPage() {
                   return (
                     <div key={r.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", height: "100%" }}>
                       <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end" }}>
-                        <div title={currency(r.received)} style={{
+                        <div data-tooltip={currency(r.received)} style={{
                           width: "100%",
                           height: `${Math.max(hp, r.received > 0 ? 4 : 0)}%`,
                           background: r.received > 0 ? `linear-gradient(180deg, ${ACCENT} 0%, rgba(0,207,255,0.35) 100%)` : "rgba(255,255,255,0.04)",

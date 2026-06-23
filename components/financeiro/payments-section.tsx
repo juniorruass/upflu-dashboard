@@ -58,6 +58,7 @@ export default function PaymentsSection() {
   const [filter, setFilter] = useState<Filter>("Todos");
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [markingPaidId, setMarkingPaidId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     client_id: "",
@@ -88,6 +89,7 @@ export default function PaymentsSection() {
   }
 
   async function markPaid(p: Payment) {
+    setMarkingPaidId(p.id);
     const res = await fetch(`/api/payments/${p.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -100,6 +102,7 @@ export default function PaymentsSection() {
       const errData = await res.json().catch(() => ({}));
       alert(errData.error || `Erro ao marcar como pago (${res.status})`);
     }
+    setMarkingPaidId(null);
   }
 
   async function deletePayment(id: string) {
@@ -230,10 +233,16 @@ export default function PaymentsSection() {
                       <td style={{ padding: "12px" }}>
                         <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
                           {s !== "paid" && (
-                            <button onClick={() => markPaid(p)} title="Marcar como pago"
-                              style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", padding: "5px 10px", borderRadius: "5px", border: "1px solid rgba(76,175,80,0.3)", background: "rgba(76,175,80,0.08)", color: "#4CAF50", cursor: "pointer", fontFamily: "inherit", fontWeight: "600" }}>
-                              <Check size={12} strokeWidth={2.5} />
-                              Pago
+                            <button
+                              onClick={() => markPaid(p)}
+                              disabled={markingPaidId === p.id}
+                              title="Marcar como pago"
+                              style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "11px", padding: "5px 10px", borderRadius: "5px", border: "1px solid rgba(76,175,80,0.3)", background: markingPaidId === p.id ? "rgba(76,175,80,0.04)" : "rgba(76,175,80,0.08)", color: "#4CAF50", cursor: markingPaidId === p.id ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: "600", opacity: markingPaidId === p.id ? 0.6 : 1, transition: "opacity 0.15s", minWidth: "62px", justifyContent: "center" }}
+                            >
+                              {markingPaidId === p.id
+                                ? <span style={{ letterSpacing: "0.1em" }}>···</span>
+                                : <><Check size={12} strokeWidth={2.5} />Pago</>
+                              }
                             </button>
                           )}
                           <button onClick={() => deletePayment(p.id)} title="Excluir"

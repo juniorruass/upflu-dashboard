@@ -21,9 +21,10 @@ function initials(name: string) {
 interface Props {
   client: Client;
   onDelete: (id: string) => void;
+  isOverdue?: boolean;
 }
 
-export default function ClientCard({ client, onDelete }: Props) {
+export default function ClientCard({ client, onDelete, isOverdue = false }: Props) {
   const sc = STATUS_COLORS[client.status] ?? { color: "var(--up-text-muted)", bg: "rgba(154,146,136,0.08)" };
   const services = client.services ?? [];
   const [deleting, setDeleting] = useState(false);
@@ -47,7 +48,7 @@ export default function ClientCard({ client, onDelete }: Props) {
       <div
         style={{
           background: hovered ? "#131313" : "#111111",
-          border: `1px solid ${hovered ? "rgba(0,207,255,0.25)" : "var(--up-border)"}`,
+          border: `1px solid ${isOverdue ? "rgba(255,107,107,0.25)" : hovered ? "rgba(0,207,255,0.25)" : "var(--up-border)"}`,
           borderRadius: "12px", padding: "24px", cursor: "pointer",
           transition: "border-color 0.15s, background 0.15s",
           position: "relative",
@@ -90,15 +91,27 @@ export default function ClientCard({ client, onDelete }: Props) {
             </p>
             <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: 0 }}>{client.segment}</p>
           </div>
-          <span style={{
-            fontSize: "10px", fontWeight: "600",
-            color: sc.color, background: sc.bg,
-            padding: "3px 8px", borderRadius: "20px",
-            flexShrink: 0, letterSpacing: "0.04em",
-            marginRight: "4px",
-          }}>
-            {STATUS_LABELS[client.status]}
-          </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end", flexShrink: 0 }}>
+            <span style={{
+              fontSize: "10px", fontWeight: "600",
+              color: sc.color, background: sc.bg,
+              padding: "3px 8px", borderRadius: "20px",
+              letterSpacing: "0.04em",
+            }}>
+              {STATUS_LABELS[client.status]}
+            </span>
+            {isOverdue && (
+              <span style={{
+                fontSize: "9px", fontWeight: "700",
+                color: "#FF6B6B", background: "rgba(255,107,107,0.1)",
+                border: "1px solid rgba(255,107,107,0.25)",
+                padding: "2px 7px", borderRadius: "20px",
+                letterSpacing: "0.06em", textTransform: "uppercase",
+              }}>
+                Vencido
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Services */}
