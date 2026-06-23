@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
+import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff, BarChart2, List, LifeBuoy, ChevronLeft, ChevronRight,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff, BarChart2, List, LifeBuoy, ChevronLeft, ChevronRight, ChevronDown,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
@@ -42,9 +43,23 @@ const navItems: NavItem[] = [
   { label: "Suporte",      href: "/dashboard/suporte",    icon: LifeBuoy   },
 ];
 
+const AUTO_ROUTES = [
+  "/dashboard/prospeccao/automatizar",
+  "/dashboard/grupos",
+  "/dashboard/blacklist",
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { open, close, collapsed, toggleCollapse } = useSidebar();
+
+  const [autoOpen, setAutoOpen] = useState(
+    AUTO_ROUTES.some((r) => pathname.startsWith(r))
+  );
+
+  useEffect(() => {
+    if (AUTO_ROUTES.some((r) => pathname.startsWith(r))) setAutoOpen(true);
+  }, [pathname]);
 
   const inner = (
     <aside style={{
@@ -91,6 +106,9 @@ export default function Sidebar() {
           const prevItem = navItems[idx - 1];
           const showDivider = item.divider && !collapsed && prevItem;
 
+          // Sub-items: hide when autoOpen is false (or sidebar collapsed)
+          if (item.sub && (!autoOpen || collapsed)) return null;
+
           return (
             <div key={item.href}>
               {/* Divider label before "Automatizar" group */}
@@ -117,6 +135,31 @@ export default function Sidebar() {
                     </>
                   )}
                 </div>
+              ) : item.divider && !collapsed ? (
+                /* "Automatizar" — link + toggle chevron */
+                <div style={{ display: "flex", alignItems: "center", borderRadius: "6px", background: isActive ? "var(--up-nav-active)" : "transparent", borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent", transition: "background 0.15s" }} className={!isActive ? "nav-link-hover" : ""}>
+                  <Link
+                    href={item.href}
+                    onClick={close}
+                    style={{ flex: 1, display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", textDecoration: "none" }}
+                  >
+                    <item.icon size={16} color={isActive ? ACCENT : "var(--up-text-muted)"} strokeWidth={isActive ? 2 : 1.5} />
+                    <span style={{ fontSize: "13px", fontWeight: isActive ? "600" : "400", color: isActive ? ACCENT : "var(--up-text-muted)" }}>
+                      {item.label}
+                    </span>
+                  </Link>
+                  <button
+                    onClick={() => setAutoOpen((v) => !v)}
+                    title={autoOpen ? "Recolher" : "Expandir"}
+                    style={{ background: "transparent", border: "none", cursor: "pointer", padding: "10px 10px 10px 4px", color: "var(--up-text-label)", display: "flex", alignItems: "center", flexShrink: 0 }}
+                  >
+                    <ChevronDown
+                      size={14}
+                      strokeWidth={2}
+                      style={{ transform: autoOpen ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s ease" }}
+                    />
+                  </button>
+                </div>
               ) : (
                 <Link
                   href={item.href}
@@ -134,7 +177,6 @@ export default function Sidebar() {
                     transition: "background 0.15s",
                     justifyContent: collapsed ? "center" : "flex-start",
                     marginTop: item.sub && !collapsed ? "-1px" : "0",
-                    position: "relative",
                   }}
                   className={!isActive ? "nav-link-hover" : ""}
                 >
