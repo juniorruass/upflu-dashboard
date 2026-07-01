@@ -30,6 +30,7 @@ const PUBLIC_API: string[] = [
   "/api/auth/",
   "/api/cron/",
   "/api/portal/auth",   // portal login / logout
+  "/api/dashboard/summary", // consumida pelo Lilly's, self-autentica via ADM_API_SECRET
 ];
 
 // Accessible by admin OR authenticated portal client
