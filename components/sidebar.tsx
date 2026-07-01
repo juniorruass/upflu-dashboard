@@ -21,18 +21,19 @@ type NavItem = {
   sub?: boolean;
   divider?: boolean;
   external?: boolean;
+  hidden?: boolean;
 };
 
 const navItems: NavItem[] = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, exact: true  },
   { label: "Prospecção",   href: `${PROSPECCAO_URL}/dashboard/prospeccao`,    icon: Search, exact: true, external: true },
-  // ── Automação ──
-  { label: "Automatizar",  href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar`,            icon: Zap,           divider: true, external: true },
-  { label: "Chat ao Vivo", href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/chat`,       icon: MessageSquare, sub: true,     external: true },
-  { label: "Grupos",       href: `${PROSPECCAO_URL}/dashboard/grupos`,                            icon: UsersRound,    sub: true,     external: true },
-  { label: "Instâncias",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/instancias`, icon: Wifi,          sub: true,     external: true },
-  { label: "Blacklist",    href: `${PROSPECCAO_URL}/dashboard/blacklist`,                         icon: ShieldOff,     sub: true,     external: true },
-  { label: "Sequências",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/sequencias`, icon: List,          sub: true,     external: true },
+  // ── Automação (oculto) ──
+  { label: "Automatizar",  href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar`,            icon: Zap,           divider: true, external: true, hidden: true },
+  { label: "Chat ao Vivo", href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/chat`,       icon: MessageSquare, sub: true,     external: true, hidden: true },
+  { label: "Grupos",       href: `${PROSPECCAO_URL}/dashboard/grupos`,                            icon: UsersRound,    sub: true,     external: true, hidden: true },
+  { label: "Instâncias",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/instancias`, icon: Wifi,          sub: true,     external: true, hidden: true },
+  { label: "Blacklist",    href: `${PROSPECCAO_URL}/dashboard/blacklist`,                         icon: ShieldOff,     sub: true,     external: true, hidden: true },
+  { label: "Sequências",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/sequencias`, icon: List,          sub: true,     external: true, hidden: true },
   // ── Vendas ──
   { label: "Pipeline",     href: "/dashboard/pipeline",   icon: BarChart2 },
   { label: "CRM",          href: "/dashboard/crm",        icon: BookUser  },
@@ -104,6 +105,8 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav style={{ flex: 1, padding: collapsed ? "16px 8px" : "20px 12px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto", overflowX: "hidden" }}>
         {navItems.map((item) => {
+          if (item.hidden) return null;
+
           // External items live in a separate app — never mark as active
           const isActive = item.external ? false : (item.exact ? pathname === item.href : pathname.startsWith(item.href));
 
