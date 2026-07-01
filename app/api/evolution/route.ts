@@ -14,6 +14,14 @@ import {
 } from "@/lib/evolution-api";
 import { createAdminClient } from "@/lib/supabase";
 
+// Instâncias de outros projetos que compartilham esta mesma Evolution API.
+// Nunca devem ser desconectadas/deletadas a partir do dashboard da Upflu.
+const PROTECTED_INSTANCES = ["LILLYS", "lillys-empresa1", "clinica"];
+
+function isProtected(instance?: string) {
+  return !!instance && PROTECTED_INSTANCES.includes(instance);
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const action   = searchParams.get("action") ?? "instances";
@@ -97,6 +105,9 @@ export async function POST(req: NextRequest) {
   const { action, instance } = body;
 
   if (action === "disconnect") {
+    if (isProtected(instance)) {
+      return NextResponse.json({ error: `Instância "${instance}" pertence a outro projeto e não pode ser desconectada por aqui` }, { status: 403 });
+    }
     const ok = await evolutionDisconnect(instance);
     return NextResponse.json({ ok });
   }
@@ -110,6 +121,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === "delete") {
+    if (isProtected(instance)) {
+      return NextResponse.json({ error: `Instância "${instance}" pertence a outro projeto e não pode ser deletada por aqui` }, { status: 403 });
+    }
     const ok = await evolutionDeleteInstance(instance);
     return NextResponse.json({ ok });
   }

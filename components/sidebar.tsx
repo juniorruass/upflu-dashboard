@@ -6,10 +6,11 @@ import { useSidebar } from "./sidebar-context";
 import { ThemeToggle } from "./theme-toggle";
 import { useState, useEffect } from "react";
 import {
-  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff, BarChart2, List, LifeBuoy, ChevronLeft, ChevronRight, ChevronDown,
+  LayoutDashboard, Users, Megaphone, TrendingUp, Settings, X, Search, BookUser, Kanban, Zap, MessageSquare, UsersRound, CalendarDays, Wifi, ShieldOff, BarChart2, List, LifeBuoy, ChevronLeft, ChevronRight, ChevronDown, ExternalLink,
 } from "lucide-react";
 
 const ACCENT = "#00CFFF";
+const PROSPECCAO_URL = process.env.NEXT_PUBLIC_PROSPECCAO_URL ?? "http://localhost:3001";
 
 type NavItem = {
   label: string;
@@ -19,18 +20,19 @@ type NavItem = {
   exact?: boolean;
   sub?: boolean;
   divider?: boolean;
+  external?: boolean;
 };
 
 const navItems: NavItem[] = [
   { label: "Visão Geral",  href: "/dashboard",               icon: LayoutDashboard, exact: true  },
-  { label: "Prospecção",   href: "/dashboard/prospeccao",    icon: Search, exact: true  },
+  { label: "Prospecção",   href: `${PROSPECCAO_URL}/dashboard/prospeccao`,    icon: Search, exact: true, external: true },
   // ── Automação ──
-  { label: "Automatizar",  href: "/dashboard/prospeccao/automatizar",            icon: Zap,          divider: true },
-  { label: "Chat ao Vivo", href: "/dashboard/prospeccao/automatizar/chat",       icon: MessageSquare, sub: true },
-  { label: "Grupos",       href: "/dashboard/grupos",                             icon: UsersRound,    sub: true },
-  { label: "Instâncias",   href: "/dashboard/prospeccao/automatizar/instancias", icon: Wifi,          sub: true },
-  { label: "Blacklist",    href: "/dashboard/blacklist",                          icon: ShieldOff,     sub: true },
-  { label: "Sequências",   href: "/dashboard/prospeccao/automatizar/sequencias", icon: List,          sub: true },
+  { label: "Automatizar",  href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar`,            icon: Zap,           divider: true, external: true },
+  { label: "Chat ao Vivo", href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/chat`,       icon: MessageSquare, sub: true,     external: true },
+  { label: "Grupos",       href: `${PROSPECCAO_URL}/dashboard/grupos`,                            icon: UsersRound,    sub: true,     external: true },
+  { label: "Instâncias",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/instancias`, icon: Wifi,          sub: true,     external: true },
+  { label: "Blacklist",    href: `${PROSPECCAO_URL}/dashboard/blacklist`,                         icon: ShieldOff,     sub: true,     external: true },
+  { label: "Sequências",   href: `${PROSPECCAO_URL}/dashboard/prospeccao/automatizar/sequencias`, icon: List,          sub: true,     external: true },
   // ── Vendas ──
   { label: "Pipeline",     href: "/dashboard/pipeline",   icon: BarChart2 },
   { label: "CRM",          href: "/dashboard/crm",        icon: BookUser  },
@@ -102,10 +104,23 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav style={{ flex: 1, padding: collapsed ? "16px 8px" : "20px 12px", display: "flex", flexDirection: "column", gap: "2px", overflowY: "auto", overflowX: "hidden" }}>
         {navItems.map((item) => {
-          const isActive = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+          // External items live in a separate app — never mark as active
+          const isActive = item.external ? false : (item.exact ? pathname === item.href : pathname.startsWith(item.href));
 
           // Sub-items: hide when autoOpen is false (or sidebar collapsed)
           if (item.sub && (!autoOpen || collapsed)) return null;
+
+          const linkStyle: React.CSSProperties = {
+            display: "flex", alignItems: "center",
+            gap: collapsed ? "0" : "10px",
+            padding: collapsed ? "10px 0" : item.sub ? "8px 12px 8px 28px" : "10px 12px",
+            borderRadius: "6px", textDecoration: "none",
+            background: isActive ? "var(--up-nav-active)" : "transparent",
+            borderLeft: isActive && !collapsed ? `2px solid ${ACCENT}` : "2px solid transparent",
+            transition: "background 0.15s",
+            justifyContent: collapsed ? "center" : "flex-start",
+            marginTop: item.sub && !collapsed ? "-1px" : "0",
+          };
 
           return (
             <div key={item.href}>
@@ -127,17 +142,18 @@ export default function Sidebar() {
                 </div>
               ) : item.divider && !collapsed ? (
                 /* "Automatizar" — link + toggle chevron */
-                <div style={{ display: "flex", alignItems: "center", borderRadius: "6px", background: isActive ? "var(--up-nav-active)" : "transparent", borderLeft: isActive ? `2px solid ${ACCENT}` : "2px solid transparent", transition: "background 0.15s" }} className={!isActive ? "nav-link-hover" : ""}>
-                  <Link
+                <div style={{ display: "flex", alignItems: "center", borderRadius: "6px", background: "transparent", borderLeft: "2px solid transparent", transition: "background 0.15s" }} className="nav-link-hover">
+                  <a
                     href={item.href}
                     onClick={close}
                     style={{ flex: 1, display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", textDecoration: "none" }}
                   >
-                    <item.icon size={16} color={isActive ? ACCENT : "var(--up-text-muted)"} strokeWidth={isActive ? 2 : 1.5} />
-                    <span style={{ fontSize: "13px", fontWeight: isActive ? "600" : "400", color: isActive ? ACCENT : "var(--up-text-muted)" }}>
+                    <item.icon size={16} color="var(--up-text-muted)" strokeWidth={1.5} />
+                    <span style={{ fontSize: "13px", fontWeight: "400", color: "var(--up-text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
                       {item.label}
+                      {item.external && !collapsed && <ExternalLink size={10} style={{ opacity: 0.4 }} />}
                     </span>
-                  </Link>
+                  </a>
                   <button
                     onClick={() => setAutoOpen((v) => !v)}
                     title={autoOpen ? "Recolher" : "Expandir"}
@@ -150,24 +166,22 @@ export default function Sidebar() {
                     />
                   </button>
                 </div>
+              ) : item.external ? (
+                <a href={item.href} onClick={close} title={collapsed ? item.label : undefined} style={linkStyle} className="nav-link-hover">
+                  <item.icon size={item.sub && !collapsed ? 13 : 16} color={item.sub && !collapsed ? "var(--up-text-dim)" : "var(--up-text-muted)"} strokeWidth={1.5} />
+                  {!collapsed && (
+                    <span style={{ fontSize: item.sub ? "12px" : "13px", fontWeight: "400", color: item.sub ? "var(--up-text-dim)" : "var(--up-text-muted)", display: "flex", alignItems: "center", gap: "5px" }}>
+                      {item.label}
+                      {!item.sub && <ExternalLink size={10} style={{ opacity: 0.4 }} />}
+                    </span>
+                  )}
+                </a>
               ) : (
                 <Link
                   href={item.href}
                   onClick={close}
                   title={collapsed ? item.label : undefined}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: collapsed ? "0" : "10px",
-                    padding: collapsed ? "10px 0" : item.sub ? "8px 12px 8px 28px" : "10px 12px",
-                    borderRadius: "6px",
-                    textDecoration: "none",
-                    background: isActive ? "var(--up-nav-active)" : "transparent",
-                    borderLeft: isActive && !collapsed ? `2px solid ${ACCENT}` : "2px solid transparent",
-                    transition: "background 0.15s",
-                    justifyContent: collapsed ? "center" : "flex-start",
-                    marginTop: item.sub && !collapsed ? "-1px" : "0",
-                  }}
+                  style={linkStyle}
                   className={!isActive ? "nav-link-hover" : ""}
                 >
                   <item.icon
