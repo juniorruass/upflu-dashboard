@@ -8,6 +8,7 @@ import { PortalLogoutBtn } from "@/components/portal/portal-logout-btn";
 import { PortalMetaSection } from "@/components/portal/portal-meta-section";
 import { PortalPushSubscribe } from "@/components/portal/portal-push-subscribe";
 import { PortalInstagramSection } from "@/components/portal/portal-instagram-section";
+import { verifyPortalSession } from "@/lib/portal-session";
 
 export const dynamic = "force-dynamic";
 
@@ -111,7 +112,8 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
   // Auth check
   const cookieStore = cookies();
   const portalCookie = (cookieStore as ReturnType<typeof cookies>).get(`portal_${slug}`);
-  const isAuthenticated = portalCookie?.value === client.id;
+  const sessionClientId = portalCookie?.value ? await verifyPortalSession(portalCookie.value) : null;
+  const isAuthenticated = sessionClientId === client.id;
 
   // If no password set, portal is open; if password set, require auth
   const needsAuth = !!client.portal_password && !isAuthenticated;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { createAdminClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
@@ -12,7 +13,10 @@ export async function POST(req: NextRequest) {
     .ilike("contact_email", email.trim())
     .single();
 
-  if (error || !client || client.portal_password !== password) {
+  const pwd = client?.portal_password as string | null | undefined;
+  const senhaCorreta = pwd ? (pwd.startsWith("$2") ? await bcrypt.compare(password, pwd) : pwd === password) : false;
+
+  if (error || !client || !senhaCorreta) {
     return NextResponse.json({ error: "Email ou senha incorretos" }, { status: 401 });
   }
 

@@ -1,26 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { jwtVerify } from "jose";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 // ── Auth helpers ────────────────────────────────────────────────────────────
 
-async function isAdminAuthed(req: NextRequest): Promise<boolean> {
-  const token = req.cookies.get("upflu-session")?.value;
-  if (!token) return false;
-  try {
-    const raw    = (process.env.SESSION_SECRET || "").replace(/^﻿/, "").trim();
-    const secret = new TextEncoder().encode(raw);
-    const { payload } = await jwtVerify(token, secret);
-    return payload.role === "admin";
-  } catch {
-    return false;
-  }
-}
-
-// Portal cookies are named portal_${slug} and store the client UUID
-function isPortalAuthed(req: NextRequest): boolean {
-  return req.cookies.getAll().some(
-    (c) => c.name.startsWith("portal_") && c.value.length > 10
-  );
+// Portal cookies are named portal_${slug} and guardam um JWT assinado (ver lib/portal-session.ts)
+async function isPortalAuthed(req: NextRequest): Promise<boolean> {
+  const ids = await getPortalClientIds(req);
+  return ids.length > 0;
 }
 
 // ── Route classification ────────────────────────────────────────────────────
@@ -61,7 +48,7 @@ export async function middleware(request: NextRequest) {
     }
 
     const adminOk  = await isAdminAuthed(request);
-    const portalOk = isPortalAuthed(request);
+    const portalOk = await isPortalAuthed(request);
 
     // Portal-or-admin accessible
     if (PORTAL_OR_ADMIN_API.some((p) => pathname.startsWith(p))) {
@@ -89,7 +76,7 @@ export async function middleware(request: NextRequest) {
   // ── Portal pages (/portal/*) ────────────────────────────────────────
   if (pathname.startsWith("/portal")) {
     const isPortalLogin = pathname === "/portal/login";
-    const portalAuthed  = isPortalAuthed(request);
+    const portalAuthed  = await isPortalAuthed(request);
 
     if (!portalAuthed && !isPortalLogin) {
       const url = request.nextUrl.clone();

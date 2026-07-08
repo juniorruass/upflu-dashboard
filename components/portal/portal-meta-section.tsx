@@ -186,6 +186,8 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
+  const [staleSince, setStaleSince] = useState<string | null>(null);
   const [portalMetrics, setPortalMetrics] = useState<string[] | null | undefined>(undefined);
 
   useEffect(() => {
@@ -210,12 +212,14 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
       const day = await dayRes.json();
       const follow = await followRes.json();
       const growth = await growthRes.json();
-      if (agg.error) { setError(agg.error); setData(null); setDaily([]); setFollowerData(null); setIgGrowth(null); }
+      if (agg.error) { setError(agg.error); setData(null); setDaily([]); setFollowerData(null); setIgGrowth(null); setStale(false); setStaleSince(null); }
       else {
         setData(agg.data ?? null); setDaily(day.data ?? []);
         setFollowerData(follow.error ? null : follow);
         setIgGrowth(growth.growth ?? null);
         setError(null);
+        setStale(!!agg.stale);
+        setStaleSince(agg.stale_since ?? null);
         setLastUpdate(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
       }
     } catch { setError("Erro ao carregar dados."); }
@@ -296,6 +300,14 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
       {/* ── Content ── */}
       {!error && data && (
         <div style={{ display: "flex", flexDirection: "column", gap: "14px", animation: "portalFade .4s ease both" }}>
+
+          {stale && (
+            <div style={{ background: "rgba(251,146,60,0.06)", border: "1px solid rgba(251,146,60,0.2)", borderRadius: "14px", padding: "12px 16px" }}>
+              <p style={{ fontSize: "12px", color: ORANGE, margin: 0, fontWeight: "600" }}>
+                Dados desatualizados{staleSince ? ` — última atualização ${new Date(staleSince).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}` : ""}
+              </p>
+            </div>
+          )}
 
           {/* Leads Chart */}
           {show("leads_chart") && daily.length > 0 && (

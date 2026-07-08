@@ -1,11 +1,20 @@
 export const dynamic = "force-dynamic";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
-export async function GET(_req: Request, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
+
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(clientId)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
+  }
+
   const supabase = createAdminClient();
 
   const { data, error } = await supabase

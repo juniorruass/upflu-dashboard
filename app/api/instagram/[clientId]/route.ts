@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 export const dynamic = "force-dynamic";
@@ -46,25 +48,32 @@ async function fetchMonthlyHistory(igId: string, token: string): Promise<{ date:
   } catch { return []; }
 }
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) return NextResponse.json({ error: "Token não configurado" }, { status: 500 });
 
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, instagram_business_account_id")
+    .select("id, instagram_business_account_id, meta_access_token")
     .eq("id", clientId)
     .single();
 
   if (!client) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
+
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(client.id)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
+  }
 
   const igId: string | null = client.instagram_business_account_id ?? null;
 
   if (!igId) {
     return NextResponse.json({ error: "ID do Instagram não configurado. Edite o cliente no painel admin." }, { status: 404 });
   }
+
+  const token = client.meta_access_token || process.env.META_ACCESS_TOKEN;
+  if (!token) return NextResponse.json({ error: "Token não configurado" }, { status: 500 });
 
   const [current, insightsHistory] = await Promise.all([
     fetchFollowers(igId, token),

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 export const dynamic = "force-dynamic";
@@ -49,20 +51,27 @@ async function fetchGrowthFromInsights(igId: string, token: string, since: Date,
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) return NextResponse.json({ growth: null });
 
   const preset = req.nextUrl.searchParams.get("date_preset") ?? "last_30d";
 
   const supabase = createAdminClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("instagram_business_account_id")
+    .select("instagram_business_account_id, meta_access_token")
     .eq("id", clientId)
     .single();
 
   const igId = client?.instagram_business_account_id;
   if (!igId) return NextResponse.json({ growth: null });
+
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(clientId)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
+  }
+
+  const token = client?.meta_access_token || process.env.META_ACCESS_TOKEN;
+  if (!token) return NextResponse.json({ growth: null });
 
   const { since, until } = presetToDates(preset);
 

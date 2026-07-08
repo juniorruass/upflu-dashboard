@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -106,6 +108,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     return NextResponse.json({ error: "Cliente não encontrado." }, { status: 404 });
   }
 
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(client.id)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
+  }
+
   if (!client.meta_account_id) {
     return NextResponse.json({ error: "meta_account_id não configurado." }, { status: 400 });
   }
@@ -152,12 +160,25 @@ export async function GET(req: NextRequest, { params }: Ctx) {
       qp.set("date_preset", datePreset || "last_30d");
     }
 
+    const snapshotPreset = datePreset || "last_30d";
     const url = `${META_BASE}/act_${client.meta_account_id}/insights?${qp}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
     const json = await res.json();
 
     if (json.error) {
       const code = json.error.code ? ` (#${json.error.code})` : "";
+
+      const { data: snap } = await supabase
+        .from("meta_metrics_snapshot")
+        .select("payload, updated_at")
+        .eq("client_id", client.id)
+        .eq("date_preset", snapshotPreset)
+        .maybeSingle();
+
+      if (snap) {
+        return NextResponse.json({ data: snap.payload, stale: true, stale_since: snap.updated_at });
+      }
+
       return NextResponse.json({ error: `${json.error.message}${code}` }, { status: 400 });
     }
 
@@ -206,34 +227,41 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const roasArr = row.website_purchase_roas as { action_type: string; value: string }[] | undefined;
     const roas = roasArr?.[0] ? parseFloat(roasArr[0].value) : null;
 
+    const responseData = {
+      spend,
+      impressions: parseInt(row.impressions ?? "0"),
+      clicks: parseInt(row.clicks ?? "0"),
+      ctr: parseFloat(row.ctr ?? "0"),
+      reach: parseInt(row.reach ?? "0"),
+      frequency: parseFloat(row.frequency ?? "0"),
+      cpm: parseFloat(row.cpm ?? "0"),
+      cpp: parseFloat(row.cpp ?? "0"),
+      leads,
+      purchases,
+      results,
+      result_label,
+      all_results,
+      cost_per_result: costPerResult,
+      cost_per_lead: costPerLead,
+      cost_per_purchase: costPerPurchase,
+      cpl: leads && spend ? spend / leads : null,
+      roas,
+      conversations,
+      cost_per_conversation: costPerConversation,
+      followers,
+      cost_per_follower: costPerFollower,
+      profile_visits: profileVisits,
+      cost_per_profile_visit: costPerProfileVisit,
+    };
+
+    await supabase.from("meta_metrics_snapshot").upsert(
+      { client_id: client.id, date_preset: snapshotPreset, payload: responseData, updated_at: new Date().toISOString() },
+      { onConflict: "client_id,date_preset" }
+    );
+
     return NextResponse.json({
       tokenWarning,
-      data: {
-        spend,
-        impressions: parseInt(row.impressions ?? "0"),
-        clicks: parseInt(row.clicks ?? "0"),
-        ctr: parseFloat(row.ctr ?? "0"),
-        reach: parseInt(row.reach ?? "0"),
-        frequency: parseFloat(row.frequency ?? "0"),
-        cpm: parseFloat(row.cpm ?? "0"),
-        cpp: parseFloat(row.cpp ?? "0"),
-        leads,
-        purchases,
-        results,
-        result_label,
-        all_results,
-        cost_per_result: costPerResult,
-        cost_per_lead: costPerLead,
-        cost_per_purchase: costPerPurchase,
-        cpl: leads && spend ? spend / leads : null,
-        roas,
-        conversations,
-        cost_per_conversation: costPerConversation,
-        followers,
-        cost_per_follower: costPerFollower,
-        profile_visits: profileVisits,
-        cost_per_profile_visit: costPerProfileVisit,
-      },
+      data: responseData,
     });
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });

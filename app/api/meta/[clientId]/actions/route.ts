@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -7,18 +9,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   const { clientId } = await params;
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) return NextResponse.json({ error: "Token não configurado" }, { status: 500 });
 
   const supabase = createAdminClient();
 
   // Try by UUID first, then by slug/name
-  let client: { meta_account_id: string | null; name: string } | null = null;
-  const byId = await supabase.from("clients").select("meta_account_id, name").eq("id", clientId).single();
+  let client: { id: string; meta_account_id: string | null; name: string; meta_access_token: string | null } | null = null;
+  const byId = await supabase.from("clients").select("id, meta_account_id, name, meta_access_token").eq("id", clientId).single();
   if (byId.data) {
     client = byId.data;
   } else {
-    const all = await supabase.from("clients").select("meta_account_id, name, slug");
+    const all = await supabase.from("clients").select("id, meta_account_id, name, slug, meta_access_token");
     const slugNorm = clientId.toLowerCase();
     client = (all.data ?? []).find((c: { slug: string | null; name: string; meta_account_id: string | null }) =>
       c.slug === slugNorm || c.name.toLowerCase().replace(/[^a-z0-9]/g, "") === slugNorm
@@ -26,6 +26,15 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   }
 
   if (!client?.meta_account_id) return NextResponse.json({ error: "Conta não configurada" }, { status: 400 });
+
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(client.id)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
+  }
+
+  const token = client.meta_access_token || process.env.META_ACCESS_TOKEN;
+  if (!token) return NextResponse.json({ error: "Token não configurado" }, { status: 500 });
 
   const sp = req.nextUrl.searchParams;
   const datePreset = sp.get("date_preset") || "last_30d";

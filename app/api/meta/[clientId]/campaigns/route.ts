@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
+import { isAdminAuthed } from "@/lib/admin-session";
+import { getPortalClientIds } from "@/lib/portal-session";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -70,6 +72,12 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
   if (clientError || !client || !client.meta_account_id) {
     return NextResponse.json({ error: "Cliente não encontrado ou sem Meta configurado." }, { status: 404 });
+  }
+
+  const adminOk = await isAdminAuthed(req);
+  const portalIds = await getPortalClientIds(req);
+  if (!adminOk && !portalIds.includes(client.id)) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 403 });
   }
 
   const token = client.meta_access_token || process.env.META_ACCESS_TOKEN;

@@ -21,13 +21,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const token = process.env.META_ACCESS_TOKEN;
-  if (!token) return NextResponse.json({ error: "no token" }, { status: 500 });
+  const globalToken = process.env.META_ACCESS_TOKEN;
 
   const supabase = createAdminClient();
   const { data: clients } = await supabase
     .from("clients")
-    .select("id, name, meta_account_id")
+    .select("id, name, meta_account_id, meta_access_token")
     .not("meta_account_id", "is", null)
     .eq("status", "active");
 
@@ -36,6 +35,12 @@ export async function GET(req: NextRequest) {
   const alerts: string[] = [];
 
   await Promise.all(clients.map(async (client) => {
+    const token = client.meta_access_token || globalToken;
+    if (!token) {
+      alerts.push(`${client.name}: sem token configurado`);
+      return;
+    }
+
     try {
       const qp = new URLSearchParams({
         fields: "name,account_status,balance,currency,spend_cap,amount_spent,funding_source_details",
@@ -45,6 +50,16 @@ export async function GET(req: NextRequest) {
       const data = await res.json();
 
       if (data.error) {
+        const code = data.error.code as number | undefined;
+        const isTokenError = code === 190;
+        await notifyAdmin({
+          title: isTokenError ? `🔑 Token Meta expirado — ${client.name}` : `⚠️ Erro ao consultar conta — ${client.name}`,
+          body: isTokenError
+            ? `O token de acesso Meta expirou ou foi revogado. Gere um novo token no cadastro do cliente (ou no token global, se este cliente não tiver um próprio).`
+            : `Erro ao consultar conta de anúncios: ${data.error.message}`,
+          url: "/dashboard/clientes",
+          tag: isTokenError ? `ad-token-error-${client.id}` : `ad-account-error-${client.id}`,
+        });
         alerts.push(`${client.name}: erro ao consultar (${data.error.message})`);
         return;
       }
