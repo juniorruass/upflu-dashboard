@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
   const { data: clients } = await supabase
     .from("clients")
     .select("id, name, meta_account_id, meta_access_token")
-    .not("meta_account_id", "is", null);
+    .not("meta_account_id", "is", null)
+    .eq("status", "active");
 
   if (!clients?.length) return NextResponse.json({ clients: [] });
 
