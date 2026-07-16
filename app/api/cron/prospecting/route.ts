@@ -30,6 +30,14 @@ function renderTemplate(template: string, vars: Record<string, string>): string 
   return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
 }
 
+function parseTemplates(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed.filter(Boolean);
+  } catch {}
+  return raw ? [raw] : [];
+}
+
 async function buscarEmpresas(cnae: string, municipio: string, uf: string, token: string) {
   const params = new URLSearchParams({
     cnae_fiscal: cnae.replace(/\D/g, ""),
@@ -81,6 +89,20 @@ export async function GET(req: NextRequest) {
   let totalEnviados = 0;
 
   for (const config of configs) {
+    const safety = {
+      ...SAFETY_DEFAULTS,
+      min_delay_seconds:     Number(config.min_delay_seconds     ?? SAFETY_DEFAULTS.min_delay_seconds),
+      max_delay_seconds:     Number(config.max_delay_seconds     ?? SAFETY_DEFAULTS.max_delay_seconds),
+      session_max:           Number(config.session_max           ?? SAFETY_DEFAULTS.session_max),
+      session_break_minutes: Number(config.session_break_minutes ?? SAFETY_DEFAULTS.session_break_minutes),
+      start_hour:            Number(config.send_hour             ?? SAFETY_DEFAULTS.start_hour),
+      end_hour:              Number(config.end_hour              ?? SAFETY_DEFAULTS.end_hour),
+      active_days:           Array.isArray(config.active_days)   ? config.active_days as number[] : SAFETY_DEFAULTS.active_days,
+    };
+
+    const horario = horarioPermitido(safety);
+    if (!horario.ok) { console.log(`[prospecting] Bloqueado: ${horario.motivo}`); continue; }
+
     const empresas = await buscarEmpresas(config.cnae, config.municipio, config.uf, brasilioToken);
     const novas = empresas.filter((e) => e.cnpj && !cnpjsExistentes.has(e.cnpj));
     totalBuscados += novas.length;
@@ -88,9 +110,12 @@ export async function GET(req: NextRequest) {
     if (!novas.length) continue;
 
     const cidadeDisplay = `${config.municipio}, ${config.uf}`;
+    const templates = parseTemplates(config.message_template);
+
     const toInsert = novas.map((e) => {
       const nome = e.nome_fantasia?.trim() || e.razao_social;
-      const mensagem = renderTemplate(config.message_template, { nome, cidade: config.municipio });
+      const template = templates[Math.floor(Math.random() * templates.length)] ?? "";
+      const mensagem = renderTemplate(template, { nome, cidade: config.municipio });
       return {
         place_id: `cnpj:${e.cnpj}`,
         nome,
@@ -113,22 +138,7 @@ export async function GET(req: NextRequest) {
     const { data: inseridos } = await supabase.from("prospects").insert(toInsert).select("id, telefone, mensagem, nome");
     totalSalvos += inseridos?.length ?? 0;
 
-    // Atualiza set de cnpjs existentes
     novas.forEach((e) => cnpjsExistentes.add(e.cnpj));
-
-    const safety = {
-      ...SAFETY_DEFAULTS,
-      min_delay_seconds:     Number(config.min_delay_seconds     ?? SAFETY_DEFAULTS.min_delay_seconds),
-      max_delay_seconds:     Number(config.max_delay_seconds     ?? SAFETY_DEFAULTS.max_delay_seconds),
-      session_max:           Number(config.session_max           ?? SAFETY_DEFAULTS.session_max),
-      session_break_minutes: Number(config.session_break_minutes ?? SAFETY_DEFAULTS.session_break_minutes),
-      start_hour:            Number(config.send_hour             ?? SAFETY_DEFAULTS.start_hour),
-      end_hour:              Number(config.end_hour              ?? SAFETY_DEFAULTS.end_hour),
-      active_days:           Array.isArray(config.active_days)   ? config.active_days as number[] : SAFETY_DEFAULTS.active_days,
-    };
-
-    const horario = horarioPermitido(safety);
-    if (!horario.ok) { console.log(`[prospecting] Bloqueado: ${horario.motivo}`); continue; }
 
     const comTelefone = (inseridos ?? [])
       .filter((p) => p.telefone && telefoneValido(p.telefone))
@@ -138,7 +148,7 @@ export async function GET(req: NextRequest) {
       const p = comTelefone[i];
       const phone = normalizarTelefone(p.telefone);
 
-      if (i > 0) await sleep(Math.min(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds), 2000));
+      if (i > 0) await sleep(delayAleatorio(safety.min_delay_seconds, safety.max_delay_seconds));
 
       const ok = await enviarWhatsApp(phone, p.mensagem);
       if (ok) {
