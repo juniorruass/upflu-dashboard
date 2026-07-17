@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { isAdminAuthed } from "@/lib/admin-session";
 import { getPortalClientIds } from "@/lib/portal-session";
+import { actionTypesForGoal, labelForActionType } from "@/lib/meta-goals";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -44,19 +45,9 @@ function findAction(actions: { action_type: string; value: string }[], types: st
 }
 
 function findResultWithLabel(actions: { action_type: string; value: string }[], types: string[]): { value: number; label: string } | null {
-  const labels: Record<string, string> = {
-    lead: "Leads", purchase: "Compras", complete_registration: "Cadastros",
-    "onsite_conversion.messaging_conversation_started_7d": "Conversas iniciadas (WhatsApp)",
-    "onsite_conversion.total_messaging_connection": "Conversas iniciadas (WhatsApp)",
-    messaging_conversation_started_7d: "Conversas iniciadas (WhatsApp)",
-    link_click: "Cliques no link", post_engagement: "Engajamento",
-    page_engagement: "Engajamento", video_view: "Visualizações de vídeo",
-    instagram_profile_visit: "Visitas ao perfil", view_content: "Visualizações",
-    onsite_web_view_content: "Visualizações", "offsite_conversion.fb_pixel_view_content": "Visualizações",
-  };
   for (const type of types) {
     const found = actions?.find((a) => a.action_type === type);
-    if (found) return { value: parseInt(found.value), label: labels[type] ?? type };
+    if (found) return { value: parseInt(found.value), label: labelForActionType(type) };
   }
   return null;
 }
@@ -129,12 +120,16 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     const campaigns = campaignJson.data ?? [];
 
-    // Fetch insights for each campaign in parallel
+    // Fetch insights + objetivo real (optimization_goal do conjunto de
+    // anúncios) pra cada campanha em paralelo
     const withInsights = await Promise.all(
       campaigns.map(async (camp: { id: string; name: string; status: string; objective: string }) => {
         try {
           const iQP = new URLSearchParams({ fields: insightFields, access_token: token, ...insightParams });
-          const iRes = await fetch(`${META_BASE}/${camp.id}/insights?${iQP}`, { signal: AbortSignal.timeout(8000) });
+          const [iRes, adsetsRes] = await Promise.all([
+            fetch(`${META_BASE}/${camp.id}/insights?${iQP}`, { signal: AbortSignal.timeout(8000) }),
+            fetch(`${META_BASE}/${camp.id}/adsets?fields=optimization_goal,promoted_object&limit=10&access_token=${token}`, { signal: AbortSignal.timeout(8000) }),
+          ]);
           const iJson = await iRes.json();
           const row = iJson.data?.[0] ?? null;
 
@@ -143,7 +138,19 @@ export async function GET(req: NextRequest, { params }: Ctx) {
           const actions: { action_type: string; value: string }[] = row.actions ?? [];
           const cpa: { action_type: string; value: string }[] = row.cost_per_action_type ?? [];
           const spend = parseFloat(row.spend ?? "0");
-          const resultMatch = findResultWithLabel(actions, RESULT_ACTIONS);
+
+          // Objetivo real configurado no ad set (o que o cliente realmente
+          // está otimizando) — só cai pra lista de prioridade genérica
+          // (RESULT_ACTIONS) se a Meta não retornar isso.
+          let priorityTypes = RESULT_ACTIONS;
+          try {
+            const adsetsJson = await adsetsRes.json();
+            const firstSet = adsetsJson.data?.[0];
+            const goalTypes = actionTypesForGoal(firstSet?.optimization_goal, firstSet?.promoted_object);
+            if (goalTypes) priorityTypes = goalTypes;
+          } catch { /* mantém fallback */ }
+
+          const resultMatch = findResultWithLabel(actions, priorityTypes);
 
           return {
             ...camp,
@@ -156,7 +163,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
               cpm: parseFloat(row.cpm ?? "0"),
               results: resultMatch?.value ?? null,
               result_label: resultMatch?.label ?? null,
-              cost_per_result: findCostPerAction(cpa, RESULT_ACTIONS),
+              cost_per_result: findCostPerAction(cpa, priorityTypes),
               leads: findAction(actions, ["lead", "onsite_web_view_content", "view_content", "offsite_conversion.fb_pixel_view_content"]),
               cost_per_lead: findCostPerAction(cpa, ["lead", "onsite_web_view_content", "view_content", "offsite_conversion.fb_pixel_view_content"]),
             },

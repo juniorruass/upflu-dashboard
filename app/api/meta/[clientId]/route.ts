@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { isAdminAuthed } from "@/lib/admin-session";
 import { getPortalClientIds } from "@/lib/portal-session";
+import { actionTypesForGoal, dominantGoal } from "@/lib/meta-goals";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -203,12 +204,40 @@ export async function GET(req: NextRequest, { params }: Ctx) {
     const FOLLOWER_TYPES = ["follow", "instagram_page_follow", "page_fan", "like", "instagram_user_follow", "page_like"];
     const PROFILE_VISIT_TYPES = ["instagram_profile_visit"];
 
+    // Objetivo real das campanhas ativas (o que o cliente de fato está
+    // otimizando) — evita que "resultado principal" seja um palpite que não
+    // bate com o objetivo configurado (lead vs. venda vs. conversa WhatsApp).
+    let priorityTypes = RESULT_ACTIONS;
+    try {
+      const campQP = new URLSearchParams({
+        fields: "id",
+        filtering: JSON.stringify([{ field: "effective_status", operator: "IN", value: ["ACTIVE"] }]),
+        limit: "10",
+        access_token: token,
+      });
+      const campsRes = await fetch(`${META_BASE}/act_${client.meta_account_id}/campaigns?${campQP}`, { signal: AbortSignal.timeout(8000) });
+      const campsJson = await campsRes.json();
+      const campIds: string[] = (campsJson.data ?? []).map((c: { id: string }) => c.id);
+
+      const goals = await Promise.all(
+        campIds.map(async (id) => {
+          const r = await fetch(`${META_BASE}/${id}/adsets?fields=optimization_goal&limit=1&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+          const j = await r.json();
+          return (j.data?.[0]?.optimization_goal as string | undefined) ?? null;
+        })
+      );
+
+      const goal = dominantGoal(goals);
+      const goalTypes = actionTypesForGoal(goal, undefined);
+      if (goalTypes) priorityTypes = goalTypes;
+    } catch { /* mantém fallback RESULT_ACTIONS */ }
+
     const leads = findAction(actions, LEAD_TYPES);
     const purchases = findAction(actions, ["purchase"]);
-    const resultMatch = findResultWithLabel(actions, RESULT_ACTIONS);
+    const resultMatch = findResultWithLabel(actions, priorityTypes);
     const results = resultMatch?.value ?? null;
     const result_label = resultMatch?.label ?? null;
-    const costPerResult = findCostPerAction(cpa, RESULT_ACTIONS);
+    const costPerResult = findCostPerAction(cpa, priorityTypes);
     const all_results = findAllResults(actions, cpa, RESULT_ACTIONS);
     const costPerLead = findCostPerAction(cpa, LEAD_TYPES);
     const costPerPurchase = findCostPerAction(cpa, ["purchase"]);
