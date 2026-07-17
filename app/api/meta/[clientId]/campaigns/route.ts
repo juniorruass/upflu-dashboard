@@ -9,8 +9,14 @@ export const dynamic = "force-dynamic";
 
 const META_BASE = "https://graph.facebook.com/v19.0";
 
+// Conversas de WhatsApp/Messenger vêm antes de link_click/engajamento —
+// numa campanha de conversão pro WhatsApp, "clique no link" é só o meio,
+// a conversa iniciada é o resultado real (o "lead" de fato).
 const RESULT_ACTIONS = [
   "lead",
+  "onsite_conversion.messaging_conversation_started_7d",
+  "onsite_conversion.total_messaging_connection",
+  "messaging_conversation_started_7d",
   "purchase",
   "complete_registration",
   "submit_application",
@@ -40,6 +46,9 @@ function findAction(actions: { action_type: string; value: string }[], types: st
 function findResultWithLabel(actions: { action_type: string; value: string }[], types: string[]): { value: number; label: string } | null {
   const labels: Record<string, string> = {
     lead: "Leads", purchase: "Compras", complete_registration: "Cadastros",
+    "onsite_conversion.messaging_conversation_started_7d": "Conversas iniciadas (WhatsApp)",
+    "onsite_conversion.total_messaging_connection": "Conversas iniciadas (WhatsApp)",
+    messaging_conversation_started_7d: "Conversas iniciadas (WhatsApp)",
     link_click: "Cliques no link", post_engagement: "Engajamento",
     page_engagement: "Engajamento", video_view: "Visualizações de vídeo",
     instagram_profile_visit: "Visitas ao perfil", view_content: "Visualizações",

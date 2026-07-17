@@ -9,9 +9,14 @@ export const dynamic = "force-dynamic";
 
 const META_BASE = "https://graph.facebook.com/v19.0";
 
-// Priority order — first match wins as "result"
+// Priority order — first match wins as "result". Conversas de WhatsApp vêm
+// antes de link_click/engajamento — numa campanha de conversão pro WhatsApp,
+// "clique no link" é só o meio, a conversa iniciada é o resultado real.
 const RESULT_ACTIONS = [
   "lead",
+  "onsite_conversion.messaging_conversation_started_7d",
+  "onsite_conversion.total_messaging_connection",
+  "messaging_conversation_started_7d",
   "purchase",
   "complete_registration",
   "submit_application",
@@ -32,6 +37,9 @@ const RESULT_ACTIONS = [
 
 const RESULT_LABELS: Record<string, string> = {
   lead: "Leads",
+  "onsite_conversion.messaging_conversation_started_7d": "Conversas iniciadas (WhatsApp)",
+  "onsite_conversion.total_messaging_connection": "Conversas iniciadas (WhatsApp)",
+  messaging_conversation_started_7d: "Conversas iniciadas (WhatsApp)",
   purchase: "Compras",
   complete_registration: "Cadastros",
   submit_application: "Aplicações",
