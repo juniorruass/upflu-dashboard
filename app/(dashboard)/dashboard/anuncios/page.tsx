@@ -100,7 +100,12 @@ const ALL_METRICS: { key: MetricKey; label: string; group: string }[] = [
   { key: "cost_per_purchase",label: "Custo/Compra",      group: "Conversão" },
 ];
 
-const DEFAULT_METRICS: MetricKey[] = ["spend", "results", "cost_per_result", "leads", "cost_per_lead"];
+// Resultado e custo/resultado já são dinâmicos (se adaptam ao tipo real de
+// conversão da campanha — leads, cliques, engajamento, vídeo, compra...).
+// Leads/CPL fixos ficam de fora do padrão pra não aparecer vazio quando o
+// resultado real da campanha é outro tipo; continuam disponíveis pra quem
+// quiser adicionar manualmente.
+const DEFAULT_METRICS: MetricKey[] = ["spend", "results", "cost_per_result"];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -446,7 +451,7 @@ export default function AnunciosPage() {
                           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                             <thead>
                               <tr style={{ borderBottom: `1px solid var(--up-border)` }}>
-                                {["Campanha", "Status", "Investimento", camps.find(c => c.insights?.result_label)?.insights?.result_label ?? "Resultados", "Custo/Result.", "Leads", "CPL", "Clicks", "CTR"].map((h) => (
+                                {["Campanha", "Status", "Investimento", camps.find(c => c.insights?.result_label)?.insights?.result_label ?? "Resultados", "Custo/Result.", "Clicks", "CTR"].map((h) => (
                                   <th key={h} style={{ padding: "10px 16px", textAlign: h === "Campanha" ? "left" : "right", fontSize: "10px", fontWeight: "600", color: MUTED, letterSpacing: "0.1em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                                 ))}
                               </tr>
@@ -471,8 +476,6 @@ export default function AnunciosPage() {
                                     <td style={{ padding: "12px 16px", textAlign: "right", color: ACCENT, fontWeight: "600" }}>{ins ? money(ins.spend) : "—"}</td>
                                     <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? num(ins.results) : "—"}</td>
                                     <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? money(ins.cost_per_result) : "—"}</td>
-                                    <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? num(ins.leads) : "—"}</td>
-                                    <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? money(ins.cost_per_lead) : "—"}</td>
                                     <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? num(ins.clicks) : "—"}</td>
                                     <td style={{ padding: "12px 16px", textAlign: "right", color: TEXT }}>{ins ? pct(ins.ctr) : "—"}</td>
                                   </tr>
