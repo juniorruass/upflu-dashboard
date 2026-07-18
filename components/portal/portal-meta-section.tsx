@@ -10,6 +10,7 @@ const MUTED   = "#666060";
 const GREEN   = "#4ADE80";
 const PURPLE  = "#A78BFA";
 const ORANGE  = "#FB923C";
+const GOLD    = "#FBBF24";
 
 interface MetaData {
   spend: number; impressions: number; clicks: number; ctr: number;
@@ -18,6 +19,8 @@ interface MetaData {
   all_results: { label: string; value: number; cost: number | null }[];
   profile_visits: number | null; cost_per_profile_visit: number | null;
   followers: number | null; cost_per_follower: number | null;
+  purchases: number | null; cost_per_purchase: number | null;
+  result_label: string | null;
 }
 
 interface FollowerData {
@@ -315,10 +318,10 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
               <div style={{ position: "absolute", top: "-60px", right: "-40px", width: "200px", height: "200px", borderRadius: "50%", background: `radial-gradient(circle, ${ACCENT}08 0%, transparent 70%)`, pointerEvents: "none" }} />
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "8px" }}>
                 <div>
-                  <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 6px", letterSpacing: "0.14em", textTransform: "uppercase" }}>Leads no período</p>
+                  <p style={{ fontSize: "10px", color: MUTED, margin: "0 0 6px", letterSpacing: "0.14em", textTransform: "uppercase" }}>{data.result_label ?? "Leads"} no período</p>
                   <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
                     <p style={{ fontSize: "36px", fontWeight: "800", color: ACCENT, margin: 0, letterSpacing: "-0.04em", lineHeight: 1 }}>{totalLeads}</p>
-                    {totalLeads > 0 && <span style={{ fontSize: "12px", color: `${ACCENT}80`, fontWeight: "600" }}>leads</span>}
+                    {totalLeads > 0 && <span style={{ fontSize: "12px", color: `${ACCENT}80`, fontWeight: "600" }}>{(data.result_label ?? "leads").toLowerCase()}</span>}
                   </div>
                 </div>
                 <span style={{ fontSize: "10px", color: MUTED, background: "var(--up-border)", border: `1px solid var(--up-border)`, borderRadius: "6px", padding: "4px 10px" }}>
@@ -329,31 +332,58 @@ export function PortalMetaSection({ clientId }: { clientId: string }) {
             </div>
           )}
 
-          {/* Leads CategoryBlock */}
-          {show("leads") && (data.leads != null || data.cost_per_lead != null) && (
-            <CategoryBlock label="Leads gerados" count={data.leads ?? 0} cost={data.cost_per_lead} color={ACCENT} icon="🎯" />
-          )}
+          {/* Blocos de resultado — a métrica escolhida como "principal" (ver
+              cadastro do cliente) sobe pro topo automaticamente. */}
+          {(() => {
+            const RESULT_LABEL_TO_KEY: Record<string, string> = {
+              "Leads": "leads",
+              "Compras": "purchases",
+              "Conversas iniciadas (WhatsApp)": "conversations",
+              "Visitas ao perfil": "profile_visits",
+            };
+            const primaryKey = data.result_label ? RESULT_LABEL_TO_KEY[data.result_label] : null;
 
-          {/* Conversas */}
-          {show("conversations") && data.conversations != null && data.conversations > 0 && (
-            <CategoryBlock label="Conversas por mensagem" count={data.conversations} cost={data.cost_per_conversation} color={GREEN} icon="💬" />
-          )}
+            const blocks = [
+              {
+                key: "leads",
+                visible: show("leads") && (data.leads != null || data.cost_per_lead != null),
+                node: <CategoryBlock label="Leads gerados" count={data.leads ?? 0} cost={data.cost_per_lead} color={ACCENT} icon="🎯" />,
+              },
+              {
+                key: "purchases",
+                visible: show("purchases") && data.purchases != null && data.purchases > 0,
+                node: <CategoryBlock label="Vendas" count={data.purchases ?? 0} cost={data.cost_per_purchase} color={GOLD} icon="🛒" />,
+              },
+              {
+                key: "conversations",
+                visible: show("conversations") && data.conversations != null && data.conversations > 0,
+                node: <CategoryBlock label="Conversas por mensagem" count={data.conversations ?? 0} cost={data.cost_per_conversation} color={GREEN} icon="💬" />,
+              },
+              {
+                key: "profile_visits",
+                visible: show("profile_visits") && pv > 0,
+                node: <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />,
+              },
+              {
+                key: "followers",
+                visible: show("followers") && fl != null && fl > 0,
+                node: (
+                  <CategoryBlock
+                    label={adsFollowers != null ? "Seguidores adquiridos" : "Seguidores ganhos"}
+                    count={fl ?? 0}
+                    cost={adsFollowers != null ? flc : null}
+                    color={PURPLE}
+                    icon="👥"
+                  />
+                ),
+              },
+            ];
 
-          {/* Visitas ao perfil */}
-          {show("profile_visits") && pv > 0 && (
-            <CategoryBlock label="Visitas ao perfil" count={pv} cost={pvc} color={ORANGE} icon="👁" />
-          )}
-
-          {/* Seguidores ganhos no período */}
-          {show("followers") && fl != null && fl > 0 && (
-            <CategoryBlock
-              label={adsFollowers != null ? "Seguidores adquiridos" : "Seguidores ganhos"}
-              count={fl}
-              cost={adsFollowers != null ? flc : null}
-              color={PURPLE}
-              icon="👥"
-            />
-          )}
+            return blocks
+              .filter((b) => b.visible)
+              .sort((a, b) => (a.key === primaryKey ? -1 : b.key === primaryKey ? 1 : 0))
+              .map((b) => <div key={b.key}>{b.node}</div>);
+          })()}
 
           {/* Métricas Gerais */}
           {(() => {

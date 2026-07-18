@@ -34,6 +34,7 @@ function fmtMonth(d: string) {
 const PORTAL_METRIC_OPTIONS: { key: string; label: string; group: string }[] = [
   { key: "leads_chart",    label: "Gráfico de Leads",       group: "Gráficos" },
   { key: "leads",          label: "Leads",                  group: "Resultados" },
+  { key: "purchases",      label: "Vendas",                 group: "Resultados" },
   { key: "conversations",  label: "Conversas por mensagem", group: "Resultados" },
   { key: "profile_visits", label: "Visitas ao perfil",      group: "Resultados" },
   { key: "followers",      label: "Seguidores",             group: "Resultados" },
@@ -43,6 +44,17 @@ const PORTAL_METRIC_OPTIONS: { key: string; label: string; group: string }[] = [
   { key: "ctr",            label: "CTR",                    group: "Métricas Gerais" },
   { key: "impressions",    label: "Impressões",             group: "Métricas Gerais" },
   { key: "reach",          label: "Alcance",                group: "Métricas Gerais" },
+];
+
+const PRIMARY_METRIC_UI_OPTIONS = [
+  { key: "", label: "Automático (pelo objetivo da campanha)" },
+  { key: "lead", label: "Leads" },
+  { key: "purchase", label: "Vendas" },
+  { key: "conversation", label: "Conversas (WhatsApp)" },
+  { key: "contact", label: "Contatos" },
+  { key: "complete_registration", label: "Cadastros" },
+  { key: "link_click", label: "Cliques no link" },
+  { key: "profile_visit", label: "Visitas ao perfil" },
 ];
 
 function TokenMetaField({ clientId, currentToken, currentExpiry, onSaved }: {
@@ -132,6 +144,7 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [savingPortalMetrics, setSavingPortalMetrics] = useState(false);
+  const [savingPrimaryMetric, setSavingPrimaryMetric] = useState(false);
 
   async function refreshMetrics() {
     try {
@@ -263,6 +276,21 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
       alert("Erro ao salvar: " + (json.error ?? res.status));
     }
     setSavingPortalMetrics(false);
+  }
+
+  async function savePrimaryMetric(key: string) {
+    setSavingPrimaryMetric(true);
+    const res = await fetch(`/api/clients/${client.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ primary_metric: key || null }),
+    });
+    const json = await res.json();
+    if (res.ok) {
+      setClient((prev) => ({ ...prev, primary_metric: json.primary_metric ?? null }));
+    } else {
+      alert("Erro ao salvar: " + (json.error ?? res.status));
+    }
+    setSavingPrimaryMetric(false);
   }
 
   async function saveMetric() {
@@ -529,6 +557,38 @@ export default function ClientDetail({ initialClient }: { initialClient: Client 
           </>)}
         </div>
       </div>
+
+      {/* ── Métrica principal ── */}
+      {client.meta_account_id && (
+        <div style={{ marginTop: "20px" }}>
+          {card(<>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
+              {sectionTitle("Métrica Principal")}
+              {savingPrimaryMetric && (
+                <span style={{ fontSize: "11px", color: "var(--up-text-label)" }}>Salvando...</span>
+              )}
+            </div>
+            <p style={{ fontSize: "12px", color: "var(--up-text-label)", margin: "0 0 12px" }}>
+              Qual resultado conta como &ldquo;principal&rdquo; (resultado + custo por resultado) pra esse cliente. Automático detecta pelo objetivo configurado na campanha.
+            </p>
+            <select
+              value={client.primary_metric ?? ""}
+              disabled={savingPrimaryMetric}
+              onChange={(e) => savePrimaryMetric(e.target.value)}
+              style={{
+                width: "100%", padding: "9px 12px", borderRadius: "8px",
+                border: "1px solid var(--up-border)", background: "var(--up-bg)",
+                color: "var(--up-text)", fontSize: "13px",
+                fontFamily: "var(--font-outfit),sans-serif",
+              }}
+            >
+              {PRIMARY_METRIC_UI_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
+              ))}
+            </select>
+          </>)}
+        </div>
+      )}
 
       {/* ── Portal: Métricas visíveis ── */}
       {client.meta_account_id && (

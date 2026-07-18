@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { isAdminAuthed } from "@/lib/admin-session";
 import { getPortalClientIds } from "@/lib/portal-session";
-import { actionTypesForGoal, labelForActionType } from "@/lib/meta-goals";
+import { actionTypesForGoal, actionTypesForPrimaryMetric, labelForActionType } from "@/lib/meta-goals";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const supabase = createAdminClient();
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id, name, meta_account_id, meta_access_token")
+    .select("id, name, meta_account_id, meta_access_token, primary_metric")
     .eq("id", clientId)
     .single();
 
@@ -143,12 +143,17 @@ export async function GET(req: NextRequest, { params }: Ctx) {
           // está otimizando) — só cai pra lista de prioridade genérica
           // (RESULT_ACTIONS) se a Meta não retornar isso.
           let priorityTypes = RESULT_ACTIONS;
-          try {
-            const adsetsJson = await adsetsRes.json();
-            const firstSet = adsetsJson.data?.[0];
-            const goalTypes = actionTypesForGoal(firstSet?.optimization_goal, firstSet?.promoted_object);
-            if (goalTypes) priorityTypes = goalTypes;
-          } catch { /* mantém fallback */ }
+          const manualTypes = actionTypesForPrimaryMetric(client.primary_metric);
+          if (manualTypes) {
+            priorityTypes = manualTypes;
+          } else {
+            try {
+              const adsetsJson = await adsetsRes.json();
+              const firstSet = adsetsJson.data?.[0];
+              const goalTypes = actionTypesForGoal(firstSet?.optimization_goal, firstSet?.promoted_object);
+              if (goalTypes) priorityTypes = goalTypes;
+            } catch { /* mantém fallback */ }
+          }
 
           const resultMatch = findResultWithLabel(actions, priorityTypes);
 

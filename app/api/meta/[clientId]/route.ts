@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase";
 import { isAdminAuthed } from "@/lib/admin-session";
 import { getPortalClientIds } from "@/lib/portal-session";
-import { actionTypesForGoal, dominantGoal } from "@/lib/meta-goals";
+import { actionTypesForGoal, actionTypesForPrimaryMetric, dominantGoal, PURCHASE_TYPES } from "@/lib/meta-goals";
 
 type Ctx = { params: Promise<{ clientId: string }> };
 
@@ -18,12 +18,11 @@ const RESULT_ACTIONS = [
   "onsite_conversion.messaging_conversation_started_7d",
   "onsite_conversion.total_messaging_connection",
   "messaging_conversation_started_7d",
-  "purchase",
+  ...PURCHASE_TYPES,
   "complete_registration",
   "submit_application",
   "contact",
   "offsite_conversion.fb_pixel_lead",
-  "offsite_conversion.fb_pixel_purchase",
   "app_install",
   "mobile_app_install",
   "link_click",
@@ -42,6 +41,11 @@ const RESULT_LABELS: Record<string, string> = {
   "onsite_conversion.total_messaging_connection": "Conversas iniciadas (WhatsApp)",
   messaging_conversation_started_7d: "Conversas iniciadas (WhatsApp)",
   purchase: "Compras",
+  "onsite_conversion.purchase": "Compras",
+  omni_purchase: "Compras",
+  onsite_web_purchase: "Compras",
+  onsite_app_purchase: "Compras",
+  onsite_web_app_purchase: "Compras",
   complete_registration: "Cadastros",
   submit_application: "Aplicações",
   contact: "Contatos",
@@ -109,7 +113,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   const supabase = createAdminClient();
   const { data: client, error: clientError } = await supabase
     .from("clients")
-    .select("id, name, meta_account_id, meta_access_token, meta_token_expires_at")
+    .select("id, name, meta_account_id, meta_access_token, meta_token_expires_at, primary_metric")
     .eq("id", clientId)
     .single();
 
@@ -201,46 +205,55 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 
     const LEAD_TYPES = ["lead", "onsite_web_view_content", "view_content", "offsite_conversion.fb_pixel_view_content", "offsite_conversion.fb_pixel_lead"];
     const CONV_TYPES = ["messaging_conversation_started_7d", "onsite_conversion.messaging_conversation_started_7d"];
-    const FOLLOWER_TYPES = ["follow", "instagram_page_follow", "page_fan", "like", "instagram_user_follow", "page_like"];
+    // "like" (reação a post) foi removido — não é a mesma coisa que ganhar
+    // seguidor, e inflava esse número (contava engajamento como se fosse
+    // "seguidor adquirido").
+    const FOLLOWER_TYPES = ["follow", "instagram_page_follow", "page_fan", "instagram_user_follow", "page_like"];
     const PROFILE_VISIT_TYPES = ["instagram_profile_visit"];
 
-    // Objetivo real das campanhas ativas (o que o cliente de fato está
-    // otimizando) — evita que "resultado principal" seja um palpite que não
-    // bate com o objetivo configurado (lead vs. venda vs. conversa WhatsApp).
+    // Métrica principal: se o Junior escolheu manualmente no cadastro do
+    // cliente, usa direto. Senão, detecta pelo objetivo real configurado nas
+    // campanhas ativas (optimization_goal) — evita que "resultado principal"
+    // seja um palpite que não bate com o objetivo (lead vs. venda vs. conversa).
     let priorityTypes = RESULT_ACTIONS;
-    try {
-      const campQP = new URLSearchParams({
-        fields: "id",
-        filtering: JSON.stringify([{ field: "effective_status", operator: "IN", value: ["ACTIVE"] }]),
-        limit: "10",
-        access_token: token,
-      });
-      const campsRes = await fetch(`${META_BASE}/act_${client.meta_account_id}/campaigns?${campQP}`, { signal: AbortSignal.timeout(8000) });
-      const campsJson = await campsRes.json();
-      const campIds: string[] = (campsJson.data ?? []).map((c: { id: string }) => c.id);
+    const manualTypes = actionTypesForPrimaryMetric(client.primary_metric);
+    if (manualTypes) {
+      priorityTypes = manualTypes;
+    } else {
+      try {
+        const campQP = new URLSearchParams({
+          fields: "id",
+          filtering: JSON.stringify([{ field: "effective_status", operator: "IN", value: ["ACTIVE"] }]),
+          limit: "10",
+          access_token: token,
+        });
+        const campsRes = await fetch(`${META_BASE}/act_${client.meta_account_id}/campaigns?${campQP}`, { signal: AbortSignal.timeout(8000) });
+        const campsJson = await campsRes.json();
+        const campIds: string[] = (campsJson.data ?? []).map((c: { id: string }) => c.id);
 
-      const goals = await Promise.all(
-        campIds.map(async (id) => {
-          const r = await fetch(`${META_BASE}/${id}/adsets?fields=optimization_goal&limit=1&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
-          const j = await r.json();
-          return (j.data?.[0]?.optimization_goal as string | undefined) ?? null;
-        })
-      );
+        const goals = await Promise.all(
+          campIds.map(async (id) => {
+            const r = await fetch(`${META_BASE}/${id}/adsets?fields=optimization_goal&limit=1&access_token=${token}`, { signal: AbortSignal.timeout(6000) });
+            const j = await r.json();
+            return (j.data?.[0]?.optimization_goal as string | undefined) ?? null;
+          })
+        );
 
-      const goal = dominantGoal(goals);
-      const goalTypes = actionTypesForGoal(goal, undefined);
-      if (goalTypes) priorityTypes = goalTypes;
-    } catch { /* mantém fallback RESULT_ACTIONS */ }
+        const goal = dominantGoal(goals);
+        const goalTypes = actionTypesForGoal(goal, undefined);
+        if (goalTypes) priorityTypes = goalTypes;
+      } catch { /* mantém fallback RESULT_ACTIONS */ }
+    }
 
     const leads = findAction(actions, LEAD_TYPES);
-    const purchases = findAction(actions, ["purchase"]);
+    const purchases = findAction(actions, PURCHASE_TYPES);
     const resultMatch = findResultWithLabel(actions, priorityTypes);
     const results = resultMatch?.value ?? null;
     const result_label = resultMatch?.label ?? null;
     const costPerResult = findCostPerAction(cpa, priorityTypes);
     const all_results = findAllResults(actions, cpa, RESULT_ACTIONS);
     const costPerLead = findCostPerAction(cpa, LEAD_TYPES);
-    const costPerPurchase = findCostPerAction(cpa, ["purchase"]);
+    const costPerPurchase = findCostPerAction(cpa, PURCHASE_TYPES);
 
     const conversations = findAction(actions, CONV_TYPES);
     const costPerConversation = findCostPerAction(cpa, CONV_TYPES);

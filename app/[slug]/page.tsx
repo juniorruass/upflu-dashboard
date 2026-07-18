@@ -143,7 +143,7 @@ export default async function ClientSlugPage({ params }: { params: Promise<{ slu
   const progress   = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, fontFamily: "var(--font-outfit, sans-serif)", color: TEXT }}>
+    <div style={{ minHeight: "100vh", background: BG, fontFamily: "var(--font-outfit, sans-serif)", color: TEXT, overflowX: "hidden" }}>
 
       <style>{`
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }

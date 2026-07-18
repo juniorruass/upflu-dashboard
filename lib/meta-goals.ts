@@ -10,6 +10,44 @@
 
 export type PromotedObject = { custom_event_type?: string } | undefined;
 
+// Compra tem vários action_types conforme onde a conversão acontece (checkout
+// externo via pixel, compra dentro do próprio Instagram/Facebook via
+// "onsite"/"omni") — todos representam a MESMA venda, então usamos
+// first-match-wins (nunca somar) igual ao resto do código.
+export const PURCHASE_TYPES = [
+  "purchase",
+  "onsite_conversion.purchase",
+  "omni_purchase",
+  "onsite_web_purchase",
+  "onsite_app_purchase",
+  "onsite_web_app_purchase",
+  "offsite_conversion.fb_pixel_purchase",
+];
+
+// Lista de prioridade genérica — usada só como fallback quando a Meta não
+// retorna optimization_goal (ou ele não é reconhecido).
+export const RESULT_ACTIONS = [
+  "lead",
+  "onsite_conversion.messaging_conversation_started_7d",
+  "onsite_conversion.total_messaging_connection",
+  "messaging_conversation_started_7d",
+  ...PURCHASE_TYPES,
+  "complete_registration",
+  "submit_application",
+  "contact",
+  "offsite_conversion.fb_pixel_lead",
+  "app_install",
+  "mobile_app_install",
+  "link_click",
+  "post_engagement",
+  "page_engagement",
+  "video_view",
+  "instagram_profile_visit",
+  "onsite_web_view_content",
+  "view_content",
+  "offsite_conversion.fb_pixel_view_content",
+];
+
 const MESSAGING_TYPES = [
   "onsite_conversion.messaging_conversation_started_7d",
   "onsite_conversion.total_messaging_connection",
@@ -17,7 +55,7 @@ const MESSAGING_TYPES = [
 ];
 
 const CUSTOM_EVENT_MAP: Record<string, string[]> = {
-  PURCHASE: ["purchase", "offsite_conversion.fb_pixel_purchase"],
+  PURCHASE: PURCHASE_TYPES,
   LEAD: ["lead", "offsite_conversion.fb_pixel_lead"],
   COMPLETE_REGISTRATION: ["complete_registration"],
   CONTACT: ["contact"],
@@ -65,7 +103,7 @@ export function actionTypesForGoal(optimizationGoal: string | null | undefined, 
     case "DERIVED_EVENTS": {
       const custom = promotedObject?.custom_event_type;
       if (custom && CUSTOM_EVENT_MAP[custom]) return CUSTOM_EVENT_MAP[custom];
-      return ["purchase", "offsite_conversion.fb_pixel_purchase"]; // fallback comum p/ OUTCOME_SALES
+      return PURCHASE_TYPES; // fallback comum p/ OUTCOME_SALES
     }
     // REACH, IMPRESSIONS, AD_RECALL_LIFT, PAGE_LIKES etc. não têm "resultado"
     // discreto — retorna null pra não forçar um número que não existe.
@@ -77,6 +115,11 @@ export function actionTypesForGoal(optimizationGoal: string | null | undefined, 
 const LABELS: Record<string, string> = {
   lead: "Leads",
   purchase: "Compras",
+  "onsite_conversion.purchase": "Compras",
+  omni_purchase: "Compras",
+  onsite_web_purchase: "Compras",
+  onsite_app_purchase: "Compras",
+  onsite_web_app_purchase: "Compras",
   "offsite_conversion.fb_pixel_purchase": "Compras",
   "offsite_conversion.fb_pixel_lead": "Leads",
   complete_registration: "Cadastros",
@@ -99,6 +142,24 @@ const LABELS: Record<string, string> = {
 
 export function labelForActionType(type: string): string {
   return LABELS[type] ?? type;
+}
+
+// Opções pro admin escolher manualmente a métrica principal do cliente
+// (substitui a detecção automática via optimization_goal quando o Junior
+// quer forçar qual resultado aparece como "principal").
+export const PRIMARY_METRIC_OPTIONS: { key: string; label: string; types: string[] }[] = [
+  { key: "lead", label: "Leads", types: ["lead", "offsite_conversion.fb_pixel_lead", "onsite_web_view_content", "view_content", "offsite_conversion.fb_pixel_view_content"] },
+  { key: "purchase", label: "Vendas", types: PURCHASE_TYPES },
+  { key: "conversation", label: "Conversas (WhatsApp)", types: MESSAGING_TYPES },
+  { key: "contact", label: "Contatos", types: ["contact"] },
+  { key: "complete_registration", label: "Cadastros", types: ["complete_registration"] },
+  { key: "link_click", label: "Cliques no link", types: ["link_click"] },
+  { key: "profile_visit", label: "Visitas ao perfil", types: ["instagram_profile_visit"] },
+];
+
+export function actionTypesForPrimaryMetric(key: string | null | undefined): string[] | null {
+  if (!key) return null;
+  return PRIMARY_METRIC_OPTIONS.find((o) => o.key === key)?.types ?? null;
 }
 
 // Busca no array de ad sets qual optimization_goal predomina (a maioria das

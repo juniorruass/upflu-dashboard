@@ -8,8 +8,10 @@ type Ctx = { params: Promise<{ clientId: string }> };
 
 const META_BASE = "https://graph.facebook.com/v19.0";
 
+// "like" (reação a post) foi removido — inflava o número contando engajamento
+// como se fosse seguidor ganho.
 const FOLLOWER_TYPES = [
-  "instagram_page_follow", "follow", "page_fan", "like",
+  "instagram_page_follow", "follow", "page_fan",
   "instagram_user_follow", "page_like",
 ];
 const PROFILE_VISIT_TYPES = ["instagram_profile_visit"];
